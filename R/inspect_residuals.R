@@ -1,6 +1,10 @@
 #' Compare distribution of data with normal distribution.
 #' 
 #' @export
+#' @import mgcv
+#' @import stats
+#' @import grDevices
+#' @import graphics
 #' @param res Vector with residuals or other data for which the distribution .
 #' @param col Color for filling the area. Default is black.
 #' @param col.normal Color for shading and line of normal distribution.
@@ -85,7 +89,9 @@ check_normaldist <- function(res, col='red', col.normal='black',
 #'    data=simdat, rho=.5, AR.start=simdat$start.event)
 #' # No time series specified:
 #' check_resid(m1)
-#' # Time series specified:
+#' # Time series specified, results in a "standard" ACF plot, 
+#' # treating all residuals as single time seriesand,
+#' # and an ACF plot with the average ACF over time series:
 #' check_resid(m1, split_by=list(Subject=simdat$Subject, Trial=simdat$Trial))
 #' # Note: residuals do not look very good.
 #'
@@ -94,11 +100,13 @@ check_normaldist <- function(res, col='red', col.normal='black',
 #' # However, it does work for included predictors:
 #' check_resid(m1, split_by=c("Group"))
 #' }
+#' # see the vignette for examples:
+#' vignette("acf", package="itsadug")
+#'
 #' @author Jacolien van Rij
 
 check_resid <- function(model, AR_start = NULL, split_by=NULL){
-	par(mfrow=c(2,2), cex=1.1)
-
+	
 	el.narm <- NULL
 	res <- resid(model)
 	res.rho <- NULL
@@ -187,9 +195,19 @@ check_resid <- function(model, AR_start = NULL, split_by=NULL){
 		}
 	}
 
-	
+	par(mfrow=c(2,2), cex=1.1)
+
 	# plot 1: qqnorm residuals
-	qqnorm(res)
+	tryCatch( qqnorm(res), 
+		error = function(e){
+			if(getOption('itsadug_print')==TRUE){
+				message("Window too small for 4 panels. Plotting 2 x 2 panels. Click ENTER to show plots.")
+			}
+			par(mfrow=c(1,2), cex=1.1)
+			par(ask=TRUE)
+			qqnorm(res)
+
+		} )
 	qqline(res, col='red')
 
 	# plot 2: density
@@ -203,7 +221,9 @@ check_resid <- function(model, AR_start = NULL, split_by=NULL){
 			main=sprintf('resid(%s)', deparse(substitute(model))))
 		lines(0:(length(val)-1), val, type='h', lwd=3, col=alpha('red', .5), lend=1, xpd=TRUE)
 	}else{
-		message("No AR1 model included.")
+		if(getOption('itsadug_print')==TRUE){
+			message("No AR1 model included.")
+		}
 		acf(res, col=ifelse(is.null(res.rho), 'black','darkgray'), 
 			main=sprintf('resid(%s)', deparse(substitute(model))))
 	}
@@ -214,7 +234,7 @@ check_resid <- function(model, AR_start = NULL, split_by=NULL){
 		if(!is.null(res.rho)){
 			val <- acf_plot(res.rho, plot=F, split_by=split_by)
 			acf_plot(res, col=ifelse(is.null(res.rho), 'black','darkgray'), split_by=split_by, 
-				ylim=range(c(0, val, 1)),
+				ylim=range(c(0, val[!is.na(val)], 1)),
 				main=sprintf('resid(%s) - time series', deparse(substitute(model))), ylab='ACF')
 			lines(0:(length(val)-1), val, type='h', lwd=3, col=alpha('red', .5), lend=1, xpd=TRUE)
 		}else{
@@ -222,7 +242,12 @@ check_resid <- function(model, AR_start = NULL, split_by=NULL){
 				main=sprintf('resid(%s) - time series', deparse(substitute(model))), ylab='ACF')
 		}
 	}else{
-		message("No predictors specified to split the residuals. Last plot is canceled.")
+		if(getOption('itsadug_print')==TRUE){
+			message("No predictors specified to split the residuals. Last plot is canceled.")
+		}
 	}
+
+	par(mfrow=c(1,1))
+	par(ask=FALSE)
 }
 

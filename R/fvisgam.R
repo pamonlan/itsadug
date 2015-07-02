@@ -1,6 +1,10 @@
 #' Visualization of nonlinear interactions.
 #'
 #' @export
+#' @import mgcv
+#' @import stats
+#' @import grDevices
+#' @import graphics
 #' @aliases vis.gam2
 #' @description Produces perspective or contour plot views of gam model 
 #' predictions of the additive effects interactions.
@@ -37,10 +41,20 @@
 #' @param plot.type one of "contour" or "persp" (default is "contour").
 #' @param zlim A two item array giving the lower and upper limits for the z-
 #' axis scale. NULL to choose automatically.
+#' @param xlim A two item array giving the lower and upper limits for the x-
+#' axis scale. NULL to choose automatically.
+#' @param ylim A two item array giving the lower and upper limits for the y-
+#' axis scale. NULL to choose automatically.
 #' @param nCol The number of colors to use in color schemes.
 #' @param rm.ranef Logical: whether or not to remove random effects. 
 #' Default is TRUE.
 #' @param print.summary Logical: whether or not to print a summary.
+#' Default set to the print info messages option 
+#' (see \code{\link{infoMessages}}).
+#' @param transform Function for transforming the fitted values. 
+#' Default is NULL.
+#' @param hide.label Logical: whether or not to hide the label 
+#' (i.e., "fitted values"). Default is FALSE.
 #' @param ... other options to pass on to persp, image or contour. In 
 #' particular ticktype="detailed" will add proper axes labeling to the plots.
 #'
@@ -60,19 +74,22 @@
 #' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE)
 #' }
 #' # see the vignette for examples:
-#' vignette("plotfunctions", package="itsadug")
+#' vignette("overview", package="itsadug")
 #' @author Jacolien van Rij and Martijn Wieling. 
 #' Modification of \code{\link[mgcv]{vis.gam}} from 
 #' package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
-#' @seealso \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}} 
+#' @seealso \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 #'
 #' @family functions for interpreting nonlinear effects
 
 fvisgam <- function(x, view = NULL, cond = list(), 
     n.grid = 30, too.far = 0, col = NA, color = "topo", contour.col = NULL, 
-    add.color.legend=TRUE,
-    se = -1, plot.type = "contour", zlim = NULL, nCol = 50, 
-    rm.ranef=NULL, print.summary=TRUE, ...) {
+    add.color.legend=TRUE, se = -1, plot.type = "contour", 
+    xlim=NULL, ylim=NULL, zlim = NULL, nCol = 50, 
+    rm.ranef=NULL, print.summary=getOption('itsadug_print'), 
+    transform=NULL, hide.label=FALSE, ...) {
+
+    # check info me
        
     fac.seq <- function(fac, n.grid) {
         fn <- length(levels(fac))
@@ -118,6 +135,21 @@ fvisgam <- function(x, view = NULL, cond = list(),
     m2 <- seq(min(x$var.summary[[view[2]]], na.rm=TRUE), 
         max(x$var.summary[[view[2]]], na.rm=TRUE), length=n.grid)
 
+    if(!is.null(xlim)){
+        if(length(xlim) != 2){
+            warning("Invalid xlim values specified. Argument xlim is being ignored.")
+        }else{ 
+            m1 <- seq(xlim[1], xlim[2], length=n.grid)
+        }
+    }
+    if(!is.null(ylim)){
+        if(length(ylim) != 2){
+            warning("Invalid ylim values specified. Argument ylim is being ignored.")
+        }else{ 
+            m2 <- seq(ylim[1], ylim[2], length=n.grid)
+        }
+    }
+
     cond[[view[1]]] <- m1
     cond[[view[2]]] <- m2
 
@@ -135,6 +167,11 @@ fvisgam <- function(x, view = NULL, cond = list(),
         newd$se.fit[ex.tf] <- newd$fit[ex.tf] <- NA
     }
     if (se <= 0) {
+        z.fit <- newd$fit
+        if(!is.null(transform)){
+            z.fit <- sapply(z.fit, transform)
+            z <- matrix(z.fit, byrow=TRUE, n.grid, n.grid)
+        }
         old.warn <- options(warn = -1)
         av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), byrow=TRUE, n.grid, n.grid - 1)
         options(old.warn)
@@ -149,8 +186,8 @@ fvisgam <- function(x, view = NULL, cond = list(),
             min.z <- zlim[1]
             max.z <- zlim[2]
         } else {
-            min.z <- min(newd$fit, na.rm = TRUE)
-            max.z <- max(newd$fit, na.rm = TRUE)
+            min.z <- min(z.fit, na.rm = TRUE)
+            max.z <- max(z.fit, na.rm = TRUE)
         }
         surf.col <- surf.col - min.z
         surf.col <- surf.col/(max.z - min.z)
@@ -188,7 +225,7 @@ fvisgam <- function(x, view = NULL, cond = list(),
         surf.col[surf.col > nCol] <- nCol
         if (is.na(col)) 
             col <- pal[as.array(surf.col)]
-        z <- matrix(newd$fit, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
         if (plot.type == "contour") {
             stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
                 dnm, "", ",main=zlab"), ",...)", sep = "")
@@ -198,6 +235,7 @@ fvisgam <- function(x, view = NULL, cond = list(),
                 txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z)", ifelse("add" %in% dnm, "", ",add=TRUE"), 
                   ",...)", sep = "")
                 eval(parse(text = txt))
+
             } else {
                 txt <- paste("contour(m1,m2,z,col=1,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
@@ -206,6 +244,22 @@ fvisgam <- function(x, view = NULL, cond = list(),
                 gradientLegend(round(c(min.z, max.z), 3), n.seg=3, pos=.875, 
                     color=pal)
             }
+	        if(hide.label==FALSE){
+	        	addlabel = "fitted values"
+	        	if(!is.null(rm.ranef)){
+	        		if(rm.ranef !=FALSE){
+	        			addlabel = paste(addlabel, "excl. random", sep=", ")
+	        		}
+	        	}
+	        	mtext(addlabel, side=4, line=0, adj=0, 
+	        		cex=.75, col='gray35', xpd=TRUE)
+
+	        	if(!is.null(transform)){
+	        		mtext("transformed", side=4, line=.75, adj=0, 
+	        		cex=.75, col='gray35', xpd=TRUE)
+	        	}
+	        }
+	            
         }else{
              stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
                 dnm, "", ",main=zlab"), ",...)", sep = "")
@@ -219,9 +273,33 @@ fvisgam <- function(x, view = NULL, cond = list(),
                 txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", 
                   stub, sep = "")
                 eval(parse(text = txt))
-            }      
+            } 
+	        if(hide.label==FALSE){
+	        	addlabel = "fitted values"
+	        	if(!is.null(rm.ranef)){
+	        		if(rm.ranef !=FALSE){
+	        			addlabel = paste(addlabel, "excl. random", sep=", ")
+	        		}
+	        	}
+	        	mtext(addlabel, side=4, line=0, adj=0, 
+	        		cex=.75, col='gray35', xpd=TRUE)
+
+	        	if(!is.null(transform)){
+	        		mtext("transformed", side=4, line=.75, adj=0, 
+	        		cex=.75, col='gray35', xpd=TRUE)
+	        	}
+	        }
         }
     } else {
+        z.fit <- newd$fit
+        z.cil <- newd$fit - newd$CI
+        z.ciu <- newd$fit + newd$CI
+        if(!is.null(transform)){
+            z.fit <- sapply(z.fit, transform)
+            z.cil <- sapply(z.cil, transform)
+            z.ciu <- sapply(z.ciu, transform)
+        }
+
         if (color == "bw" || color == "gray") {
             subs <- paste("grey are +/-", se, "s.e.")
             lo.col <- "gray"
@@ -237,12 +315,11 @@ fvisgam <- function(x, view = NULL, cond = list(),
             min.z <- zlim[1]
             max.z <- zlim[2]
         } else {
-            z.max <- max(newd$fit + newd$CI, na.rm = TRUE)
-            z.min <- min(newd$fit - newd$CI, na.rm = TRUE)
+            z.max <- max(z.ciu, na.rm = TRUE)
+            z.min <- min(z.cil, na.rm = TRUE)
         }
         zlim <- c(z.min, z.max)
-        z <- newd$fit - newd$CI
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z.cil, byrow=TRUE, n.grid, n.grid)
         if (plot.type == "contour") 
             warning("sorry no option for contouring with errors: try plot.gam")
         stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("zlab" %in% 
@@ -250,17 +327,34 @@ fvisgam <- function(x, view = NULL, cond = list(),
         txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, sep = "")
         eval(parse(text = txt))
         par(new = TRUE)
-        z <- newd$fit
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z.fit, byrow=TRUE, n.grid, n.grid)
         txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), stub, sep = "")
         eval(parse(text = txt))
         par(new = TRUE)
-        z <- newd$fit + newd$CI
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z.ciu, byrow=TRUE, n.grid, n.grid)
         txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, sep = "")
         eval(parse(text = txt))
+        if(hide.label==FALSE){
+        	addlabel = "fitted values"
+        	if(!is.null(rm.ranef)){
+        		if(rm.ranef !=FALSE){
+        			addlabel = paste(addlabel, "excl. random", sep=", ")
+        		}
+        	}
+        	mtext(addlabel, side=4, line=0, adj=0, 
+        		cex=.75, col='gray35', xpd=TRUE)
+
+        	if(!is.null(transform)){
+        		mtext("transformed", side=4, line=.75, adj=0, 
+        		cex=.75, col='gray35', xpd=TRUE)
+        	}
+
+
+        }
     }
-    invisible(list(fv = newd, m1 = m1, m2 = m2))
+
+    invisible(list(fv = newd, m1 = m1, m2 = m2, zlim=c(min.z, max.z), 
+        note=ifelse(is.null(transform), "type=lpmatrix, not on response scale", transform)) )   
 }
 
  

@@ -1,5 +1,6 @@
 #' Utility unction.
 #' 
+#' @export
 #' @param model A fitted regression model (using lm, glm, gam, or bam).
 #' @return The indices of the data that were not fitted by the model.
 #' @author Jacolien van Rij
@@ -32,6 +33,8 @@ missing_est <- function(model){
 
 #' Utility unction.
 #' 
+#' @export
+#' @import mgcv
 #' @param model1 A fitted regression model (using lm, glm, gam, or bam).
 #' @param model2 A fitted regression model (using lm, glm, gam, or bam).
 #' @return A list with model terms that are not shared by both models.
@@ -70,3 +73,30 @@ diff_terms <- function(model1, model2){
 	out[[deparse(substitute(model2))]] <- d2
 	return(out)
 }
+
+#' Utility unction.
+#' 
+#' @export
+#' @param text A text string (smooth term label) that needs to be converted 
+#' to a regular expression. 
+#' @return A regular expression string.
+#' @author Jacolien van Rij
+#' @examples
+#' data(simdat)
+#' # Model for illustrating coefficients:
+#' m0 <- bam(Y ~ s(Time) + s(Subject, bs='re') 
+#' + s(Time, Subject, bs='re'), data=simdat)
+#' 
+#' # get all coefficients:
+#' coef(m0)
+#' # to get only the Subject intercepts:
+#' coef(m0)[grepl(convertNonAlphanumeric("s(Subject)"), names(coef(m0)))]
+#' # to get only the Subject slopes:
+#' coef(m0)[grepl(convertNonAlphanumeric("s(Time,Subject)"), names(coef(m0)))]
+#'
+#' @family utility functions
+
+convertNonAlphanumeric <- function(text){
+	return( gsub("([^a-zA-Z0-9])", "\\\\\\1", as.character(text)) )
+}
+

@@ -1,6 +1,10 @@
 #' Visualization of group estimates.
 #'
 #' @export
+#' @import mgcv
+#' @import stats
+#' @import grDevices
+#' @import graphics
 #' @description Plots a smooth from a \code{\link[mgcv]{gam}} or 
 #' \code{\link[mgcv]{bam}} model based on predictions.
 #' In contrast with the default \code{\link[mgcv]{plot.gam}}, this function 
@@ -23,6 +27,8 @@
 #' confidence intervals are plotted. The value of se will be multiplied with 
 #' the standard error (i.e., 1.96 results in 95\%CI and 2.58).
 #' @param print.summary Logical: whether or not to print summary.
+#' Default set to the print info messages option 
+#' (see \code{\link{infoMessages}}).
 #' @param main Changing the main title for the plot, see also title.
 #' @param xlab Changing the label for the x axis, 
 #' defaults to a description of x.
@@ -57,7 +63,7 @@
 #' }
 #' 
 #' # see the vignette for examples:
-#' vignette("plotfunctions", package="itsadug")
+#' vignette("overview", package="itsadug")
 #' @author Jacolien van Rij, based on a function of Fabian Tomaschek 
 #' @seealso \code{\link[mgcv]{plot.gam}}, \code{\link{plot_diff}} 
 #'
@@ -65,7 +71,7 @@
 
 plot_parametric <- function(x, pred, cond = list(), 
     parametricOnly = FALSE, rm.ranef=NULL, 
-    col = 'black', se = 1.96, print.summary=TRUE,
+    col = 'black', se = 1.96, print.summary=getOption('itsadug_print'),
     main=NULL, xlab=NULL, ...) {
        
     dnm <- names(list(...))

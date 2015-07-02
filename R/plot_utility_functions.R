@@ -1,5 +1,8 @@
 #' Utility function.
 #'
+#' @export
+#' @import grDevices
+#' @import graphics
 #' @description Wrapper around \code{\link[grDevices]{adjustcolor}}.
 #' 
 #' @param x A color or a vector with color values.
@@ -7,6 +10,13 @@
 #' transparent) to 1 (not transparent).
 #'
 #' @family Utility functions for plotting
+#' @section Note: 
+#' Does not always work for x11 panels.
+#' @examples
+#' emptyPlot(100,100, h=50, v=50)
+#' rect(25,25,75,75, col=alpha('red',f=1))
+#' rect(35,41,63,81, col=alpha(rgb(0,1,.5),f=.25), 
+#'    border=alpha(rgb(0,1,.5), f=.65), lwd=4)
 
 alpha <- function(x, f = 0.5) {
     if(f > 1 | f < 0){
@@ -19,6 +29,8 @@ alpha <- function(x, f = 0.5) {
 #' Utility function.
 #'
 #' @export
+#' @import grDevices
+#' @import graphics
 #' @description Generate an color palette with changing transparency.
 #' 
 #' @param x A vector with color values. Could be a single value specifying a 
@@ -79,6 +91,8 @@ alphaPalette <- function(x, f.seq, n=NULL) {
 #' Utility function.
 #'
 #' @export
+#' @import grDevices
+#' @import graphics
 #' @description Add a transparency Rug to a contour plot or image.
 #' 
 #' @param x Observations on x-axis.
@@ -102,26 +116,65 @@ alphaPalette <- function(x, f.seq, n=NULL) {
 #' @seealso 
 #' \code{\link[graphics]{rug}}, \code{\link[graphics]{contour}}, 
 #' \code{\link[graphics]{image}}
-#'
+#' @examples
+#' data(simdat)
+#' 
+#' # Introduce extreme values:
+#' set.seed(123)
+#' newdat <- simdat[sample(which(simdat$Time < 1500),
+#'     size=round(.5*length(which(simdat$Time < 1500)))),]
+#' newdat <- rbind(newdat, 
+#'     simdat[sample(which(simdat$Time > 1500),
+#'     size=5),])
+#' # Some simple GAM with tensor:
+#' m1 <- bam(Y ~ te(Time, Trial), data=newdat)
+#' # plot summed effects:
+#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+#'     add.color.legend=FALSE)
+#' # add rug:
+#' fadeRug(newdat$Time, newdat$Trial)
+#' # compare with default rug:
+#' rug(newdat$Time)
+#' rug(newdat$Trial, side=2)
+#' # add color legend:
+#' gradientLegend(c(-15,15), pos=.875)
+#' # add data points (for checking the grid):
+#' points(newdat$Time, newdat$Trial)
+#' 
+#' # change x- and y-grid:
+#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
+#' points(newdat$Time, newdat$Trial)
+#' fadeRug(newdat$Time, newdat$Trial, n.grid=c(100,10), col='gray')
 #' @family Utility functions for plotting
 
-fadeRug <- function(x, y, n.grid = 30, gradual=FALSE, max.alpha = 0.75, col='white') {
+fadeRug <- function(x, y, n.grid = 30, gradual=FALSE, 
+    max.alpha = 0.75, col='white') {
+    n.grid.x <- n.grid.y <- n.grid[1]
+    if(length(n.grid)==2){
+        n.grid.y <- n.grid[2]
+    }
+
     xlim <- c(par()$usr[1], par()$usr[2])
     ylim <- c(par()$usr[3], par()$usr[4])
-    x.step <- length(xlim[1]:xlim[2])/n.grid
-    y.step <- length(ylim[1]:ylim[2])/n.grid
+    x.step <- diff(seq(xlim[1], xlim[2], length=n.grid.x))[1]
+    y.step <- diff(seq(ylim[1], ylim[2], length=n.grid.y))[1]
 
-    im <- matrix(table(factor(round((x - xlim[1])/x.step), levels = 1:n.grid), factor(round((y - ylim[1])/y.step), levels = 1:n.grid)))
+
+    im <- matrix(table(factor(round((x - xlim[1])/x.step)+1, levels = 1:n.grid.x), 
+        factor(round((y - ylim[1])/y.step)+1, levels = 1:n.grid.y)))
     if(gradual==FALSE){
         im[im > 0] <- 1 
     }
     fadecols <- alphaPalette(col, f.seq = seq(max.alpha, 0, length = max(im) + 1))
-    im <- matrix(fadecols[im + 1], byrow = TRUE, ncol = n.grid)
-    rasterImage(as.raster(im), xleft = xlim[1], xright = xlim[2], ybottom = ylim[2], ytop = ylim[1], interpolate = FALSE)
+    im <- matrix(fadecols[im + 1], byrow = TRUE, ncol = n.grid.x)
+    im <- im[n.grid.y:1,]
+    rasterImage(as.raster(im), xleft = xlim[1], xright = xlim[2], ybottom = ylim[1], ytop = ylim[2], interpolate = FALSE)
 }
 
 #' Utility function.
 #'
+#' @export
+#' @import graphics
 #' @description Function for positioning a legend or label in or outside the 
 #' plot region based on proportion of the plot region rather than Cartesian 
 #' coordinates.
@@ -145,10 +198,75 @@ getCoords <- function(pos = 1.1, side = 1) {
     return(out)
 } 
 
+#' Get the figure region as coordinates of the current plot region.
+#'
+#' @export
+#' @import grDevices
+#' @import graphics
+#' @param input Text string: 'f' (figure, default), 'p' (plot region), 
+#' 'hf' (half way figure region), or 'hp' (half way plot region)
+#' @return A vector of the form c(x1, x2, y1, y2) giving the 
+#' boundaries of the figure region as coordinates of the current 
+#' plot region.
+#' @author Jacolien van Rij
+#' @examples
+#' # setup plot region:
+#' emptyPlot(1,1, bty='o')
+#' fc <- getFigCoords()
+#' pc <- getFigCoords('p')
+#' arrows(x0=pc[c(1,2,1,2)], x1=fc[c(1,2,1,2)],
+#'     y0=pc[c(3,3,4,4)], y1=fc[c(3,3,4,4)], xpd=TRUE)
+#' 
+#' # Same plot with different axis:
+#' emptyPlot(c(250,500),c(331, 336), bty='o')
+#' fc <- getFigCoords()
+#' pc <- getFigCoords('p')
+#' arrows(x0=pc[c(1,2,1,2)], x1=fc[c(1,2,1,2)],
+#'     y0=pc[c(3,3,4,4)], y1=fc[c(3,3,4,4)], xpd=TRUE)
+#' hc <-  getFigCoords('h')
+#' 
+#' # other options:
+#' # 1. center of figure region:
+#' abline(v=getFigCoords('hf')[1], col='blue', xpd=TRUE)
+#' abline(h=getFigCoords('hf')[2], col='blue', xpd=TRUE)
+#' # 2. center of plot region:
+#' abline(v=getFigCoords('hp')[1], col='red', lty=3)
+#' abline(h=getFigCoords('hp')[2], col='red', lty=3)
+#' @family Utility functions for plotting
+
+getFigCoords <- function(input='f'){
+    p <- par()
+    x.width = p$usr[2] - p$usr[1]
+    y.width = p$usr[4] - p$usr[3]
+    x.w = p$plt[2] - p$plt[1]
+    y.w = p$plt[4] - p$plt[3]  
+
+    if(input=='f'){
+        return( c(p$usr[1]-p$plt[1]*x.width/x.w, # xmin
+            p$usr[2]+(1-p$plt[2])*x.width/x.w,   # xmax
+            p$usr[3]-p$plt[3]*y.width/y.w,       # ymin
+            p$usr[4]+(1-p$plt[4])*y.width/y.w    # ymax
+            ) )
+    }else if(input=='p'){
+        return(p$usr)
+    }else if(input=='hp'){
+        return( c( 0.5*x.width + p$usr[1], # x
+            0.5*y.width + p$usr[3] ) )    # y
+    }else if(input=='hf'){
+        return( c( p$usr[1]+(0.5-p$plt[1])*(x.width / x.w), # x
+                   p$usr[3]+(0.5-p$plt[3])*(y.width / y.w)  # y
+                ))
+    }else{
+        return(NULL)
+    }
+}
+
 
 #' Utility function.
 #'
 #' @export
+#' @import grDevices
+#' @import graphics
 #' @description Add a gradient legend to a contour plot (or other plot) to 
 #' indicate the range of values represented by the color palette.
 #' 
@@ -198,9 +316,15 @@ getCoords <- function(pos = 1.1, side = 1) {
 #' gradientLegend(valRange=c(-14,14),pos=.125, side=4, inside=FALSE)
 #' gradientLegend(valRange=c(-14,14),pos=.75, length=.5,
 #' color=alphaPalette('white', f.seq=seq(0,1, by=.1)), border.col='white')
+#' 
 #' # when defining custom points, it is still important to specify side:
 #' gradientLegend(valRange=c(-14,14), pos=c(500,-5,1250,-4), coords=TRUE, 
 #' border.col='red', side=1)
+#'
+#' # The functions fvisgam, pvisgam, and plot_diff2 output the zlim:
+#' fvg <- fvisgam(m1, view=c("Time", "Trial"), add.color.legend=FALSE)
+#' fadeRug(simdat$Time, simdat$Trial)
+#' gradientLegend(round(fvg$zlim,2), pos=.875)
 #' 
 #' @family Utility functions for plotting
 
@@ -291,6 +415,8 @@ gradientLegend <- function(valRange, color='topo', nCol=30,
 #' Utility function.
 #'
 #' @export
+#' @import grDevices
+#' @import graphics
 #' @description Add vertical error bars.
 #' 
 #' @param x Vector with x-values.
@@ -334,6 +460,9 @@ errorBars <- function(x, mean, se, minmax=NULL, ...){
 
 #' Utility function.
 #'
+#' @export
+#' @import grDevices
+#' @import graphics
 #' @description Add horizontal error bars.
 #' 
 #' @param y Vector with y-values.
@@ -378,6 +507,9 @@ horiz_error <- function(y, mean, se, minmax=NULL, ...){
 
 #' Utility function.
 #'
+#' @export
+#' @import grDevices
+#' @import graphics
 #' @description Add horizontal or vertical interval indications. 
 #' This function can also be used to plot asymmetric (non-parametric)
 #' error bars or confidence intervals. Basically a wrapper around arrows.
@@ -501,9 +633,13 @@ addInterval <- function(pos, lowVals, highVals, horiz=TRUE, minmax=NULL, length=
             segments(y0=lowVals[len.check], y1=lowVals[len.check], x0=pos-len, x1=pos+len, ...)
         }
 
-        pos <- pos[-len.check]
-        lowVals <- lowVals[-len.check]
-        highVals <- highVals[-len.check]
+        # pos <- pos[-len.check]
+        # lowVals <- lowVals[-len.check]
+        # highVals <- highVals[-len.check]
+
+        # set of warnings
+        options(warn=-1)
+
     }
 
     if(horiz){
@@ -519,9 +655,9 @@ addInterval <- function(pos, lowVals, highVals, horiz=TRUE, minmax=NULL, length=
             eval(parse(text=paste('arrows(y0=lowVals, y1=highVals, x0=pos, x1=pos, length=length,', pars ,',...)', sep='')))
         }        
     }
+
+    if(length(len.check)>0){
+        options(warn=0)
+    }
 }
-
-
-
-
 
