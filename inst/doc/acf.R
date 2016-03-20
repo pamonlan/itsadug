@@ -1,145 +1,125 @@
-## ------------------------------------------------------------------------
-suppressMessages(library(itsadug))
-info('version')
+## ----setup, include=FALSE------------------------------------------------
+knitr::opts_chunk$set(echo = TRUE)
+library(itsadug)
 
-## ---- results='hide'-----------------------------------------------------
+## ------------------------------------------------------------------------
+library(itsadug)
+library(mgcv)
 data(simdat)
-
-# For illustration purposes, we build a GAMM model
-# with a nonlinear interaction, two groups, and
-# random wiggly smooths for Subjects:
-m1 <- bam(Y ~ Group + te(Time, Trial, by=Group)
-  + s(Time, Subject, bs='fs', m=1),
-  data=simdat)
-
-## ---- fig.width=4, fig.height=4------------------------------------------
-acf(resid(m1))
-
-## ---- fig.width=4, fig.height=4------------------------------------------
-acf_resid(m1)
-
-## ---- eval=FALSE---------------------------------------------------------
-#  # Option A: include named list
-#  acf_resid(m1, split_pred=list(simdat$Subject,simdat$Trial))
-#  
-#  # Option B: include model predictors
-#  # This method only works for predictors that are included in the model.
-#  acf_resid(m1, split_pred=c("Subject","Trial"))
-
-## ---- fig.width=4, fig.height=4, echo=FALSE------------------------------
-acf_resid(m1, split_pred=c("Subject","Trial"))
-
-## ---- fig.width=4, fig.height=4, results='hold'--------------------------
-# Minimum ACF per lag:
-acf_resid(m1, split_pred=c("Subject","Trial"), fun=min)
-# Maximum ACF per lag:
-acf_resid(m1, split_pred=c("Subject","Trial"), fun=max)
-
-## ---- fig.width=4, fig.height=4------------------------------------------
-
-# Median ACF per lag:
-acf_resid(m1, split_pred="Subject", fun=median, lwd=3,
-          main="Distribution of ACF")
-# Calculate 25% and 75% quantiles:
-acf1 <- acf_resid(m1, split_pred="Subject", 
-    fun=function(x){quantile(x, .25)}, plot=FALSE)
-acf2 <- acf_resid(m1, split_pred="Subject", 
-    fun=function(x){quantile(x, .75)}, plot=FALSE)
-# Plot these as error bars in different colors:
-len <- length(acf1)-1
-fill_area(x=0:len, y=acf2, from=acf1, col=alpha(1))
-addInterval(pos=0:len, acf1, acf2, horiz=FALSE, col=alpha(1))
-# add legend:
-legend('topright',
-    fill=alpha(1),
-    border=alpha(1),
-    legend='25-75%',
-    bty='n')
-
-## ---- fig.width=8, fig.height=6------------------------------------------
-acf_resid(m1, split_pred=c("Subject","Trial"), n=6)
-
-## ---- fig.width=8, fig.height=6------------------------------------------
-out <- acf_resid(m1, split_pred=c("Subject","Trial"), n=6, plot=FALSE)
-# print the head of the elements in the first quantile:
-head(out[[1]][['elements']])
-# print the quantile:
-out[[1]][['quantile']]
-
-## ---- fig.width=8, fig.height=6------------------------------------------
-acf_resid(m1, split_pred=c("Subject","Trial"), n=6, random=TRUE)
-
-## ---- fig.width=8, fig.height=6------------------------------------------
-simdat$Event <- with(simdat, interaction(Subject, Trial))
-acf_resid(m1, split_pred=list(Event=simdat$Event), n=6, 
-    cond=list(Event=c('c05.-10', 'c11.-10', 'a05.-9', 'a09.-9', 'a13.-9', 'c02.-9')))
+# add missing values to simdat:
+simdat[sample(nrow(simdat), 15),]$Y <- NA
 
 ## ------------------------------------------------------------------------
-# default output is the acf values:
-(out <- acf_resid(m1, split_pred=c("Subject","Trial"), plot=FALSE))
-
-# Alternatively, more information could be retrieved:
-out <- acf_resid(m1, split_pred=c("Subject","Trial"), plot=FALSE, return_all=TRUE)
-# out is a list of info:
-names(out)
-
-# 1. acf gives the acf values:
-out[['acf']]
-
-# 2. acftable provides the individual acf's in wide table format:
-head(out[['acftable']], 3)
-dim(out[['acftable']])
-
-# 3. dataframe prvides a data frame with the acf, n, and ci information
-# in long table format:
-head(out[['dataframe']])
-
-# 4. n provides the number of data points underlying each ACF:
-head(out[['n']])
-     
-# 5. series and FUN provide info on input and function:
-out[['series']]
-out[['FUN']]
-
-## ---- eval=FALSE---------------------------------------------------------
-#  # Plot individual participants with the package lattice:
-#  library(lattice)
-#  out <- acf_resid(m1, split_pred=c("Subject"), plot=FALSE, return_all=TRUE)$dataframe
-#  civec = out[out$lag==0,]$ci
-#  xyplot(acf ~ lag | event, type = "h", data = out, col.line = "black",
-#              panel = function(...) {
-#                  panel.abline(h = civec[panel.number()], col.line = "grey")
-#                  panel.abline(h = -civec[panel.number()], col.line = "grey")
-#                  panel.abline(h = 0, col.line = "black")
-#                  panel.xyplot(...)
-#              },
-#              strip = strip.custom(bg = "grey90"),
-#              par.strip.text = list(cex = 0.8),
-#              xlab="lag", ylab="autocorrelation")
-
-## ---- fig.width=4, fig.height=4, results='hold'--------------------------
-# genetare AR start column:
-simdat <- start_event(simdat, column="Time", event="Event")
+simdat <- start_event(simdat, column="Time", event=c("Subject", "Trial"), label.event="Event")
 head(simdat)
 
-# run GAMM with AR1 model:
-m1 <- bam(Y ~ Group + te(Time, Trial, by=Group)
-  + s(Time, Subject, bs='fs', m=1),
-  data=simdat, rho=.65, AR.start=simdat$start.event)
+## ------------------------------------------------------------------------
+library(mgcv)
+# example model:
+m1 <- bam(Y ~ te(Time, Trial)+s(Subject, bs='re'), data=simdat)
 
-# plot normal acf, without correction for rho:
+## ---- fig.width=12, fig.height=4-----------------------------------------
+par(mfrow=c(1,3), cex=1.1)
+
+# default ACF function:
+acf(resid(m1), main="acf(resid(m1))")
+# resid_gam:
+acf(resid_gam(m1), main="acf(resid_gam(m1))")
+# acf_resid:
+acf_resid(m1, main="acf_resid(m1)")
+
+## ---- fig.width=4, fig.height=4------------------------------------------
+# we also ask to plot the ACF by specifying plot (FALSE by default):
+r1 <- start_value_rho(m1, plot=TRUE)
+
+## ------------------------------------------------------------------------
+acf(resid(m1), plot=FALSE)$acf[2]
+
+## ------------------------------------------------------------------------
+# example model:
+m1AR1 <- bam(Y ~ te(Time, Trial)+s(Subject, bs='re'), data=simdat, rho=r1, AR.start=simdat$start.event)
+
+## ---- fig.width=8, fig.height=4------------------------------------------
+par(mfrow=c(1,2), cex=1.1)
 acf(resid(m1))
-# plot normal acf with acf_plot:
+acf(resid(m1AR1))
+
+## ---- fig.width=8, fig.height=4------------------------------------------
+par(mfrow=c(1,2), cex=1.1)
 acf_resid(m1)
-# plot normal acf with acf_plot:
-acf_plot(resid(m1), split_by=list(simdat$Subject))
-# plot corrected acf plot with acf_plot:
-acf_plot(resid_gam(m1, incl_na=TRUE), split_by=list(simdat$Subject))
+acf_resid(m1AR1)
 
-## ---- fig.width=4, fig.height=4, results='hold'--------------------------
-acf_plot(resid_gam(m1))
-acf_plot(resid_gam(m1, incl_na=TRUE), split_by=list(simdat$Subject))
+## ---- fig.width=12, fig.height=4-----------------------------------------
+par(mfrow=c(1,3), cex=1.1)
+acf_resid(m1AR1, split_pred = c("Subject", "Trial"))
+# alternatively, if the predictors are not found in the model we can use the data:
+acf_resid(m1AR1, split_pred=list(Subject=simdat$Subject, Trial=simdat$Trial))
+# ... or the AR.start information, if provided to the model:
+acf_resid(m1AR1, split_pred="AR.start")
 
-## ---- fig.width=8, fig.height=6, results='hold'--------------------------
-acf_n_plots(resid_gam(m1, incl_na=TRUE), split_by=list(simdat$Subject), n=6, random=TRUE)
+## ---- fig.width=9, fig.height=6------------------------------------------
+par(cex=1.1)
+acf_resid(m1AR1, split_pred = c("Subject", "Trial"), n=6)
+
+## ---- fig.width=8, fig.height=4------------------------------------------
+par(mfrow=c(1,2), cex=1.1)
+# normal residuals:
+normal.res <- resid(m1AR1)
+acf(normal.res)
+# corrected residuals:
+corrected.res <- resid_gam(m1AR1)
+acf(corrected.res)
+
+## ----error=TRUE----------------------------------------------------------
+# This will elicit an error:
+simdat$res.m1 <- resid(m1)
+# solution:
+simdat$res.m1 <- NA
+simdat[!is.na(simdat$Y),]$res.m1 <- resid(m1)
+
+# This will generate an error:
+simdat$res.m1AR1 <- resid_gam(m1AR1)
+# ... and this too!
+simdat$res.m1AR1 <- NA
+simdat[!is.na(simdat$Y),]$res.m1AR1 <- resid_gam(m1AR1)
+# solution:
+simdat$res.m1AR1 <- NA
+simdat[!is.na(simdat$Y),]$res.m1AR1 <- resid_gam(m1AR1, incl_na=TRUE)
+
+## ---- fig.width=12, fig.height=4-----------------------------------------
+par(mfrow=c(1,3), cex=1.1)
+acf(resid_gam(m1AR1))
+acf_plot(resid_gam(m1AR1))
+acf_resid(m1AR1)
+
+## ---- fig.width=12, fig.height=4-----------------------------------------
+par(mfrow=c(1,3), cex=1.1)
+# when using acf_plot one need to remove missing values manually:
+acf_plot(resid_gam(m1AR1, incl_na = TRUE), 
+         split_by=list(Subject=simdat[!is.na(simdat$Y),]$Subject,
+                       Trial=simdat[!is.na(simdat$Y),]$Trial))
+# ... acf_resid takes care of that automatically:
+acf_resid(m1AR1, split_pred=c("Subject", "Trial"))
+# ... also when using a list to identify time series:
+acf_resid(m1AR1, split_pred=list(Subject=simdat$Subject,
+                       Trial=simdat$Trial))
+
+## ---- fig.width=4, fig.height=4------------------------------------------
+tmp <- simdat[!is.na(simdat$Y),]
+# default function is mean:
+acf.y <- acf_plot(tmp$res.m1, 
+         split_by=list(Subject=tmp$Subject, Trial=tmp$Trial),
+         main="ACF with standard deviation")
+points(as.numeric(names(acf.y)),acf.y, pch=16, cex=.5)
+# alternatively, we could ask for SE:
+acf.se <- acf_plot(tmp$res.m1AR1, 
+         split_by=list(Subject=tmp$Subject, Trial=tmp$Trial),
+         fun=sd, plot=FALSE)
+add_bars(as.numeric(names(acf.se)), y=acf.y+acf.se, y0=acf.y-acf.se, col=NA, border=2, width=.5)
+legend('topright', legend="sd", fill=NA, border=2, bty='n')
+
+## ------------------------------------------------------------------------
+simdat$Event <- NA
+simdat[!is.na(simdat$Y),]$Event <- derive_timeseries(m1AR1)
+str(simdat)
 

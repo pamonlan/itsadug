@@ -3,28 +3,21 @@
 #' Itsadug provides a set of functions that facilitate the evaluation, 
 #' interpretation, and visualization of GAMM models that are implemented in 
 #' the package \code{\link[mgcv]{mgcv}}. 
-#'
-#' @section Evaluation:
-#' \itemize{
-#'   \item The function \code{\link{compareML}} compares two GAMM models based 
-#' on their selection scores and degrees of freedom.
-#'   \item The function \code{\link{check_resid}} allows for a quick inspection
-#' of the residuals. It shows the distribution and autocorrelation.
-#'   \item The functions \code{\link{acf_resid}}, \code{\link{acf_plot}}, 
-#' and \code{\link{acf_n_plots}} allow for a more precise inspection of the 
-#' autocorrelation in the model residuals.
-#'   \item The function \code{\link{resid_gam}} gives back the corrected 
-#' residuals of a GAMM that includes an AR1 model.
-#' }
 #' 
+#' @section Tutorials:
+#' \itemize{
+#' \item \code{vignette("inspect", package="itsadug")} - summarizes different 
+#' functions for visualizing the model.
+#' \item \code{vignette("test", package="itsadug")} - summarizes 
+#' different functions for significance testing.
+#' \item \code{vignette("acf", package="itsadug")} - summarizes how to check 
+#' and account for autocorrelation in the residuals.
+#' }
+#' Also available online: \url{www.jacolienvanrij.com/itsadug}.
+#'
 #' @section Interpretation and visualization:
-#' The vignettes "overview" and "plotfunctions" 
-#' (\code{vignette("overview", package="itsadug")} and 
-#' \code{vignette("plotfunctions", package="itsadug")}) 
-#' provide more 
-#' info and examples on the different plot functions, and how they related to 
-#' \code{mgcv}'s default plot functions. Here's a short list of the functions 
-#' for visualizing model terms and interactions:
+#' Main functions that are provided in \code{itsadug} for interpretation and 
+#' visualization of GAMM models:
 #' \itemize{
 #'   \item \code{\link{pvisgam}} plots partial interaction surfaces; it also 
 #' allows for visualizing 3-way or higher interactions.
@@ -33,9 +26,37 @@
 #'   \item \code{\link{plot_smooth}} plots 1D model estimates, and has the 
 #' possibility to exclude random effects. 
 #'   \item \code{\link{plot_parametric}} plot group estimates.
-#'   \item \code{\link{plot_diff2}} plots a \emph{difference} surface 
-#' (difference between two nonlinear interaction surfaces).
-#'   \item \code{\link{plot_diff}} plots a \emph{difference} smooth.
+#'   \item \code{\link{inspect_random}} plots and optionally averages random 
+#' smooths
+#'   \item \code{\link{plot_data}} plots the data
+#'   \item \code{\link{plot_topo}} plots EEG topographies
+#' }
+#' 
+#' @section Testing for significance:
+#' \itemize{
+#' \item \code{\link{compareML}} Performs Chisquare test on two models
+#' \item \code{\link{plot_diff}} Calculates and visualizes the difference 
+#' between two conditions within a model
+#' \item \code{\link{plot_diff2}} Calculates and visualizes the 2 dimensional 
+#' difference between two conditions within a model
+#' }
+#' 
+#' @section Evaluation of the model:
+#' \itemize{
+#' \item \code{\link{check_resid}} plots four different plots to inspect the 
+#' distribution of and structure in the residuals
+#' \item \code{\link{plot_modelfit}} plots an overlay of the data and the 
+#' modelfit for randomly selected trials
+#' \item \code{\link{diagnostics}} produces plots of the distributions of 
+#' residuals and predictors in the model
+#' }
+#' 
+#' @section Checking and handling autocorrelation:
+#' \itemize{
+#' \item \code{\link{acf_resid}} different ways to inspect autocorrelation in 
+#' the residuals
+#' \item \code{\link{start_event}} creates an AR.start column 
+#' \item \code{\link{resid_gam}} returns residuals corrected for the AR1 model
 #' }
 #'
 #' @section Predictions:
@@ -55,27 +76,6 @@
 #' extracting random effects only.
 #' }
 #'
-#' @section Additional functions:
-#' There are more functions, mostly utility functions. But the ones mentioned 
-#' here may be worth to try:
-#' \itemize{
-#'   \item The function \code{\link{start_event}} creates a column
-#' with the start of each event, which can be used as input of the 
-#' argument \code{AR.start} in \code{\link[mgcv]{gam}} or 
-#' \code{\link[mgcv]{bam}}
-#'   \item The function \code{\link{gamtabs}} is a wrapper around 
-#' \code{print.xtable} (package xtable) for including model summaries 
-#' in a \code{knitr} file.
-#'   \item The function \code{\link{plot_topo}} is a wrapper around 
-#' \code{\link{pvisgam}}, \code{\link{fvisgam}}, and \code{\link{plot_diff2}} 
-#' that creates an EEG topo plot with electrode locations.
-#'   \item \code{\link{find_difference}} returns where a smooth is 
-#' significantly different from zero. 
-#'   \item \code{\link{fadeRug}} uses transparency to overlay data 
-#' observations on a surface.
-#'   \item \code{\link{gradientLegend}} for adding a color legend to a plot.
-#' }
-#'
 #' @section Notes:
 #' \itemize{
 #' \item Use \code{\link{infoMessages}(FALSE)} to suppress all 
@@ -93,9 +93,94 @@
 #' @author
 #' Jacolien van Rij, Martijn Wieling, R.Harald Baayen, Hedderik van Rijn
 #'
-#' Maintainer: Jacolien van Rij (\email{vanrij.jacolien@@gmail.com})
+#' Maintainer: Jacolien van Rij (\email{vanrij.jacolien@gmail.com})
 #'
-#' University of Tuebingen, Germany
+#' University of Groningen, The Netherlands & University of Tuebingen, Germany
 #' @docType package
 #' @name itsadug
 NULL
+
+
+
+
+
+#' Turn on or off information messages.
+#' 
+#' @export
+#' @param input Input variable indicating to print info messages 
+#' ("on", or 1, or TRUE) or not ("off", 0, or FALSE).
+#' @examples
+#' # To turn on the info messages (all the same):
+#' infoMessages("on")
+#' infoMessages(1)
+#' infoMessages(TRUE)
+#' # To turn off the info messages (all the same):
+#' infoMessages("off")
+#' infoMessages(0)
+#' infoMessages(FALSE)
+#' # checking output:
+#' (out <- infoMessages(FALSE))
+#' @family Functions for package use
+infoMessages <- function(input){
+	if(is.logical(input)){
+		options(itsadug_print=input)
+	}else if(is.numeric(input)){
+		options(itsadug_print=ifelse(input<=0, FALSE, TRUE))
+	}else if(is.character(input)){
+		options(itsadug_print=ifelse(input=="off", FALSE, 
+			ifelse(input=="on",TRUE, getOption('itsadug_print'))))
+	}else{
+		stop(sprintf("Cannot interpret input value %s. Try to use logical values TRUE or FALSE.", input))
+	}
+	invisible(list(value=getOption('itsadug_print'), 
+		effect=ifelse(getOption('itsadug_print')==TRUE, "messages printed", "no messages printed")))
+}
+
+
+
+
+
+.onAttach <- function(...) {
+  if(is.null(getOption('itsadug_print'))){
+  	options(itsadug_print=TRUE)
+  }
+  if(getOption('itsadug_print')){
+  	packageStartupMessage('Loaded package itsadug 2.0 (see \'help("itsadug")\' ).')
+  }
+}
+
+
+
+
+
+#' Information on how to cite this package
+#' 
+#' @export
+#' @import utils
+#' @param input Optional parameter. Normally (NULL) the citation info is 
+#' printed. If value "version" then only the version is printed.
+#' @examples
+#' info()
+#' info("version")
+#' citation(package="itsadug")
+#' # To get info about R version:
+#' R.version.string
+#' @seealso
+#' \code{\link[utils]{citation}}, \code{\link[base]{R.version}},
+#' \code{\link[utils]{sessionInfo}}
+#' @family Functions for package use
+info <- function(input=NULL){
+	if(is.null(input)){
+		citation(package="itsadug")
+	}else if(input=="version"){
+		cat(sprintf("Package itsadug, version %s\n", 
+			packageVersion("itsadug")))
+	}else{
+		help(package="itsadug")
+	}
+}
+
+
+
+
+

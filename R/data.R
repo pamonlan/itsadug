@@ -15,7 +15,6 @@
 #' }
 #' @author Jacolien van Rij
 "simdat"
-
 #' Raw EEG data, single trial, 50Hz.
 #'
 #' A dataset containing a single EEG trial.
@@ -32,4 +31,8 @@
 #' }
 #' @author Jacolien van Rij
 "eeg"
+
+
+
+
 
