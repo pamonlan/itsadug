@@ -5,8 +5,8 @@
 \title{Visualization of smooths.}
 \usage{
 plot_smooth(x, view = NULL, cond = list(), plot_all = NULL,
-  rm.ranef = NULL, n.grid = 30, rug = TRUE, col = NULL, add = FALSE,
-  se = 1.96, shade = TRUE, eegAxis = FALSE,
+  rm.ranef = NULL, n.grid = 30, rug = TRUE, add = FALSE, se = 1.96,
+  shade = TRUE, eegAxis = FALSE, col = NULL, lwd = NULL, lty = NULL,
   print.summary = getOption("itsadug_print"), main = NULL, xlab = NULL,
   ylab = NULL, xlim = NULL, ylim = NULL, h0 = 0, v0 = NULL,
   transform = NULL, transform.view = NULL, legend_plot_all = NULL,
@@ -38,8 +38,6 @@ calculating the plotted surface.}
 plot applies is displayed as a rug plot at the foot of each plot of a 1-d 
 smooth. Setting to FALSE will speed up plotting for large datasets.}
 
-\item{col}{The colors for the lines and the error bars of the plot.}
-
 \item{add}{Logical: whether or not to add the lines to an existing plot, or 
 start a new plot (default).}
 
@@ -56,6 +54,12 @@ using termplot).}
 negative amplitudes upwards as traditionally is done in EEG research.
 If eeg.axes is TRUE, labels for x- and y-axis are provided, when not 
 provided by the user. Default value is FALSE.}
+
+\item{col}{The colors for the lines and the error bars of the plot.}
+
+\item{lwd}{The line width for the lines of the plot.}
+
+\item{lty}{The line type for the lines of the plot.}
 
 \item{print.summary}{Logical: whether or not to print summary.
 Default set to the print info messages option 
@@ -116,7 +120,7 @@ data(simdat)
 \dontrun{
 # Model with random effect and interactions:
 m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
-    data=simdat)
+    data=simdat, discrete=TRUE)
 
 # Default plot produces only surface of Time x Trial:
 plot(m1, select=1)

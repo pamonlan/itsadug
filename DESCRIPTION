@@ -1,6 +1,6 @@
 Package: itsadug
-Version: 2.0
-Date: 2016-03-17
+Version: 2.1
+Date: 2016-05-27
 Title: Interpreting Time Series and Autocorrelated Data Using GAMMs
 Authors@R: c( person("Jacolien", "van Rij", email="vanrij.jacolien@gmail.com", role = c("aut", "cre")),
     person("Martijn","Wieling", role = "aut"), 
@@ -12,7 +12,7 @@ Author: Jacolien van Rij [aut, cre],
     Hedderik van Rijn [ctb]
 Maintainer: Jacolien van Rij <vanrij.jacolien@gmail.com>
 Description: GAMM (Generalized Additive Mixed Modeling; Lin & Zhang, 1999)
-    as implemented in the R package mgcv (Wood, S.N., 2006; 2011) is a nonlinear
+    as implemented in the R package 'mgcv' (Wood, S.N., 2006; 2011) is a nonlinear
     regression analysis which is particularly useful for time course data such as
     EEG, pupil dilation, gaze data (eye tracking), and articulography recordings,
     but also for behavioral data such as reaction times and response data. As time
@@ -24,11 +24,11 @@ Description: GAMM (Generalized Additive Mixed Modeling; Lin & Zhang, 1999)
     contrasts).
 License: GPL (>= 2)
 LazyData: true
-Depends: R (>= 2.14.0), mgcv (>= 1.8)
+Depends: R (>= 2.14.0), mgcv (>= 1.8), plotfunctions (>= 1.0)
 VignetteBuilder: knitr
 Suggests: knitr, xtable, sp, data.table
 RoxygenNote: 5.0.1
 NeedsCompilation: no
-Packaged: 2016-03-19 16:32:34 UTC; jacolien
+Packaged: 2016-05-28 13:11:12 UTC; jacolien
 Repository: CRAN
-Date/Publication: 2016-03-20 16:27:20
+Date/Publication: 2016-05-28 15:52:51

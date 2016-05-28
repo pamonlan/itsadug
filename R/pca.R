@@ -5,6 +5,7 @@
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Produces perspective or contour plot views of gam model 
 #' predictions of the additive effects interactions.
 #' The code is based on the script for \code{\link[mgcv]{vis.gam}}, 
@@ -364,6 +365,7 @@ get_pca_predictions <- function(x, pca.term=NULL,
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Produces perspective or contour plot views of gam model 
 #' predictions of the additive effects interactions.
 #' The code is based on the script for \code{\link[mgcv]{vis.gam}}, 

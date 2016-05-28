@@ -30,12 +30,8 @@ Jacolien van Rij
 }
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
-  \code{\link{diff_terms}}, \code{\link{findAbsMin}},
-  \code{\link{find_difference}},
-  \code{\link{find_n_neighbors}}, \code{\link{getDec}},
-  \code{\link{getRange}}, \code{\link{group_sort}},
-  \code{\link{list2str}}, \code{\link{missing_est}},
-  \code{\link{move_n_point}}, \code{\link{print_summary}},
-  \code{\link{se}}, \code{\link{timeBins}}
+  \code{\link{diff_terms}}, \code{\link{find_difference}},
+  \code{\link{missing_est}}, \code{\link{print_summary}},
+  \code{\link{timeBins}}
 }
 

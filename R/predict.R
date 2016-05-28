@@ -689,6 +689,12 @@ get_predictions <- function(model, cond=NULL, se=TRUE, f=1.96, rm.ranef=NULL,
 			print_summary(mysummary)
 		}
 		
+		for(i in names(newd)){
+			if(i %in% c("fit", "CI", "rm.ranef")){
+				warning(sprintf("Predictor %s is renamed to %s_predictor. To avoid problems with plotting, please rename the predictor before running the model. Use a different name, or capitalization.", i))
+				names(newd)[names(newd)==i] <- sprintf("%s_predictor",i)
+			}
+		}
 		newd$fit <- p %*% coef(model)
 		if(se){
 			newd$CI <- f*sqrt(rowSums((p%*%vcov(model))*p))

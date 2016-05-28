@@ -311,6 +311,7 @@ compareML <- function(model1, model2,
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @aliases plotDiff
 #' @param model A GAMM model, resulting from the functions
 #' \code{\link[mgcv]{gam}} or \code{\link[mgcv]{bam}}.
@@ -480,14 +481,20 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 		}
 		if(mark.diff==TRUE){
 			diff <- find_difference(newd$difference, newd$CI, newd[,xvar])
-			addInterval(pos=getFigCoords('p')[3], diff$start, diff$end, col="red", lwd=2*par()$lwd, length=0, xpd=TRUE)
-			abline(v=c(diff$start, diff$end), lty=3, col='red')
+			if(length(diff$start) > 0){
+				addInterval(pos=getFigCoords('p')[3], diff$start, diff$end, col="red", lwd=2*par()$lwd, length=0, xpd=TRUE)
+				abline(v=c(diff$start, diff$end), lty=3, col='red')
+			}
+		}
+		if(print.summary){
 			if(length(diff$start) > 0){
 				tmp <- data.frame(Significant = sprintf("%f - %f", diff$start, diff$end))
-				if(print.summary==TRUE){
-					print(tmp)
-				}
+			}else{
+				tmp <- "Difference is not significant."
 			}
+			cat("\n")
+			cat(tmp)
+			cat("\n")
 		}
 		invisible(out)
 	}else{
@@ -506,6 +513,7 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @aliases plotDiff2D
 #' @param model A GAMM model, resulting from the functions
 #' \code{\link[mgcv]{gam}} or \code{\link[mgcv]{bam}}.

@@ -5,6 +5,7 @@
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Produces perspective or contour plot views of gam model 
 #' predictions of the additive effects interactions.
 #' The code is based on the script for \code{\link[mgcv]{vis.gam}}, 
@@ -563,6 +564,7 @@ gamtabs <- function (model, caption = " ", label = "tab.gam",
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @param model A gam object, produced by \code{\link[mgcv]{gam}} or 
 #' \code{\link[mgcv]{bam}}.
 #' @param select A number, indicating the model term to be selected. 
@@ -778,8 +780,8 @@ inspect_random <- function(model, select=1, fun=NULL,
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Plots the data, fitted values, or residuals. 
-#'
 #' @param model A lm or gam object, produced by \code{\link[mgcv]{gam}} or 
 #' \code{\link[mgcv]{bam}}, \code{\link[stats]{lm}}, \code{\link[stats]{glm}}.
 #' @param view Text string containing the predictor or column in the data 
@@ -1124,6 +1126,7 @@ plot_data <- function(model, view, split_by=NULL,
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Plots a smooth from a \code{\link[mgcv]{gam}} or 
 #' \code{\link[mgcv]{bam}} model based on predictions.
 #' In contrast with the default \code{\link[mgcv]{plot.gam}}, this function 
@@ -1281,6 +1284,7 @@ plot_parametric <- function(x, pred, cond = list(),
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Plots a smooth from a \code{\link[mgcv]{gam}} or 
 #' \code{\link[mgcv]{bam}} model based on predictions.
 #' In contrast with the default \code{\link[mgcv]{plot.gam}}, this function 
@@ -1304,7 +1308,6 @@ plot_parametric <- function(x, pred, cond = list(),
 #' @param rug Logical: when TRUE (default) then the covariate to which the 
 #' plot applies is displayed as a rug plot at the foot of each plot of a 1-d 
 #' smooth. Setting to FALSE will speed up plotting for large datasets. 
-#' @param col The colors for the lines and the error bars of the plot.
 #' @param add Logical: whether or not to add the lines to an existing plot, or 
 #' start a new plot (default).
 #' @param se If less than or equal to zero then only the predicted surface is 
@@ -1318,6 +1321,9 @@ plot_parametric <- function(x, pred, cond = list(),
 #' negative amplitudes upwards as traditionally is done in EEG research.
 #' If eeg.axes is TRUE, labels for x- and y-axis are provided, when not 
 #' provided by the user. Default value is FALSE.
+#' @param col The colors for the lines and the error bars of the plot.
+#' @param lty The line type for the lines of the plot.
+#' @param lwd The line width for the lines of the plot.
 #' @param print.summary Logical: whether or not to print summary.
 #' Default set to the print info messages option 
 #' (see \code{\link{infoMessages}}).
@@ -1357,7 +1363,7 @@ plot_parametric <- function(x, pred, cond = list(),
 #' \dontrun{
 #' # Model with random effect and interactions:
 #' m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
-#'     data=simdat)
+#'     data=simdat, discrete=TRUE)
 #'
 #' # Default plot produces only surface of Time x Trial:
 #' plot(m1, select=1)
@@ -1414,14 +1420,14 @@ plot_parametric <- function(x, pred, cond = list(),
 #' @family Functions for model inspection
 plot_smooth <- function(x, view = NULL, cond = list(), 
     plot_all=NULL, rm.ranef=NULL,
-    n.grid = 30, rug = TRUE, col = NULL, add=FALSE, 
+    n.grid = 30, rug = TRUE, add=FALSE, 
     se = 1.96, shade = TRUE, eegAxis=FALSE, 
+    col=NULL, lwd=NULL, lty=NULL,
     print.summary=getOption('itsadug_print'),
     main=NULL, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, h0=0, v0=NULL, 
     transform=NULL, transform.view=NULL, legend_plot_all=NULL, 
     hide.label=FALSE, ...) {
        
-    dnm <- names(list(...))
     v.names <- names(x$var.summary)
     if (is.null(view)) {
         stop("Specify one view predictors for the x-axis.")
@@ -1487,6 +1493,9 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         f=ifelse(se>0, se, 1.96), rm.ranef=rm.ranef,
         print.summary=print.summary)
     if(se > 0){
+        if(("ul" %in% names(newd)) |("ll" %in% names(newd))){
+            warning("Column names 'ul' and / or 'll' are used for plotting confidence intervals. Predictors with the same names may be overwitten, which may cause unexpected effects. Please rename predictors by using capitalization to avoid problems with plotting.")
+        }
         newd$ul <- with(newd, fit+CI)
         newd$ll <- with(newd, fit-CI)
         if(!is.null(transform)){
@@ -1527,11 +1536,19 @@ plot_smooth <- function(x, view = NULL, cond = list(),
             ylim <- range(newd$fit)
         }
     }
-        
+    if(is.null(col)){
+        col = "black"
+    }
+    if(is.null(lwd)){
+        lwd = 1
+    }
+    if(is.null(lty)){
+        lty = 1
+    }
     if(add==FALSE){
-        emptyPlot(range(newd[,view[1]]), ylim,
-            main=main, xlab=xlab, ylab=ylab,
-            h0=h0, v0=v0, eegAxis=eegAxis, ...)
+            emptyPlot(range(newd[,view[1]]), ylim,
+                main=main, xlab=xlab, ylab=ylab,
+                h0=h0, v0=v0, eegAxis=eegAxis, ...)
         if(hide.label==FALSE){
             addlabel = "fitted values"
             if(!is.null(rm.ranef)){
@@ -1557,92 +1574,89 @@ plot_smooth <- function(x, view = NULL, cond = list(),
                     rug.cond[[i]] = unique(newd[,i])
                 }
             }
-            rug_model(x, view=view[1], cond=rug.cond, rm.ranef=rm.ranef)
-                
+            rug_model(x, view=view[1], cond=rug.cond, rm.ranef=rm.ranef)  
         }
     }
     if(!is.null(plot_all)){
         alllevels <- c()
         plotlevels <- c()
-        plotcolors = "black"
+        cols = "black"
+        ltys = 1
+        lwds = 1
+        tmpname <- plot_all
         if(length(plot_all)>1){
             tmpname <- sub("/", "", tempfile(pattern = "event", 
                 tmpdir = "plotsmooth", fileext = ""), fixed=TRUE)
             newd[,tmpname] <- interaction(newd[, plot_all])
-            alllevels <- length(levels(newd[,tmpname]))
-            plotlevels <- levels(newd[,tmpname])
-            plotcolors=rainbow(alllevels)
+        }
+        alllevels <- length(levels(newd[,tmpname]))
+        plotlevels <- levels(newd[,tmpname])
+        cols=rainbow(alllevels)
+        ltys=rep(1, alllevels)
+        lwds=rep(1, alllevels)
             
-            if(!is.null(col)){
-            	if(length(col) < alllevels){
-            		plotcolors = rep(col, ceiling(alllevels/length(col)))
-            	}else{
-            		plotcolors = col
-            	}
+        if(!is.null(col)){
+            if(length(col) < alllevels){
+                cols = rep(col, ceiling(alllevels/length(col)))
+            }else{
+                cols = col
             }
-            cnt <- 1
-            for(i in levels(newd[,tmpname])){
-                if(se > 0){
-                    plot_error(newd[newd[,tmpname]==i,view[1]], 
-                        newd[newd[,tmpname]==i,]$fit, 
-                        newd[newd[,tmpname]==i,]$ul, 
-                        se.fit2=newd[newd[,tmpname]==i,]$ll, 
-                        shade=shade, f=1, col=plotcolors[cnt], ...)
-                }else{
-                    lines(newd[newd[,tmpname]==i,view[1]], 
-                        newd[newd[,tmpname]==i,]$fit, 
-                        col=plotcolors[cnt], ...)
-                }
-                cnt <- cnt+1
+        }
+        if(!is.null(lty)){
+            if(length(lty) < alllevels){
+                cols = rep(lty, ceiling(alllevels/length(lty)))
+            }else{
+                cols = lty
             }
+        }
+        if(!is.null(lwd)){
+            if(length(lwd) < alllevels){
+                cols = rep(lwd, ceiling(alllevels/length(lwd)))
+            }else{
+                cols = lwd
+            }
+        }
+            
+        cnt <- 1
+        for(i in levels(newd[,tmpname])){
+            if(se > 0){
+                plot_error(newd[newd[,tmpname]==i,view[1]], 
+                    newd[newd[,tmpname]==i,]$fit, 
+                    newd[newd[,tmpname]==i,]$ul, 
+                    se.fit2=newd[newd[,tmpname]==i,]$ll, 
+                    shade=shade, f=1, 
+                    col=cols[cnt], lwd=lwds[cnt], lty=ltys[cnt], ...)
+            }else{
+                lines(newd[newd[,tmpname]==i,view[1]], 
+                    newd[newd[,tmpname]==i,]$fit, 
+                    col=cols[cnt], lwd=lwds[cnt], lty=ltys[cnt], ...)
+            }
+            cnt <- cnt+1
+        }
+        if(tmpname != plot_all){
             newd[, tmpname] <- NULL
-        }else{
-            alllevels <- length(levels(newd[,plot_all]))
-            plotlevels <- levels(newd[,plot_all])
-            plotcolors=rainbow(alllevels)
-            if(!is.null(col)){
-            	if(length(col) < alllevels){
-            		plotcolors = rep(col, ceiling(alllevels/length(col)))
-            	}else{
-            		plotcolors = col
-            	}
-            }
-            cnt <- 1
-            for(i in levels(newd[,plot_all])){
-                if(se > 0){
-                    plot_error(newd[newd[,plot_all]==i,view[1]], 
-                        newd[newd[,plot_all]==i,]$fit, 
-                        newd[newd[,plot_all]==i,]$ul, 
-                        se.fit2=newd[newd[,plot_all]==i,]$ll, 
-                        shade=shade, f=1, col=plotcolors[cnt], ...)
-                }else{
-                    lines(newd[newd[,plot_all]==i,view[1]], 
-                        newd[newd[,plot_all]==i,]$fit, col=plotcolors[cnt], ...)
-                }
-                cnt <- cnt+1
-            }       
         }
         # add legend:
         if(is.null(legend_plot_all)){
             gfc <- getFigCoords()
             legend(gfc[2], gfc[4],
                 legend=plotlevels,
-                text.col=plotcolors,
+                text.col=cols,
                 text.font=2,
                 xjust=1, yjust=1,
                 bty='n', xpd=TRUE)
         }else{
             legend(legend_plot_all,
                 legend=plotlevels,
-                text.col=plotcolors,
+                text.col=cols,
                 text.font=2,
                 bty='n', xpd=TRUE)
         }
     }else{
         if(se > 0){
-            plot_error(as.vector(newd[,view[1]]), newd$fit, newd$ul, se.fit2=newd$ll, shade=shade, f=1, col=col, ...)
+            plot_error(as.vector(newd[,view[1]]), newd$fit, newd$ul, se.fit2=newd$ll, shade=shade, f=1, col=col, lwd=lwd, lty=lty, ...)
         }else{
-            lines(newd[,view[1]], newd$fit, col=col, ...)
+            lines(newd[,view[1]], newd$fit, col=col, lwd=lwd, lty=lty,...)
         }
     }
     
@@ -1661,6 +1675,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @param model A gam object, produced by \code{\link[mgcv]{gam}} or 
 #' \code{\link[mgcv]{bam}}.
 #' @param view A two-value vector containing the names of the two main effect 
@@ -1842,6 +1857,7 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Produces perspective or contour plot views of gam model 
 #' predictions of the partial effects interactions. Combines the function 
 #' \code{\link[mgcv]{plot.gam}} for interaction surfaces with the function 

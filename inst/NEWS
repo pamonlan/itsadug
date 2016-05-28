@@ -1,3 +1,29 @@
+# -----------------------------------------------
+
+# itsadug 2.1
+
+## Major changes:
+
+The package 'itsadug' has been split into two: all general multipurpose plot functions have been moved to the new package 'plotfunctions', whereas 'itsadug' now contains only the functions specialized for (nonlinear) regression models and autocorrelation problems.
+
+## Bug fixes:
+
+- fixed mark.diff error for nonsignificant differences
+- fixed bug in plot_smooth: using 'fit' as predictor will cause an 
+  interpretable error message instead of not plotting
+- fixed bug in plot_smooth: lty and lwd can be set for the different levels of 
+  plot_all.
+- fixed bug in plot_modelfit: can also be used for binomial count data 
+  (only with logit link)
+
+
+## Other:
+- by installing the package data.table, start_event will run much faster
+
+
+
+# -----------------------------------------------
+
 # itsadug 2.0
 
 ## Major changes:

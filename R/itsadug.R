@@ -145,7 +145,7 @@ infoMessages <- function(input){
   	options(itsadug_print=TRUE)
   }
   if(getOption('itsadug_print')){
-  	packageStartupMessage('Loaded package itsadug 2.0 (see \'help("itsadug")\' ).')
+  	packageStartupMessage('Loaded package itsadug 2.1 (see \'help("itsadug")\' ).')
   }
 }
 

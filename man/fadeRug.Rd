@@ -75,16 +75,6 @@ Jacolien van Rij
 \code{\link[graphics]{rug}}, \code{\link[graphics]{contour}}, 
 \code{\link[graphics]{image}}
 
-Other Functions for plotting: \code{\link{addInterval}},
-  \code{\link{add_bars}}, \code{\link{alphaPalette}},
-  \code{\link{alpha}}, \code{\link{check_normaldist}},
-  \code{\link{color_contour}}, \code{\link{dotplot_error}},
-  \code{\link{drawArrows}}, \code{\link{emptyPlot}},
-  \code{\link{errorBars}}, \code{\link{fill_area}},
-  \code{\link{getCoords}}, \code{\link{getFigCoords}},
-  \code{\link{getProps}}, \code{\link{gradientLegend}},
-  \code{\link{marginDensityPlot}},
-  \code{\link{plot_error}}, \code{\link{plot_image}},
-  \code{\link{plotsurface}}, \code{\link{rug_model}}
+Other Functions for plotting: \code{\link{rug_model}}
 }
 

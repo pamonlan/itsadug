@@ -628,6 +628,7 @@ acf_resid <- function(model, split_pred=NULL, n=1, plot=TRUE, check.rho=NULL, ma
 #' @export
 #' @import mgcv
 #' @import stats
+#' @import plotfunctions
 #' @param model GAMM model that includes an AR1 model.
 #' @param AR.start Vector with AR.start information, 
 #' necessary for the AR1 model. Optional, defaults to NULL.
@@ -785,8 +786,6 @@ derive_timeseries <- function(model, AR.start=NULL){
 #' @family functions for model criticism
 resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALSE) {
     
-    # message(sprintf('Version %s of package mgcv is loaded.', packageVersion('mgcv')))
-    
     # help function
     next_point <- function(x) {
         x <- as.vector(x)
@@ -839,7 +838,7 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
     }else{
         stop(sprintf('Function does not work for models of class %s.', class(model)[1]))
     }
-        
+ 
     
     if (nrow(tmpdat) == length(resid(model))) {
         tmpdat$RES <- resid(model)
@@ -894,6 +893,14 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
 #' series. Default is NULL (no new column for time series is created).
 #' @param order Logical: whether or not to order each time series. 
 #' Default is TRUE, maybe set to FALSE with large data frames that are already ordered.
+#' @section Note:
+#' When working with large data frames, it may be worth installing the package 
+#' \code{data.table}. Although not required for the package, the function 
+#' \code{start_event} will check if \code{data.table} is available and will 
+#' use it's much faster function \code{rbindlist}. This speeds up the function 
+#' \code{start_event}. Run the command 
+#' \code{install.packages("data.table", repos="http://cran.us.r-project.org")} 
+#' in the command window for installing the package \code{data.table}.
 #' @return Data frame.
 #' @author Jacolien van Rij
 #' @examples 
@@ -934,14 +941,20 @@ start_event <- function(data, column="Time", event="Event", label="start.event",
 	} else {
 		tmp <- split(data, f=list(data[,event]), drop=TRUE)
 	}
-	tmp <- lapply(tmp, function(x){
-		min.x <- min(x[,column])
-		x[,label] <- x[,column]==min.x
-		if(order){
+	if(order){
+		tmp <- lapply(tmp, function(x){
+			min.x <- min(x[,column])
+			x[,label] <- x[,column]==min.x
 			x <- x[order(x[,column]),]
-		}
-		return(x)
-	})
+			return(x)
+		})
+	}else{
+		tmp <- lapply(tmp, function(x){
+			min.x <- min(x[,column])
+			x[,label] <- x[,column]==min.x
+			return(x)
+		})
+	}
 	if (requireNamespace("data.table", quietly = TRUE)) {
 		tmp <- as.data.frame(data.table::rbindlist(tmp))
 	}else{

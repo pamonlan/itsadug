@@ -1,5 +1,8 @@
 #' Inspect residuals of regression models.
 #' 
+#' @import grDevices
+#' @import graphics
+#' @import plotfunctions
 #' @export
 #' @param model A regression model, resulting from the functions
 #' \code{\link[mgcv]{gam}} or \code{\link[mgcv]{bam}}, or \code{lm},
@@ -145,6 +148,7 @@ check_resid <- function(model, AR_start = NULL, split_pred=NULL, ask=TRUE, selec
 #' @import grDevices
 #' @import graphics
 #' @import utils
+#' @import plotfunctions
 #' @description Diagnostic plots for evaluating the model fit.
 #'
 #' @param model A lm or gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -254,7 +258,8 @@ diagnostics <- function(model, plot='all', ask=TRUE,
         lines(lowess(resid(model) ~ fitted(model)), col='red')
     }
     dat <- model$model
-    dat$res <- resid(model)
+    res.col <- sprintf("res_%05.0f", round(runif(1,0,99999)))
+    dat[,res.col] <- resid(model)
     # plot 2: residuals of predictors
     if( 2 %in% plot.selection ){
         if(print.summary==TRUE){
@@ -263,12 +268,12 @@ diagnostics <- function(model, plot='all', ask=TRUE,
         for(i in names(model$var.summary)){
             if(inherits(dat[,i], c("numeric", 'integer'))){
                 dat <- dat[order(dat[,i]),]
-                plot(dat[,i], dat$res, 
+                plot(dat[,i], dat[,res.col], 
                     frame.plot=FALSE,
                     main=sprintf("Residuals ~ %s", i),
                     xlab=i, ylab=sprintf("resid(%s)", deparse(substitute(model))))
                 abline(h=0, lty=3, col='gray')
-                lines(lowess(dat$res ~ dat[,i]), col='red')
+                lines(lowess(dat[,res.col] ~ dat[,i]), col='red')
             }
         }
     }
@@ -363,6 +368,7 @@ diagnostics <- function(model, plot='all', ask=TRUE,
 #' @import stats
 #' @import grDevices
 #' @import graphics
+#' @import plotfunctions
 #' @description Plots the fitted values and the data for \code{n} 
 #' trials of time series data. For example, plots \code{n} trials 
 #' of the same participant.
@@ -479,6 +485,7 @@ plot_modelfit <- function(x, view, event=NULL,
     viewcol <- sprintf("%s%d", "tmp", sample.int(1e+06, size = 1L))
     eventcol <- sprintf("%s%d", "ev", sample.int(1e+06, size = 1L))
     plot.events <- NULL
+    fit.col <- sprintf("%s%d", "fit", sample.int(1e+06, size = 1L))
     missing <- missing_est(x)
     if (is.null(view)) {
         stop("Specify one view predictor for the x-axis, either the name of a model predictor or a vector.")
@@ -523,7 +530,7 @@ plot_modelfit <- function(x, view, event=NULL,
         	}
         }
     }
-    dat$fit <- fitted(x)
+    dat[,fit.col] <- fitted(x)
     if(!is.null(cond)){
         cn <- names(cond)
         for(icn in cn){
@@ -564,11 +571,27 @@ plot_modelfit <- function(x, view, event=NULL,
 	    # select events:
 	    dat <- droplevels( dat[dat[,eventcol] %in% plot.events,] )
 	}
+    # check for binomial count data:
+    if( x$family[1] == "binomial" ){
+        if(length(dat[,y]) == (2*nrow(dat))){
+            if(x$family[2]=="logit"){
+                newy <- sprintf("%s_logit", y)
+                dat[,newy] <- plogis( log( (dat[,y][,1]+1) / (dat[,y][,2]+1) ) )
+                y <- newy
+            }else{
+                stop(sprintf("plot_modelfit only implemented for logit link function, not yet implemented for %s.", x$family))
+            }
+        }
+    }
+    if(! is.null(dim(dat[,y]))){
+        if(dim(dat[,y])[2] == 2){
+        }
+    }
     if(!is.null(transform)){
-        dat$fit <- sapply(dat$fit, transform)
+        dat[,fit.col] <- sapply(dat[,fit.col], transform)
     }
     if(is.null(ylim)){ 
-        ylim <- range(c(dat$fit, dat[,y]), na.rm=TRUE)
+        ylim <- range(c(dat[,fit.col], dat[,y]), na.rm=TRUE)
     }
     if(add==FALSE){
         emptyPlot(range(dat[,view]), ylim,
@@ -601,17 +624,17 @@ plot_modelfit <- function(x, view, event=NULL,
 	    	if(nrow(newd)>1){
 	    		# plot data:
 	    		if(fill){
-	    			fill_area(newd[,viewcol], newd$fit, from=newd[,y], 
+	    			fill_area(newd[,viewcol], newd[,fit.col], from=newd[,y], 
 	    				col=col[1], border=col[2], outline=FALSE)
 	    			lines(newd[,viewcol], newd[,y], col=col[1], ...)
 	    		}else{
 	    			lines(newd[,viewcol], newd[,y], col=col[1], ...)
-	    			lines(newd[,viewcol], newd$fit, col=col[2], ...)
+	    			lines(newd[,viewcol], newd[,fit.col], col=col[2], ...)
 	    		}
 	    	} else if(nrow(newd)==1){
 	    		# plot data:
 	    		points(newd[,viewcol], newd[,y], col=col[1], ...)
-	    		points(newd[,viewcol], newd$fit, col=col[2], ...)
+	    		points(newd[,viewcol], newd[,fit.col], col=col[2], ...)
 	    	} else{
 	    		if(print.summary){
 	    			message(sprintf("No data for event %s. Ignored.", i))
@@ -623,11 +646,11 @@ plot_modelfit <- function(x, view, event=NULL,
     	if(nrow(newd)>1){
     		# plot data:
     		lines(newd[,viewcol], newd[,y], col=col[1], ...)
-    		lines(newd[,viewcol], newd$fit, col=col[2], ...)
+    		lines(newd[,viewcol], newd[,fit.col], col=col[2], ...)
     	} else if(nrow(newd)==1){
     		# plot data:
     		points(newd[,viewcol], newd[,y], col=col[1], ...)
-    		points(newd[,viewcol], newd$fit, col=col[2], ...)
+    		points(newd[,viewcol], newd[,fit.col], col=col[2], ...)
     	} else{
     		if(print.summary){
 	    		message("No data to be plotted.")
@@ -644,6 +667,10 @@ plot_modelfit <- function(x, view, event=NULL,
 	   		bty='n', cex=.85,  xpd=TRUE)
  	}
     #output
+    if("fit" %in% names(dat)){
+        warning("Colname 'fit' found in data. This column will be overwritten with fitted values. ")
+    }
+    names(dat)[names(dat)==fit.col] <- "fit"
     invisible( list(events = ifelse(!is.null(event),plot.events, NA), subdat = dat[,!colnames(dat) %in% c(viewcol, eventcol)], 
     	view = dat[,viewcol], event = ifelse(!is.null(event),dat[, eventcol], NA)  ) )
 }

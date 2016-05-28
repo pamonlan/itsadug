@@ -56,17 +56,6 @@ rug_model(m1, view="Trial", cond=list(Group="Adults"), side=2)
 Jacolien van Rij
 }
 \seealso{
-Other Functions for plotting: \code{\link{addInterval}},
-  \code{\link{add_bars}}, \code{\link{alphaPalette}},
-  \code{\link{alpha}}, \code{\link{check_normaldist}},
-  \code{\link{color_contour}}, \code{\link{dotplot_error}},
-  \code{\link{drawArrows}}, \code{\link{emptyPlot}},
-  \code{\link{errorBars}}, \code{\link{fadeRug}},
-  \code{\link{fill_area}}, \code{\link{getCoords}},
-  \code{\link{getFigCoords}}, \code{\link{getProps}},
-  \code{\link{gradientLegend}},
-  \code{\link{marginDensityPlot}},
-  \code{\link{plot_error}}, \code{\link{plot_image}},
-  \code{\link{plotsurface}}
+Other Functions for plotting: \code{\link{fadeRug}}
 }
 

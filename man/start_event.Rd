@@ -32,6 +32,16 @@ Data frame.
 \description{
 Determine the starting point for each time series.
 }
+\section{Note}{
+
+When working with large data frames, it may be worth installing the package 
+\code{data.table}. Although not required for the package, the function 
+\code{start_event} will check if \code{data.table} is available and will 
+use it's much faster function \code{rbindlist}. This speeds up the function 
+\code{start_event}. Run the command 
+\code{install.packages("data.table", repos="http://cran.us.r-project.org")} 
+in the command window for installing the package \code{data.table}.
+}
 \examples{
 data(simdat)
 head(simdat)
