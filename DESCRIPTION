@@ -1,6 +1,6 @@
 Package: itsadug
-Version: 2.1
-Date: 2016-05-27
+Version: 2.2
+Date: 2016-06-13
 Title: Interpreting Time Series and Autocorrelated Data Using GAMMs
 Authors@R: c( person("Jacolien", "van Rij", email="vanrij.jacolien@gmail.com", role = c("aut", "cre")),
     person("Martijn","Wieling", role = "aut"), 
@@ -29,6 +29,6 @@ VignetteBuilder: knitr
 Suggests: knitr, xtable, sp, data.table
 RoxygenNote: 5.0.1
 NeedsCompilation: no
-Packaged: 2016-05-28 13:11:12 UTC; jacolien
+Packaged: 2016-06-13 08:04:05 UTC; jacolien
 Repository: CRAN
-Date/Publication: 2016-05-28 15:52:51
+Date/Publication: 2016-06-13 13:07:04

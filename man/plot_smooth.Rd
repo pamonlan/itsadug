@@ -146,15 +146,19 @@ plot_smooth(m1, view='Time', cond=list(Trial=-5),
 # Model with random effect and interactions:
 m2 <- bam(Y ~ Group + s(Time, by=Group)
     +s(Time, Subject, bs='fs', m=1),
-    data=simdat)
+    data=simdat, discrete=TRUE)
 
 # Plot all levels of a predictor:
 plot_smooth(m2, view='Time', plot_all="Group",
     rm.ranef=TRUE)
 # It also possible to combine predictors in plot_all.
-# Note: this is not a meaningfull plot, 
-# just for illustration purposes!
+# Note: this is not a meaningfull plot, because Subjects
+# fall in only one group. Just for illustration purposes!
 plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"))
+# Clearly visible difference in confidence interval, because  
+# a01 does not occur in Group "Children":
+# (Note that this plot generates warning)
+plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"), cond=list(Subject="a01"))
 
 # Using transform
 # Plot log-transformed dependent predictor on original scale:

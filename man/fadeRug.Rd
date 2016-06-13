@@ -4,8 +4,8 @@
 \alias{fadeRug}
 \title{Fade out the areas in a surface without data.}
 \usage{
-fadeRug(x, y, n.grid = 30, gradual = FALSE, max.alpha = 0.75,
-  col = "white")
+fadeRug(x, y, n.grid = 30, too.far = 0.03, col = "white", alpha = 1,
+  use.data.range = TRUE)
 }
 \arguments{
 \item{x}{Observations on x-axis.}
@@ -13,18 +13,24 @@ fadeRug(x, y, n.grid = 30, gradual = FALSE, max.alpha = 0.75,
 \item{y}{Observations on y-axis.}
 
 \item{n.grid}{Resolution of Rug. Defaults to 30, 
-which means that the x- and y-axis are divided in 30 bins.}
+which means that the x- and y-axis are divided in 30 bins. 
+A two-value vector ould be used to specify different bins for 
+x- and y-axis.}
 
-\item{gradual}{Logical: whether or not to use the number of 
-observations in an area, i.e., more transparent equals more 
-observations. Default is FALSE, which means that the function only 
-distinguishes between observations in a certain region or not, 
-regardless how many observations.}
+\item{too.far}{plot grid nodes that are too far from the points defined by 
+the variables given in view can be excluded from the plot. too.far 
+determines what is too far. The grid is scaled into the unit square along 
+with the view variables and then grid nodes more than too.far from the 
+predictor variables are excluded. Based on 
+\code{\link[mgcv]{exclude.too.far}} of Simon N. Wood.}
 
-\item{max.alpha}{Maximum of transparency, number between 0 (completely 
-transparent) and 1 (non-transparent). Defaults to .75.}
+\item{col}{Color representing missing data. Defaults to "white".}
 
-\item{col}{Color value. Defaults to "white".}
+\item{alpha}{Transparency, number between 0 (completely 
+transparent) and 1 (non-transparent). Defaults to 1.}
+
+\item{use.data.range}{Logical value, indicating whether \code{x} and 
+\code{y} are the data that the plot is based on. Defaults to TRUE.}
 }
 \value{
 Plots a shaded image over the contour plot or image.
@@ -51,25 +57,36 @@ newdat <- rbind(newdat,
 # Some simple GAM with tensor:
 m1 <- bam(Y ~ te(Time, Trial), data=newdat)
 # plot summed effects:
-fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
-    add.color.legend=FALSE)
-# add rug:
+fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 fadeRug(newdat$Time, newdat$Trial)
+# check with data points:
+points(newdat$Time, newdat$Trial, pch=16, col=alpha(1))
+
 # compare with default rug:
+fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 rug(newdat$Time)
 rug(newdat$Trial, side=2)
-# add color legend:
-gradientLegend(c(-15,15), pos=.875)
-# add data points (for checking the grid):
-points(newdat$Time, newdat$Trial)
+fadeRug(newdat$Time, newdat$Trial)
+# and compare with too.far:
+fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+    too.far=.03)
+vis.gam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+    too.far=.03, plot.type="contour", color="topo")
 
-# change x- and y-grid:
+# in case fade rug overlaps with color legend:
+fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+     add.color.legend=FALSE)
+fadeRug(newdat$Time, newdat$Trial, alpha=.75)
+gradientLegend(c(-15,15), pos=.875)
+
+# change x- and y-grid, and color:
 fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 points(newdat$Time, newdat$Trial)
 fadeRug(newdat$Time, newdat$Trial, n.grid=c(100,10), col='gray')
 }
 \author{
-Jacolien van Rij
+Jacolien van Rij, based on Simon N. Wood's 
+\code{\link[mgcv]{exclude.too.far}}
 }
 \seealso{
 \code{\link[graphics]{rug}}, \code{\link[graphics]{contour}}, 

@@ -1,5 +1,18 @@
 # -----------------------------------------------
 
+# itsadug 2.2
+
+## Bug fixes:
+
+- fixed bug in plot_smooth: plot_all didn't plot colors or line specifics (lwd, lty), bug fixed and automatically colored lines are plotted for each level.
+- fixed bug in plot_diff: error in plot_diff when writing the estimated differences to the terminal, bug now fixed.
+
+## Minor change:
+
+- function fadeRug reimplemented, now based on mgcv's exclude.too.far function.
+
+# -----------------------------------------------
+
 # itsadug 2.1
 
 ## Major changes:

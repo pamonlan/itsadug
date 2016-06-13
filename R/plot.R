@@ -3,22 +3,29 @@
 #' @export
 #' @import grDevices
 #' @import graphics
+#' @import mgcv
 #' @description Add a transparency Rug to a contour plot or image.
 #' 
 #' @param x Observations on x-axis.
 #' @param y Observations on y-axis.
 #' @param n.grid Resolution of Rug. Defaults to 30, 
-#' which means that the x- and y-axis are divided in 30 bins.
-#' @param gradual Logical: whether or not to use the number of 
-#' observations in an area, i.e., more transparent equals more 
-#' observations. Default is FALSE, which means that the function only 
-#' distinguishes between observations in a certain region or not, 
-#' regardless how many observations.
-#' @param max.alpha Maximum of transparency, number between 0 (completely 
-#' transparent) and 1 (non-transparent). Defaults to .75.
-#' @param col Color value. Defaults to "white".
+#' which means that the x- and y-axis are divided in 30 bins. 
+#' A two-value vector ould be used to specify different bins for 
+#' x- and y-axis.
+#' @param too.far plot grid nodes that are too far from the points defined by 
+#' the variables given in view can be excluded from the plot. too.far 
+#' determines what is too far. The grid is scaled into the unit square along 
+#' with the view variables and then grid nodes more than too.far from the 
+#' predictor variables are excluded. Based on 
+#' \code{\link[mgcv]{exclude.too.far}} of Simon N. Wood.
+#' @param col Color representing missing data. Defaults to "white".
+#' @param alpha Transparency, number between 0 (completely 
+#' transparent) and 1 (non-transparent). Defaults to 1.
+#' @param use.data.range Logical value, indicating whether \code{x} and 
+#' \code{y} are the data that the plot is based on. Defaults to TRUE.
 #' @return Plots a shaded image over the contour plot or image.
-#' @author Jacolien van Rij
+#' @author Jacolien van Rij, based on Simon N. Wood's 
+#' \code{\link[mgcv]{exclude.too.far}}
 #' @section Warning:
 #' On Linux \code{\link{x11}} devices may not support transparency. 
 #' In that case, a solution might be to write the plots immediately to a file 
@@ -39,42 +46,67 @@
 #' # Some simple GAM with tensor:
 #' m1 <- bam(Y ~ te(Time, Trial), data=newdat)
 #' # plot summed effects:
-#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
-#'     add.color.legend=FALSE)
-#' # add rug:
+#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 #' fadeRug(newdat$Time, newdat$Trial)
+#' # check with data points:
+#' points(newdat$Time, newdat$Trial, pch=16, col=alpha(1))
+#' 
 #' # compare with default rug:
+#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 #' rug(newdat$Time)
 #' rug(newdat$Trial, side=2)
-#' # add color legend:
-#' gradientLegend(c(-15,15), pos=.875)
-#' # add data points (for checking the grid):
-#' points(newdat$Time, newdat$Trial)
+#' fadeRug(newdat$Time, newdat$Trial)
+#' # and compare with too.far:
+#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+#'     too.far=.03)
+#' vis.gam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+#'     too.far=.03, plot.type="contour", color="topo")
 #' 
-#' # change x- and y-grid:
+#' # in case fade rug overlaps with color legend:
+#' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+#'      add.color.legend=FALSE)
+#' fadeRug(newdat$Time, newdat$Trial, alpha=.75)
+#' gradientLegend(c(-15,15), pos=.875)
+#' 
+#' # change x- and y-grid, and color:
 #' fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 #' points(newdat$Time, newdat$Trial)
 #' fadeRug(newdat$Time, newdat$Trial, n.grid=c(100,10), col='gray')
 #' @family Functions for plotting
-fadeRug <- function(x, y, n.grid = 30, gradual=FALSE, 
-    max.alpha = 0.75, col='white') {
+fadeRug <- function(x, y, n.grid = 30, 
+    too.far=0.03,
+    col='white', alpha = 1,
+    use.data.range=TRUE) {
     n.grid.x <- n.grid.y <- n.grid[1]
     if(length(n.grid)==2){
         n.grid.y <- n.grid[2]
     }
-    xlim <- c(par()$usr[1], par()$usr[2])
-    ylim <- c(par()$usr[3], par()$usr[4])
-    x.step <- diff(seq(xlim[1], xlim[2], length=n.grid.x))[1]
-    y.step <- diff(seq(ylim[1], ylim[2], length=n.grid.y))[1]
-    im <- matrix(table(factor(round((x - xlim[1])/x.step)+1, levels = 1:n.grid.x), 
-        factor(round((y - ylim[1])/y.step)+1, levels = 1:n.grid.y)))
-    if(gradual==FALSE){
-        im[im > 0] <- 1 
+    xlim <- range(x, na.rm=TRUE)
+    ylim <- range(y, na.rm=TRUE)
+    if(use.data.range==FALSE){
+        xlim = par()$usr[1:2]
+        ylim = par()$usr[3:4]
     }
-    fadecols <- alphaPalette(col, f.seq = seq(max.alpha, 0, length = max(im) + 1))
-    im <- matrix(fadecols[im + 1], byrow = TRUE, ncol = n.grid.x)
-    im <- im[n.grid.y:1,]
-    rasterImage(as.raster(im), xleft = xlim[1], xright = xlim[2], ybottom = ylim[1], ytop = ylim[2], interpolate = FALSE)
+    newd <- expand.grid(x=seq(xlim[1], xlim[2], length=n.grid.x),
+        y=seq(ylim[1], ylim[2], length=n.grid.y))
+    newd <- newd[order(newd[,'y'],newd[,'x']),]
+    x.step <- diff(seq(xlim[1], xlim[2], length=n.grid.x))[1]
+    y.step <- diff(seq(ylim[1], ylim[2], length=n.grid.y))[1]    
+    too.far.raster <- rep(alpha(col, f=0), nrow(newd))
+    ex.tf = NULL
+    if (too.far > 0) {
+        ex.tf <- mgcv::exclude.too.far(newd[,'x'], newd[,'y'], x, y, dist = too.far)
+        too.far.raster[ex.tf] <- alpha(col, f=alpha)
+    }
+    ## for debugging:
+    # newd <- newd[!ex.tf,]
+    # points(newd$x, newd$y, pch=16, col=alpha(col, f=alpha))
+    # points(newdat$Time, newdat$Trial, pch="*", col=alpha(1))
+    # raster images are row-first, in contrast to images...
+    too.far.raster <- matrix(too.far.raster, byrow=TRUE, ncol=n.grid.x, nrow=n.grid.y)
+    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1,])
+    gfc <- getFigCoords('p')
+    rasterImage(too.far.raster, xleft=gfc[1], xright=gfc[2], ybottom=gfc[3], ytop=gfc[4])
 }
 
 

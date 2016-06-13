@@ -1389,15 +1389,19 @@ plot_parametric <- function(x, pred, cond = list(),
 #' # Model with random effect and interactions:
 #' m2 <- bam(Y ~ Group + s(Time, by=Group)
 #'     +s(Time, Subject, bs='fs', m=1),
-#'     data=simdat)
+#'     data=simdat, discrete=TRUE)
 #' 
 #' # Plot all levels of a predictor:
 #' plot_smooth(m2, view='Time', plot_all="Group",
 #'     rm.ranef=TRUE)
 #' # It also possible to combine predictors in plot_all.
-#' # Note: this is not a meaningfull plot, 
-#' # just for illustration purposes!
+#' # Note: this is not a meaningfull plot, because Subjects
+#' # fall in only one group. Just for illustration purposes!
 #' plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"))
+#' # Clearly visible difference in confidence interval, because  
+#' # a01 does not occur in Group "Children":
+#' # (Note that this plot generates warning)
+#' plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"), cond=list(Subject="a01"))
 #'
 #' # Using transform
 #' # Plot log-transformed dependent predictor on original scale:
@@ -1459,7 +1463,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         }else{
             # check if plot_all in cond
             if(any(plot_all %in% names(cond))){
-                warning(sprintf("%s in cond and in plot_all. plot_all is being ignored.",
+                warning(sprintf("%s in cond and in plot_all. Not all levels are being plotted.",
                     paste(plot_all[plot_all %in% names(cond)], collapse=', ')))
                 plot_all <- plot_all[!plot_all %in% names(cond)]
             }
@@ -1536,13 +1540,13 @@ plot_smooth <- function(x, view = NULL, cond = list(),
             ylim <- range(newd$fit)
         }
     }
-    if(is.null(col)){
+    if(is.null(col) & is.null(plot_all)){
         col = "black"
     }
-    if(is.null(lwd)){
+    if(is.null(lwd) & is.null(plot_all)){
         lwd = 1
     }
-    if(is.null(lty)){
+    if(is.null(lty) & is.null(plot_all)){
         lty = 1
     }
     if(add==FALSE){
@@ -1633,7 +1637,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
             }
             cnt <- cnt+1
         }
-        if(tmpname != plot_all){
+        if(! tmpname %in% plot_all){
             newd[, tmpname] <- NULL
         }
         # add legend:

@@ -488,12 +488,12 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 		}
 		if(print.summary){
 			if(length(diff$start) > 0){
-				tmp <- data.frame(Significant = sprintf("%f - %f", diff$start, diff$end))
+				tmp <- c(sprintf("%s window(s) of significant difference(s):",xvar), sprintf("\t%f - %f", diff$start, diff$end))
 			}else{
 				tmp <- "Difference is not significant."
 			}
 			cat("\n")
-			cat(tmp)
+			cat(paste(tmp, collapse="\n"))
 			cat("\n")
 		}
 		invisible(out)
