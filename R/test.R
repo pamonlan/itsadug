@@ -7,11 +7,15 @@
 #' @param model2 Second model.
 #' @param signif.stars Logical (default = TRUE). Whether or not to display 
 #' stars indicating the level of significance on 95\% confidence level.
+#' @param suggest.report Logical (default = FALSE). Whether or not to 
+#' present a suggestion on how one could report the information. If 
+#' \code{print.output} is set to FALSE, \code{suggest.report} will 
+#' set to FALSE too. Please inspect yourself whether the label between 
+#' square bracket fits your own standards. Note: the \code{X2} should be 
+#' replaced by a proper Chi-Square symbol \eqn{\chi^2}{}.
 #' @param print.output Logical: whether or not to print the output. 
-#' By default controlled globally in the package options:  
-#' If the function \code{\link{infoMessages}} is set to TRUE, the output 
-#' will be automatically printed.
-#' Could be also set by explicitly providing TRUE or FALSE. See notes.
+#' By default set to true, even if the the messages are not allowed by 
+#' a global package option using the function \code{\link{infoMessages}}.
 #' @details
 #' 
 #' As an Chi-Square test is performed on two times the difference in 
@@ -37,15 +41,13 @@
 #' Model comparison is only implemented for the methods GCV, fREML, REML, and ML.
 #'
 #' @section Notes:
-#' If no output is provided in the command window, set info messages to TRUE: 
-#' \code{infoMessages("on")} and try again.
 #' For suppressing the output and all warnings, set infoMessages to FALSE 
-#' (\code{infoMessages("on")} ) and use the function 
+#' (\code{infoMessages("off")} ), set the argument \code{print.output} to FALSE,
+#' and use the function 
 #' \code{\link{suppressWarnings}} to suppress warning messages.
 #' @return Optionally returns the Chi-Square test table.
 #' @author Jacolien van Rij. With many thanks to Simon N. Wood for his feedback.
 #' @seealso For models without AR1 model or random effects \code{\link{AIC}} can be used.
-# help function
 #' @examples
 #' data(simdat)
 #'
@@ -67,10 +69,6 @@
 #' # do not print output, but save table for later use:
 #' cml <- compareML(m1, m2, print.output=FALSE)$table
 #' cml
-#' # alternative way:
-#' infoMessages('off')
-#' cml <- compareML(m1, m2, print.output=FALSE)$table
-#' infoMessages('on')
 #'
 #' # Use suppressWarnings to also suppress warnings:
 #' suppressWarnings(cml <- compareML(m1, m2, print.output=FALSE)$table)
@@ -78,8 +76,8 @@
 #' }
 #' @family Testing for significance
 compareML <- function(model1, model2,
-    signif.stars=TRUE,
-    print.output=getOption('itsadug_print')) {
+    signif.stars=TRUE, suggest.report=FALSE,
+    print.output=TRUE) {
     # check gam or bam model:
     if((!"gam" %in% class(model1)) | (!"gam" %in% class(model2))){
         stop("Models are not gam objects (i.e., build with bam()/gam()).")
@@ -96,7 +94,8 @@ compareML <- function(model1, model2,
     ml1 <- model1$gcv.ubre[1]
     ml2 <- model2$gcv.ubre[1]
     
-    ### OLD METHOD, SIMON SAYS NOT OK! ### edf1 <- sum(model1$edf) edf2 <- sum(model2$edf) NEW METHOD: ###
+    ### OLD METHOD, SIMON SAYS NOT OK! ### edf1 <- sum(model1$edf) edf2 <- sum(model2$edf) 
+    ## NEW METHOD: ###
     ndf1 <- length(model1$sp) + model1$nsdf + ifelse(length(model1$smooth)>0,
         sum(sapply(model1$smooth, FUN = function(x) {
             x$null.space.dim
@@ -135,6 +134,7 @@ compareML <- function(model1, model2,
     out      <- NULL
     advice   <- NULL
     warning  <- NULL
+    report   <- NULL
     
     # if (type != 'AIC') {
     # Situation 1: model 1 has lower score, but model 2 has lower df. Is it significantly better model than model 2?
@@ -142,8 +142,9 @@ compareML <- function(model1, model2,
 	if(abs(round(ndf2 - ndf1)) < .5){
 		if( ml1 < ml2){
             advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and equal df (%.3f).\n-----\n", 
-            	deparse(substitute(model1)), 
+                deparse(substitute(model1)), 
                 type, ml2 - ml1, ndf2 - ndf1)
+            
             out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), 
             	Score = c(ml2, ml1), 
             	Edf = c(ndf2, ndf1), 
@@ -172,7 +173,7 @@ compareML <- function(model1, model2,
         out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), 
         	Score = c(ml2, ml1), 
         	Edf = c(ndf2, ndf1), 
-            Chisq = c("", sprintf("%.3f", ml2 - ml1)), 
+            Difference = c("", sprintf("%.3f", ml2 - ml1)), 
             Df = c("", sprintf("%.3f", abs(ndf1 - ndf2))), 
             p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), 
             	ifelse(h1 < 0.001, sprintf("%.3e", h1), 
@@ -181,6 +182,12 @@ compareML <- function(model1, model2,
             Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), 
             	ifelse(h1 < 0.01, sprintf("** ", h1), 
             	ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))))
+        report <- sprintf("\nReport suggestion: The Chi-Square test on the %s scores indicates that model %s is [%s?] better than model %s (X2(%.2f)=%.3f, p%s).\n-----\n", 
+                type, deparse(substitute(model1)), 
+                ifelse(h1 > .1, "not significantly", ifelse(h1 > .05, "not significantly / marginally", ifelse(h1 > .01, "marginally / significantly", "significantly"))),
+                deparse(substitute(model2)),
+                abs(ndf1 - ndf2), abs(ml1 - ml2), 
+                ifelse(h1 < 2e-16, "<2e-16", ifelse(h1 < .001, "<.001", ifelse(h1 < .01, "<.01", ifelse(h1 < .1, sprintf("%.3f", h1), ">.1")))))
         
     # Situation 2: model 2 has lower score, but model 1 has lower df. Is it significantly better model than model 1?
     } else if ((ml2 < ml1) & (ndf1 < ndf2)) {
@@ -190,7 +197,7 @@ compareML <- function(model1, model2,
         out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), 
         	Score = c(ml1, ml2), 
         	Edf = c(ndf1, ndf2), 
-        	Chisq = c("", sprintf("%.3f", ml1 - ml2)), 
+        	Difference = c("", sprintf("%.3f", ml1 - ml2)), 
         	Df = c("", sprintf("%.3f", abs(ndf1 - ndf2))), 
         	p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), 
         		ifelse(h1 < 0.001, sprintf("%.3e", h1), 
@@ -199,6 +206,12 @@ compareML <- function(model1, model2,
             Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), 
             	ifelse(h1 < 0.01, sprintf("** ", h1), 
             	ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))))
+        report <- sprintf("\nReport suggestion: The Chi-Square test on the %s scores indicates that model %s is [%s] better than model %s (X2(%.2f)=%.3f, p%s).\n-----\n", 
+                type, deparse(substitute(model2)), 
+                ifelse(h1 > .1, "not significantly", ifelse(h1 > .05, "not significantly / marginally", ifelse(h1 > .01, "marginally / significantly", "significantly"))),
+                deparse(substitute(model1)),
+                abs(ndf1 - ndf2), abs(ml1 - ml2), 
+                ifelse(h1 < 2e-16, "<2e-16", ifelse(h1 < .001, "<.001", ifelse(h1 < .01, "<.01", ifelse(h1 < .1, sprintf("%.3f", h1), ">.1")))))
         
     # Situation 3: model 1 has lower score, and also lower df.
     } else if ((ml1 < ml2) & (ndf1 < ndf2)) {
@@ -241,7 +254,11 @@ compareML <- function(model1, model2,
     }
     if(print.output){
         if(is.null(advice)){
-            cat(sprintf("\nChi-square test of %s scores\n-----\n", type))
+            if(suggest.report==TRUE & !is.null(report)){
+                cat(report)
+            }else{
+                cat(sprintf("\nChi-square test of %s scores\n-----\n", type))
+            }
         }else{
             cat(advice)
         }
@@ -266,23 +283,22 @@ compareML <- function(model1, model2,
         } else {
             rho2 = model2$AR1.rho
         }
-        
-        if (rho1 == 0 & rho2 == 0) {
-            # AIC is useless for models with rho
-            if (AIC(model1) == AIC(model2)) {
-              warning <- sprintf("AIC difference: 0.\n\n")
-            } else {
-              warning <- sprintf("AIC difference: %.2f, model %s has lower AIC.\n\n", 
-                AIC(model1) - AIC(model2), 
-                ifelse(AIC(model1) >= AIC(model2), 
-                    deparse(substitute(model2)), 
-                    deparse(substitute(model1))))
-            }
-            if(print.output){
-                cat(warning)
-            }
+        # AIC message:
+        if (AIC(model1) == AIC(model2)) {
+          aicmessage <- sprintf("AIC difference: 0.\n\n")
         } else {
-            warning(warning <- sprintf(" AIC is not reliable, because an AR1 model is included (rho1 = %f, rho2 = %f). ", 
+          aicmessage <- sprintf("AIC difference: %.2f, model %s has lower AIC.\n\n", 
+            AIC(model1) - AIC(model2), 
+            ifelse(AIC(model1) >= AIC(model2), 
+                deparse(substitute(model2)), 
+                deparse(substitute(model1))))
+        }
+        if(print.output){
+            cat(aicmessage)
+        }
+        if (rho1 != 0 | rho2 != 0) {
+            # AIC is useless for models with rho
+            warning(sprintf(" AIC might not be reliable, as an AR1 model is included (rho1 = %f, rho2 = %f). ", 
                 rho1, rho2))
         }
     }
@@ -296,7 +312,7 @@ compareML <- function(model1, model2,
     	m2=list(Model=model2$formula, Score=ml2, Df=ndf2),
     	table = out,
         advice = ifelse(is.null(advice), NA, advice),
-        AIC = ifelse(is.null(warning), NA, warning) ) )
+        AIC = ifelse(is.null(aicmessage), NA, aicmessage) ) )
 }
  
 
@@ -322,21 +338,31 @@ compareML <- function(model1, model2,
 #' @param cond A named list of the values to use for the predictor terms. 
 #' Variables omitted from this list will have the closest observed value to 
 #' the median for continuous variables, or the reference level for factors. 
-#' @param plotCI Logical: whether or not to plot confidence intervals. 
-#' Default is TRUE.
-#' @param f A number to scale the standard error. Defaults to 1.96, resulting 
-#' in 95\% confidence intervals. For 99\% confidence intervals use a value of 
-#' 2.58.
+#' @param se If less than or equal to zero then only the predicted smooth is 
+#' plotted, but if greater than zero, then the predicted values plus 
+#' confidence intervals are plotted. 
+#' The value of \code{se} will be multiplied with 
+#' the standard error (i.e., 1.96 results in 95\%CI and 2.58). 
+#' Default is set to 1.96 (95\%CI).
+#' @param sim.ci Logical: Using simultaneous confidence intervals or not 
+#' (default set to FALSE). The implementation of simultaneous CIs follows 
+#' Gavin Simpson's blog of December 15, 2016: 
+#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' This interval is calculated from simulations based. 
+#' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+#' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+#' covariance matrix of the parameters is uncertainty corrected 
+#' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+#' smoothness parameters.
 #' @param rm.ranef Logical: whether or not to remove random effects. 
 #' Default is FALSE. Alternatively a string (or vector of strings) with the 
 #' name of the random effect(s) to remove.
 #' @param mark.diff Logical: whether or not marking where the difference 
 #' is significantly different from 0.
+#' @param col Line color. Shading color is derived from line color.
+#' @param col.diff Color to mark differences (red by default).
 #' @param eegAxis Logical: whether or not to reverse the y-axis, plotting 
 #' negative values upwards. Default is FALSE.
-#' @param col Line color. Shading color is derived from line color.
-#' @param shade Logical: plot shaded confidence interval (TRUE) 
-#' or dashed lines that indicate confidence region (FALSE).
 #' @param xlim Range of x-axis. If not specified, the function automatically 
 #' generates an appropriate x-axis.
 #' @param ylim Range of y-axis. If not specified, the function automatically 
@@ -361,7 +387,8 @@ compareML <- function(model1, model2,
 #' @param print.summary Logical: whether or not to print the summary. 
 #' Default set to the print info messages option 
 #' (see \code{\link{infoMessages}}).
-#' @param ... Optional arguments for plot.
+#' @param ... Optional arguments for \code{\link[plotfunctions]{emptyPlot}}, 
+#' or \code{\link[plotfunctions]{plot_error}}.
 #' @return If the result is not being plotted, a list is 
 #' returned with the estimated difference (\code{est}) and the standard error 
 #' over the estimate (\code{se}) and the x-values (\code{x}) is returned.
@@ -369,13 +396,22 @@ compareML <- function(model1, model2,
 #' @examples
 #' data(simdat)
 #' \dontrun{
-#' m1 <- bam(Y ~ Group + te(Time, Trial, by=Group),
-#'     data=simdat)
+#' m1 <- bam(Y ~ Group + te(Time, Trial, by=Group)
+#'     + s(Time, Subject, bs='fs', m=1),
+#'     data=simdat, discrete=TRUE)
 #' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")))
-#' # Reversed y-axis (for EEG data):
+#' # in this model, excluding random effects does not change the difference:
 #' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
-#'     eegAxis=TRUE)
-#' # retrieving plot values...
+#'     rm.ranef=TRUE)
+#' # simultaneous CI:
+#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+#'     rm.ranef=TRUE, sim.ci=TRUE)
+#' # Reversed y-axis (for EEG data) and no shading:
+#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+#'     eegAxis=TRUE, shade=FALSE)
+#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")),
+#' density=15, angle=90, ci.lwd=3)
+#' # Retrieving plot values...
 #' out <- plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
 #'    plot=FALSE)
 #' #... which might be used for indicating differences:
@@ -385,12 +421,19 @@ compareML <- function(model1, model2,
 #' }
 #'
 #' @family Testing for significance
-plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96, 
-	eegAxis=FALSE, col="black", shade=TRUE, n.grid=100, add=FALSE,
-	print.summary=getOption('itsadug_print'), plot=TRUE, rm.ranef=NULL,
+plot_diff <- function(model, view, comp, cond=NULL, 
+	se=1.96, sim.ci = FALSE, n.grid=100, add=FALSE,
+	rm.ranef=NULL, mark.diff=TRUE, col.diff ='red',
+	col="black", eegAxis=FALSE, transform.view=NULL, 
+	print.summary=getOption('itsadug_print'), plot=TRUE, 
 	main=NULL, ylab=NULL, xlab=NULL, xlim=NULL, ylim=NULL, 
-	transform.view=NULL, mark.diff=TRUE, 
 	hide.label=FALSE, ...) { 
+	# For simultaneous CI, n.grid needs to be at least 200, 
+    # otherwise the simulations for the simultaneous CI is not adequate
+    if (sim.ci==TRUE) { 
+        n.grid = max(n.grid,200) 
+    }
+ 	# global variables
 	dat = model$model
 	xvar <- NULL
 	by_predictor <- NULL
@@ -400,7 +443,7 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 	}else{
 		xvar <- view[1]
 		if(xvar %in% names(cond)){
-			warning(sprintf('Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.', xvar))
+			warning(sprintf('Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.', xvar, xvar))
 		}else{
 			cond[[xvar]] <- seq(min(na.exclude(dat[,xvar])), max(na.exclude(dat[,xvar])), length=n.grid)
 		}
@@ -412,9 +455,12 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
         	cond[[xvar]] <- seq(xlim[1], xlim[2], length=n.grid)
         }
     }
+    # generate predictions:
 	newd <- c()
-	newd <- get_difference(model, comp=comp, cond=cond, 
-		print.summary=print.summary, rm.ranef=rm.ranef, f=f)
+	newd <- get_difference(model, comp=comp, cond=cond,
+		se=ifelse(se>0, TRUE, FALSE), 
+        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, 
+		print.summary=print.summary, rm.ranef=rm.ranef)
 	# transform values x-axis:
     errormessage <- function(){
         return("Error: the function specified in transformation.view cannot be applied to x-values, because infinite or missing values are not allowed.")
@@ -433,10 +479,23 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
             cat("\t* Note: x-values are transformed.\n")
         }
     }
+    # output data:
+	out <- data.frame(est=newd$difference,
+		x=newd[,xvar])
+	names(out)[2] <- xvar
+	if(se > 0){
+		out$CI <- newd$CI
+		out$f  <- se
+		if(sim.ci==TRUE){
+			out$sim.CI <- newd$sim.CI
+		}
+	}
+	out$comp=list2str(names(comp), comp)
+    # graphical parameters:
 	if (is.null(main)) {
 		levels1 <- paste(sapply(comp, function(x) x[1]), collapse='.')
 		levels2 <- paste(sapply(comp, function(x) x[2]), collapse='.')
-		main = sprintf('Difference between %s and %s', levels1, levels2)
+		main = sprintf('Difference %s - %s', levels1, levels2)
 	} 
 	if(is.null(ylab)) {
 		ylab = sprintf("Est. difference in %s", as.character(model$formula[[2]]))
@@ -446,23 +505,31 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 	}
 	if(is.null(ylim)){
 		ylim <- range(newd$difference)
-		if (plotCI) { 
+		if (se > 0) { 
 			ylim <- with(newd, range(c(difference+CI, difference-CI)))
 		}
 	}
-	out <- data.frame(est=newd$difference,
-		x=newd[,xvar])
-	names(out)[2] <- xvar
-	if(plotCI){
-		out$CI <- newd$CI
-		out$f <- f
+	if(is.null(xlim)){
+		xlim <- range(newd[,xvar])
 	}
-	out$comp=list2str(names(comp), comp)
+    par = list(...)
+    if(! "h0" %in% names(par)){
+    	par[['h0']] <- 0
+    }
+    if(!"shade" %in% names(par)){
+    	par[['shade']] <- TRUE
+    }
+    area.par <- c("shade", "type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre", "ci.lty", "ci.lwd", "border", "alpha", "density", "angle") 
+    line.par <- c("type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre") 
+    area.args <- list2str(area.par, par)
+    line.args <- list2str(line.par, par)
+    plot.args <- list2str(x=names(par)[!names(par) %in% c(line.par, area.par)], par)
+	# plot:
 	if(plot==TRUE){
 		if(add==FALSE){
-			emptyPlot(range(newd[,xvar]), ylim, 
-				main=main, xlab=xlab, ylab=ylab, h0=0,
-				eegAxis=eegAxis, ...)
+			eval(parse(text=sprintf("emptyPlot(xlim, ylim, 
+				main=main, xlab=xlab, ylab=ylab, 
+				eegAxis=eegAxis, %s)", plot.args)))
 			if(hide.label==FALSE){
 	            addlabel = "difference"
 	            if(!is.null(rm.ranef)){
@@ -470,20 +537,36 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 	                    addlabel = paste(addlabel, "excl. random", sep=", ")
 	                }
 	            }
+	            if(sim.ci==TRUE){
+	                addlabel = paste(addlabel, "simult.CI", sep=", ")
+	            }
 	            mtext(addlabel, side=4, line=0, adj=0, 
 	                cex=.75, col='gray35', xpd=TRUE)
 	        }        			
 		}
-		if(plotCI==TRUE){
-			plot_error(newd[,xvar], newd$difference, newd$CI, shade=shade, col=col, ...)
+		if(se>0){
+			if(sim.ci==TRUE){
+				eval(parse(text=sprintf("plot_error(newd[,xvar], newd$difference, newd$sim.CI, col=col, %s)",
+					area.args)))
+			}else{
+				eval(parse(text=sprintf("plot_error(newd[,xvar], newd$difference, newd$CI, col=col, %s)",
+					area.args)))
+			}
 		}else{
-			lines(newd[,xvar], newd$difference, col=col, ...)
+			if(line.args==""){
+				lines(newd[,xvar], newd$difference, col=col)
+			}else{
+				eval(parse(text=sprintf("lines(newd[,xvar], newd$difference, col=col, %s)", line.args)))
+			}
 		}
 		if(mark.diff==TRUE){
 			diff <- find_difference(newd$difference, newd$CI, newd[,xvar])
+			if(sim.ci==TRUE){
+				diff <- find_difference(newd$difference, newd$sim.CI, newd[,xvar])
+			}
 			if(length(diff$start) > 0){
-				addInterval(pos=getFigCoords('p')[3], diff$start, diff$end, col="red", lwd=2*par()$lwd, length=0, xpd=TRUE)
-				abline(v=c(diff$start, diff$end), lty=3, col='red')
+				addInterval(pos=getFigCoords('p')[3], diff$start, diff$end, col=col.diff, lwd=2*par()$lwd, length=0, xpd=TRUE)
+				abline(v=c(diff$start, diff$end), lty=3, col=col.diff)
 			}
 		}
 		if(print.summary){
@@ -523,16 +606,36 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 #' and the 2 levels to calculate the difference for.
 #' @param cond Named list of the values to use for the other predictor terms 
 #' (not in view). 
-#' @param color Colorpalette
+#' @param color The color scheme to use for plots. One of "topo", "heat", 
+#' "cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+#' can be provided for a custom color palette.
 #' @param nCol Range of colors of background of contour plot.
 #' @param col Line color.
 #' @param add.color.legend Logical: whether or not to add a color legend. 
 #' Default is TRUE. If FALSE (omitted), one could use the function
 #' \code{\link{gradientLegend}} to add a legend manually at any position.
-#' @param plotCI Logical: whether or not to plot confidence intervals.
-#' @param f A number to scale the standard error. Defaults to 1.96, resulting 
-#' in 95\% confidence intervals. For 99\% confidence intervals use a value of 
-#' 2.58.
+#' @param se If less than or equal to zero then only the predicted surface is 
+#' plotted, but if greater than zero, then the predicted values plus 
+#' confidence intervals are plotted. 
+#' The value of \code{se} will be multiplied with 
+#' the standard error (i.e., 1.96 results in 95\%CI and 2.58). 
+#' Default is set to 1.96 (95\%CI).
+#' @param sim.ci Logical: Using simultaneous confidence intervals or not 
+#' (default set to FALSE). The implementation of simultaneous CIs follows 
+#' Gavin Simpson's blog of December 15, 2016: 
+#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' This interval is calculated from simulations based. 
+#' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+#' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+#' covariance matrix of the parameters is uncertainty corrected 
+#' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+#' smoothness parameters.
+#' @param show.diff Logical: whether or not to indicate the regions that 
+#' are significantly different from zero. Note that these regions are just 
+#' an indication and dependent on the value of \code{n.grid}. 
+#' Defaults to FALSE.
+#' @param col.diff Color to shade the nonsignificant areas.
+#' @param alpha.diff Level of transparency to mark the nonsignificant areas.
 #' @param n.grid Resolution.
 #' @param nlevels Levels of contour lines.
 #' @param zlim A two item array giving the lower and upper limits for the z-
@@ -560,7 +663,17 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 #' When NULL (default), no rounding. If -1 (default), automatically determined. 
 #' Note: if value = -1 (default), rounding will be applied also when 
 #' \code{zlim} is provided.
-#' @param ... Optional arguments for \code{\link{plotsurface}}.
+#' @param ... Optional arguments for \code{\link[plotfunctions]{plotsurface}}.
+#' @section Warning:
+#' When the argument \code{show.diff} is set to TRUE a shading area indicates 
+#' where the confidence intervals include zero. Or, in other words, the areas 
+#' that are not significantly different from zero. Be careful with the 
+#' interpretation, however, as the precise shape of the surface is dependent 
+#' on model constraints such as the value of \code{\link[mgcv]{choose.k}} and the 
+#' smooth function used, and the size of the confidence intervals are 
+#' dependent on the model fit and model characteristics 
+#' (see \code{vignette('acf', package='itsadug')}). In addition, the value of 
+#' \code{n.grid} determines the precision of the plot.
 #' @return If the result is not being plotted, a list is 
 #' returned with the estimated difference (\code{est}) and the standard error 
 #' over the estimate (\code{se.est}) and the x-values (\code{x}) is returned.
@@ -578,7 +691,8 @@ plot_diff <- function(model, view, comp, cond=NULL, plotCI=TRUE, f=1.96,
 # plots differences in 2D plot
 plot_diff2 <- function(model, view, comp, cond=NULL, 
 	color='topo', nCol=100, col=NULL, add.color.legend=TRUE,
-	plotCI=FALSE, f=1.96, n.grid=30, nlevels=10, 
+	se=1.96, sim.ci=FALSE, show.diff=FALSE, col.diff=1, alpha.diff=.5,
+    n.grid=30, nlevels=10, 
 	zlim=NULL, xlim=NULL, ylim=NULL, 
 	main=NULL, xlab=NULL, ylab=NULL,
 	rm.ranef=NULL, transform.view=NULL,
@@ -623,7 +737,9 @@ plot_diff2 <- function(model, view, comp, cond=NULL,
 	}
 	newd <- c()
 	newd <- get_difference(model, comp=comp, cond=cond, 
-		print.summary=print.summary, rm.ranef=rm.ranef, f=f)
+        se=ifelse(se>0, TRUE, FALSE), 
+        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, 
+		print.summary=print.summary, rm.ranef=rm.ranef)
 	# transform values x- and y-axes:
     errormessage <- function(name){
         return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", name))
@@ -679,8 +795,8 @@ plot_diff2 <- function(model, view, comp, cond=NULL,
 	if(is.null(xlab)) {
 		xlab = view[1]
 	}
-	if(plotCI){
-		p <- plotsurface(newd, view=view, predictor="difference", valCI='CI',
+	if(se > 0){
+		p <- plotfunctions::plotsurface(newd, view=view, predictor="difference", valCI='CI',
 			main=main, xlab=xlab, ylab=ylab, 
 			zlim=zlim, 
 			col=col, color=color, nCol=nCol, add.color.legend=add.color.legend,
@@ -696,7 +812,7 @@ plot_diff2 <- function(model, view, comp, cond=NULL,
                 cex=.75, col='gray35', xpd=TRUE)
         }     		
 	}else{
-		p <- plotsurface(newd, view=view, predictor="difference", 
+		p <- plotfunctions::plotsurface(newd, view=view, predictor="difference", 
 			main=main, xlab=xlab, ylab=ylab, 
 			zlim=zlim, 
 			col=col, color=color, nCol=nCol, add.color.legend=add.color.legend,
@@ -708,10 +824,16 @@ plot_diff2 <- function(model, view, comp, cond=NULL,
                     addlabel = paste(addlabel, "excl. random", sep=", ")
                 }
             }
+            if(sim.ci==TRUE){
+                addlabel = paste(addlabel, "simult.CI", sep=", ")
+            }
             mtext(addlabel, side=4, line=0, adj=0, 
                 cex=.75, col='gray35', xpd=TRUE)
         }  	
 	}
+    if(show.diff){
+        plot_signifArea(newd, view=view, predictor="difference", valCI="CI", col=col.diff, alpha=alpha.diff)
+    }
 	
 	p[['zlim']] <- zlim
 	invisible(p)

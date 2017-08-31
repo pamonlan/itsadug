@@ -1,3 +1,61 @@
+# itsadug 2.3
+
+## Changes in arguments:
+- plot_diff/ plot_diff2: the arguments 'plotCI' and 'f' are replaced by 'se' for consistency with plot_smooth, fvisgam, pvisgam
+- pvisgam: argument 'type' deleted, because it was not used anymore
+
+## New features:
+- get_predictions, plot_smooths, fvisgam, plot_diff: argument 'sim.ci' allows to choose for simulataneous CI error bars, based on Gavin Simpson's blog of December 15, 2016: http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/ 
+- plot_smooths: argument 'sim.ci' allows to choose for simulataneous CI error bars (see get_predictions)
+- pvisgam, fvisgam, plot_diff2: the argument 'show.diff' indicates the area(s) in the surface that are significantly different from zero (i.e., that do not include zero in the confidence intervals). Note: This is just meant as a rough indication, and the user should be careful with the interpretation. 
+
+## Minor changes:
+- pvisgam, fvisgam: if main is not specified, the name of the dependent variable is printed as title.
+
+## Bug fixes:
+- get_predictions: changing multiple column output to single column output to avoid problems with tidyverse usage (request from Joseph Fruehwald).
+
+
+# itsadug 2.2.5
+
+## Bug fixes:
+- get_coefs: now also works with only 1 parametric term
+- plot_topo: allows to change size when the new parameter setmargin is set to false.
+
+## New features:
+- plot_diff2: argument show.diff to show where the surface is not different from zero
+
+## Minor changes:
+- get_predictions: output should work now with tidyverse packages
+- compareML: minor changes in output compareML, e.g. "Difference" instead of "Chisq" as header in the table, and above the table a summary is mentioned in all cases.
+- plot_diff2: argument color does now also accept a vector of colors that will define a custom gradient palette.
+- plot_diff: argument col.diff to change color of significant region
+- pvisgam: se=1 also works for contour plots. To do: this functions need reimplementation for more efficient maintenance.
+
+
+# -----------------------------------------------
+
+# itsadug 2.2.4
+
+## Minor changes:
+- compareML: replaced warning for use of AIC by information message
+
+# itsadug 2.2.3
+
+## Minor changes:
+- plot_smooth now allows to select more than one value for predictors in argument cond. This makes it possible to use plot_all for plotting only a subset of the data.
+
+# itsadug 2.2.2
+
+## Minor changes:
+- plot_smooth now also works for binomial predictors
+- get_modelterms now also works for binomial predictors
+
+# itsadug 2.2.1
+
+## Bug fix:
+- fixed bug in plot_smooth: plot_all line specifics (lwd, lty), but changed colors instead. Bug fixed.
+
 # -----------------------------------------------
 
 # itsadug 2.2

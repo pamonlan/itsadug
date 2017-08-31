@@ -42,14 +42,12 @@ use it's much faster function \code{rbindlist}. This speeds up the function
 \code{install.packages("data.table", repos="http://cran.us.r-project.org")} 
 in the command window for installing the package \code{data.table}.
 }
+
 \examples{
 data(simdat)
 head(simdat)
 test <- start_event(simdat, event=c("Subject", "Trial"), label.event="Event") 
 head(test)
-}
-\author{
-Jacolien van Rij
 }
 \seealso{
 Other functions for model criticism: \code{\link{acf_n_plots}},
@@ -57,4 +55,6 @@ Other functions for model criticism: \code{\link{acf_n_plots}},
   \code{\link{derive_timeseries}}, \code{\link{resid_gam}},
   \code{\link{start_value_rho}}
 }
-
+\author{
+Jacolien van Rij
+}

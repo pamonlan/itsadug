@@ -94,6 +94,7 @@ Plots the data, fitted values, or residuals.
 This function plots the fitted effects, including intercept and other 
 predictors.
 }
+
 \examples{
 data(simdat)
 
@@ -139,13 +140,12 @@ plot_data(m1, view="Time", split_by="Subject",
 }
 
 }
-\author{
-Jacolien van Rij, idea of Tino Sering
-}
 \seealso{
 Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{gamtabs}}, \code{\link{inspect_random}},
   \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
   \code{\link{plot_topo}}, \code{\link{pvisgam}}
 }
-
+\author{
+Jacolien van Rij, idea of Tino Sering
+}

@@ -6,10 +6,10 @@
 \usage{
 pvisgam(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
   too.far = 0, col = NA, color = "topo", contour.col = NULL,
-  add.color.legend = TRUE, se = -1, type = "link",
-  plot.type = "contour", zlim = NULL, xlim = NULL, ylim = NULL,
-  nCol = 50, labcex = 0.6, hide.label = FALSE,
-  print.summary = getOption("itsadug_print"), dec = NULL, ...)
+  add.color.legend = TRUE, se = -1, plot.type = "contour", zlim = NULL,
+  xlim = NULL, ylim = NULL, nCol = 50, labcex = 0.6,
+  hide.label = FALSE, print.summary = getOption("itsadug_print"),
+  show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, dec = NULL, ...)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -39,7 +39,8 @@ predictor variables are excluded.}
 \item{col}{The colors for the facets of the plot.}
 
 \item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw".}
+"cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+can be provided for a custom color palette (see examples).}
 
 \item{contour.col}{sets the color of contours when using plot.}
 
@@ -51,9 +52,6 @@ Default is TRUE. If FALSE (omitted), one could use the function
 plotted, but if greater than zero, then 3 surfaces are plotted, one at the 
 predicted values minus se standard errors, one at the predicted values and 
 one at the predicted values plus se standard errors.}
-
-\item{type}{"link" to plot on linear predictor scale and "response" to plot 
-on the response scale.}
 
 \item{plot.type}{one of "contour" or "persp" (default is "contour").}
 
@@ -76,6 +74,15 @@ axis scale. NULL to choose automatically.}
 \item{print.summary}{Logical: whether or not to print summary.
 Default set to the print info messages option 
 (see \code{\link{infoMessages}}).}
+
+\item{show.diff}{Logical: whether or not to indicate the regions that 
+are significantly different from zero. Note that these regions are just 
+an indication and dependent on the value of \code{n.grid}. 
+Defaults to FALSE.}
+
+\item{col.diff}{Color to shade the nonsignificant areas.}
+
+\item{alpha.diff}{Level of transparency to mark the nonsignificant areas.}
 
 \item{dec}{Numeric: number of decimals for rounding the color legend. 
 When NULL (default), no rounding. If -1 the values are automatically determined. 
@@ -101,16 +108,28 @@ The code is derivated from the script for \code{\link[mgcv]{vis.gam}}.
 }
 \section{Warnings}{
 
-In contrast to vis.gam, do not specify other predictors in \code{cond} that 
+\itemize{
+\item In contrast to vis.gam, do not specify other predictors in \code{cond} that 
 are not to be plotted.
+\item When the argument \code{show.diff} is set to TRUE a shading area indicates 
+where the confidence intervals include zero. Or, in other words, the areas 
+that are not significantly different from zero. Be careful with the 
+interpretation, however, as the precise shape of the surface is dependent 
+on model constraints such as the value of \code{\link[mgcv]{choose.k}} and the 
+smooth function used, and the size of the confidence intervals are 
+dependent on the model fit and model characteristics 
+(see \code{vignette('acf', package='itsadug')}). In addition, the value of 
+\code{n.grid} determines the precision of the plot.
 }
+}
+
 \examples{
 data(simdat)
 
 \dontrun{
 # Model with random effect and interactions:
 m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
-    data=simdat)
+    data=simdat, discrete=TRUE)
 
 # Plot summed effects:
 vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
@@ -122,6 +141,10 @@ plot(m1, select=1)
 # Alternatives:
 pvisgam(m1, view=c("Trial", "Time"), select=1)
 pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20))
+pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
+    color="terrain")
+pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
+    color=c("blue", "white", "red"))
 
 # Notes on the color legend:
 # Labels can easily fall off the plot, therefore the numbers are 
@@ -140,10 +163,6 @@ par(mar=oldmar) # restore to default settings
 # see the vignette for examples:
 vignette("overview", package="itsadug")
 }
-\author{
-Jacolien van Rij. Modification of \code{\link[mgcv]{vis.gam}} from 
-package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
-}
 \seealso{
 \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 
@@ -152,4 +171,7 @@ Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{plot_data}}, \code{\link{plot_parametric}},
   \code{\link{plot_smooth}}, \code{\link{plot_topo}}
 }
-
+\author{
+Jacolien van Rij. Modification of \code{\link[mgcv]{vis.gam}} from 
+package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
+}

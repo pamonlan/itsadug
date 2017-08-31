@@ -49,12 +49,11 @@ summary(m1)
 coef(m1)
 
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Model predictions: \code{\link{get_difference}},
   \code{\link{get_fitted}}, \code{\link{get_modelterm}},
   \code{\link{get_predictions}}, \code{\link{get_random}}
 }
-
+\author{
+Jacolien van Rij
+}

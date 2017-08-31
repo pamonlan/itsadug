@@ -32,12 +32,11 @@ report <- report_stats(m1, print.summary=FALSE)
 report[3,2]
 
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Testing for significance: \code{\link{compareML}},
   \code{\link{plot_diff2}}, \code{\link{plot_diff}},
   \code{\link{wald_gam}}
 }
-
+\author{
+Jacolien van Rij
+}

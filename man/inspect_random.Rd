@@ -111,13 +111,12 @@ inspect_random(m2, select=5, fun=mean,
 # see the vignette for examples:
 vignette("overview", package="itsadug")
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{gamtabs}}, \code{\link{plot_data}},
   \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
   \code{\link{plot_topo}}, \code{\link{pvisgam}}
 }
-
+\author{
+Jacolien van Rij
+}

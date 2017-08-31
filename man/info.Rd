@@ -26,4 +26,3 @@ R.version.string
 
 Other Functions for package use: \code{\link{infoMessages}}
 }
-

@@ -47,7 +47,7 @@ get_coefs <- function (model, se=TRUE) {
     coefs <- coef(model)[1:n]
     p.table <- NULL
     if(se==TRUE){
-        covmat <- model$Vp[1:n, 1:n]
+        covmat <- as.matrix( model$Vp[1:n, 1:n] )
         name <- names(coefs)
         dimnames(covmat) <- list(name, name)
         se <- diag(covmat)^.5
@@ -82,9 +82,25 @@ get_coefs <- function (model, se=TRUE) {
 #' (See notes.)
 #' @param se Logical: whether or not to return the confidence interval or 
 #' standard error around the estimates.
+#' @param sim.ci Logical: Using simultaneous confidence intervals or not 
+#' (default set to FALSE). The implementation of simultaneous CIs follows 
+#' Gavin Simpson's blog of December 15, 2016: 
+#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' This interval is calculated from simulations based. 
+#' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+#' In addition, make sure to specify at least 200 points for each smooth 
+#' for the simulations when using simultaneous CI.
+#' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+#' covariance matrix of the parameters is uncertainty corrected 
+#' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+#' smoothness parameters.
 #' @param f A number to scale the standard error. Defaults to 1.96, resulting 
 #' in 95\% confidence intervals. For 99\% confidence intervals use a value of 
 #' 2.58.
+#' @param return.n.posterior Numeric: N samples from 
+#' the posterior distribution of the fitted model are returned. 
+#' Default value is 0 (no samples returned). 
+#' Only workes when \code{sim.ci=TRUE}.
 #' @param print.summary Logical: whether or not to print a summary of the 
 #' values selected for each predictor. 
 #' Default set to the print info messages option 
@@ -112,7 +128,9 @@ get_coefs <- function (model, se=TRUE) {
 #' @family Model predictions
 get_difference <- function(model, comp, cond=NULL,
 	rm.ranef=NULL,
-	se=TRUE, f=1.96, print.summary=getOption('itsadug_print')){
+	se=TRUE, sim.ci=FALSE, f=1.96, 
+	return.n.posterior=0,
+	print.summary=getOption('itsadug_print')){
 	if(!"lm" %in% class(model)){
 		stop("This function does not work for class %s models.", class(model)[1])
 	}else{
@@ -237,12 +255,60 @@ get_difference <- function(model, comp, cond=NULL,
 		if(se){
 			newd$CI <- f*sqrt(rowSums((p%*%vcov(model))*p))
 		}
+		# simultaneous CI 
+	    # See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+		stackFits <- NULL
+		if (sim.ci==TRUE) { 
+	        Vb <- vcov(model, freq=FALSE, unconditional=TRUE)
+	        se.fit <- sqrt(rowSums((p%*%Vb)*p))
+	        sim <- mgcv::rmvn(10000, mu=rep(0,nrow(Vb)), V=Vb)
+	        # Cg <- predict(model, newd, type='lpmatrix')
+	        # Cg replaced by p
+	        simDev <- p %*% t(sim)
+	        # Evaluate the basis function at g and compute the deviations 
+	        # between the fitted and true parameters. Then we find the absolute values 
+	        # of the standardized deviations from the true model: 
+	        absDev <- abs(sweep(simDev, 1, se.fit, FUN="/"))
+	        # maximum of the absolute standardized deviations:
+	        masd <- apply(absDev, 2L, max)
+	        # set simultaneous X% CI on the basis of original se multiplication specified by f:
+	        crit <- quantile(masd, prob=1-round(2*(1-pnorm(f)), 2), type=8)
+	        newd$sim.CI <- crit*se.fit
+	    
+	    	if((return.n.posterior > 0) | (print.summary==TRUE)){
+		        # coverage pointwise and simultaneous CIs:
+	        	sims <- rmvn(max(1e4, return.n.posterior), mu = coef(model), V = Vb)
+				fits <- p %*% t(sims)
+		        inCI <- function(x, upr, lwr) {
+				    all(x >= lwr & x <= upr)
+				}
+				fitsInPCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$CI, lwr = newd$fit - newd$CI)
+				fitsInSCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$sim.CI, lwr = newd$fit - newd$sim.CI)
+		        mysummary[[  paste("Simultaneous ",100*(1-round(2*(1-pnorm(f)),2)),"%-CI used", sep="")  ]] = sprintf("\n\t\t%s\n\t\t%s\n\t\t%s\n",
+		        	paste("Critical value: ",round(crit,3),sep=''),
+		        	paste("Proportion posterior simulations in pointwise CI: ", round(sum(fitsInPCI) / length(fitsInPCI),2), " (10000 samples)", sep=''),
+		        	paste("Proportion posterior simulations in simultaneous CI: ", round(sum(fitsInSCI) / length(fitsInSCI),2), " (10000 samples)",sep=''))
+			
+				if(return.n.posterior > 0) {
+					rnd <- sample(max(1e4, return.n.posterior), return.n.posterior)
+					fits <- stack(as.data.frame(fits[, rnd]))[,1]
+					stackFits <- newd[rep(1:nrow(newd), length(rnd)),colnames(newd)[!colnames(newd) %in% c("fit", "CI", "sim.CI", "rm.ranef")]]
+					row.names(stackFits) <- NULL
+					stackFits$posterior.fit <- fits
+					stackFits$draw <- rep(rnd, each=nrow(newd))
+				}
+	        }
+	    }
 		# print summary of chosen values
 		if(print.summary==TRUE){
 			print_summary(mysummary)
 		}	
 		
-		return(newd)
+		if(return.n.posterior > 0){
+	    	return(list(newd=newd, posterior.fit=stackFits))
+	    }else{
+	    	return(newd)
+	    }
 	}
 }
 
@@ -471,7 +537,14 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 		smoothterms <-  model$smooth[[select[1]]][['term']]
 		# select right grouping predictor:
 		if(model$smooth[[select[1]]][['by']] !="NA"){
-			cond[[model$smooth[[select[1]]][['by']]]] <- model$smooth[[select[1]]][['by.level']]
+			if( is.null(model$smooth[[select[1]]][['by.level']]) ){
+				if( !all( unique(model$model[,model$smooth[[2]]$by]) %in% c(0,1,NA) ) ){
+					stop(sprintf("Check if predictor %s is really binomial.", model$smooth[[2]]$by))
+				}
+				cond[[model$smooth[[select[1]]][['by']]]] <- 1
+			}else{
+				cond[[model$smooth[[select[1]]][['by']]]] <- model$smooth[[select[1]]][['by.level']]
+			}
 		}
 		su <- model$var.summary
 		newd <- NULL
@@ -562,14 +635,30 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #' @param cond A named list of the values to use for the predictor terms. 
 #' Variables omitted from this list will have the closest observed value to 
 #' the median for continuous variables, or the reference level for factors. 
-#' @param se Logical: whether or not to return the confidence interval or 
-#' standard error around the estimates.
-#' @param f A number to scale the standard error. Defaults to 1.96, resulting 
-#' in 95\% confidence intervals. For 99\% confidence intervals use a value of 
-#' 2.58.
 #' @param rm.ranef Logical: whether or not to remove random effects. 
 #' Default is FALSE. Alternatively a vector with numbers (modelterms) 
 #' of the random effect(s) to remove.
+#' @param se Logical: whether or not to return the confidence interval or 
+#' standard error around the estimates.
+#' @param sim.ci Logical: Using simultaneous confidence intervals or not 
+#' (default set to FALSE). The implementation of simultaneous CIs follows 
+#' Gavin Simpson's blog of December 15, 2016: 
+#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' This interval is calculated from simulations based. 
+#' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+#' In addition, make sure to specify at least 200 points for each smooth 
+#' for the simulations when using simultaneous CI.
+#' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+#' covariance matrix of the parameters is uncertainty corrected 
+#' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+#' smoothness parameters.
+#' @param f A number to scale the standard error. Defaults to 1.96, resulting 
+#' in 95\% confidence intervals. For 99\% confidence intervals use a value of 
+#' 2.58.
+#' @param return.n.posterior Numeric: N samples from 
+#' the posterior distribution of the fitted model are returned. 
+#' Default value is 0 (no samples returned). 
+#' Only workes when \code{sim.ci=TRUE}.
 #' @param print.summary Logical: whether or not to print a summary of the 
 #' values selected for each predictor. 
 #' Default set to the print info messages option 
@@ -599,11 +688,30 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #' # plot of predictions that are not supported by data:
 #' emptyPlot(c(-500,0), range(pp$fit), h=0)
 #' plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE) 
+#' 
+#' m2 <- bam(Y ~ Group + s(Time, by=Group)
+#'     + s(Time, Subject, bs='fs', m=1), 
+#'     data=simdat, discrete=TRUE)
+#' # Simultaneous CI vs pointwise CI
+#' # NOTE: USE AT LEST 200 DATAPOINTS FOR SIMULTANEOUS CI
+#' pp <- get_predictions(m2, 
+#'     cond=list(Group="Adults", Time=seq(0,2000,length=200)), 
+#'     rm.ranef=TRUE, sim.ci=TRUE)
+#' head(pp)
+#' # plot:
+#' emptyPlot(2000, range(pp$fit), h=0)
+#' plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE)
+#' plot_error(pp$Time, pp$fit, pp$sim.CI, shade=FALSE, col=2, xpd=TRUE)
+#' 
+#' 
 #' }
 #'
 #' @author Jacolien van Rij
 #' @family Model predictions
-get_predictions <- function(model, cond=NULL, se=TRUE, f=1.96, rm.ranef=NULL, 
+get_predictions <- function(model, cond=NULL, 
+	rm.ranef=NULL, 
+	se=TRUE, sim.ci=FALSE, f=1.96, 
+	return.n.posterior = 0,
 	print.summary=getOption('itsadug_print')){
 	if(is.null(cond)){
 		stop("Please specify values for at least one predictor in the parameter 'cond'.")
@@ -685,17 +793,14 @@ get_predictions <- function(model, cond=NULL, se=TRUE, f=1.96, rm.ranef=NULL,
 				warning("No random effects to cancel.\n")				
 			}
 		}
-		if(print.summary){
-			print_summary(mysummary)
-		}
 		
 		for(i in names(newd)){
-			if(i %in% c("fit", "CI", "rm.ranef")){
+			if(i %in% c("fit", "CI", "sim.CI", "rm.ranef")){
 				warning(sprintf("Predictor %s is renamed to %s_predictor. To avoid problems with plotting, please rename the predictor before running the model. Use a different name, or capitalization.", i))
 				names(newd)[names(newd)==i] <- sprintf("%s_predictor",i)
 			}
 		}
-		newd$fit <- p %*% coef(model)
+		newd$fit <- (p %*% coef(model))[,1]
 		if(se){
 			newd$CI <- f*sqrt(rowSums((p%*%vcov(model))*p))
 		}
@@ -703,7 +808,58 @@ get_predictions <- function(model, cond=NULL, se=TRUE, f=1.96, rm.ranef=NULL,
 			newd$rm.ranef <- paste(smoothlabels, collapse=",")
 		}
 		
-		return(newd)
+	    # simultaneous CI 
+	    # See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+		stackFits <- NULL
+		if (sim.ci==TRUE) { 
+	        Vb <- vcov(model, freq=FALSE, unconditional=TRUE)
+	        se.fit <- sqrt(rowSums((p%*%Vb)*p))
+	        sim <- mgcv::rmvn(10000, mu=rep(0,nrow(Vb)), V=Vb)
+	        # Cg <- predict(model, newd, type='lpmatrix')
+	        # Cg replaced by p
+	        simDev <- p %*% t(sim)
+	        # Evaluate the basis function at g and compute the deviations 
+	        # between the fitted and true parameters. Then we find the absolute values 
+	        # of the standardized deviations from the true model: 
+	        absDev <- abs(sweep(simDev, 1, se.fit, FUN="/"))
+	        # maximum of the absolute standardized deviations:
+	        masd <- apply(absDev, 2L, max)
+	        # set simultaneous X% CI on the basis of original se multiplication specified by f:
+	        crit <- quantile(masd, prob=1-round(2*(1-pnorm(f)), 2), type=8)
+	        newd$sim.CI <- crit*se.fit
+	    
+	    	if((return.n.posterior > 0) | (print.summary==TRUE)){
+		        # coverage pointwise and simultaneous CIs:
+	        	sims <- rmvn(max(1e4, return.n.posterior), mu = coef(model), V = Vb)
+				fits <- p %*% t(sims)
+		        inCI <- function(x, upr, lwr) {
+				    all(x >= lwr & x <= upr)
+				}
+				fitsInPCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$CI, lwr = newd$fit - newd$CI)
+				fitsInSCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$sim.CI, lwr = newd$fit - newd$sim.CI)
+		        mysummary[[  paste("Simultaneous ",100*(1-round(2*(1-pnorm(f)),2)),"%-CI used", sep="")  ]] = sprintf("\n\t\t%s\n\t\t%s\n\t\t%s\n",
+		        	paste("Critical value: ",round(crit,3),sep=''),
+		        	paste("Proportion posterior simulations in pointwise CI: ", round(sum(fitsInPCI) / length(fitsInPCI),2), " (10000 samples)", sep=''),
+		        	paste("Proportion posterior simulations in simultaneous CI: ", round(sum(fitsInSCI) / length(fitsInSCI),2), " (10000 samples)", sep=''))
+			
+				if(return.n.posterior > 0) {
+					rnd <- sample(max(1e4, return.n.posterior), return.n.posterior)
+					fits <- stack(as.data.frame(fits[, rnd]))[,1]
+					stackFits <- newd[rep(1:nrow(newd), length(rnd)),colnames(newd)[!colnames(newd) %in% c("fit", "CI", "sim.CI", "rm.ranef")]]
+					row.names(stackFits) <- NULL
+					stackFits$posterior.fit <- fits
+					stackFits$draw <- rep(rnd, each=nrow(newd))
+				}
+	        }
+	    }
+	   	if(print.summary){
+			print_summary(mysummary)
+		}
+	    if(return.n.posterior > 0){
+	    	return(list(newd=newd, posterior.fit=stackFits))
+	    }else{
+	    	return(newd)
+	    }
 	}
 }
 

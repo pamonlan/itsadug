@@ -5,12 +5,12 @@
 \title{Visualization of smooths.}
 \usage{
 plot_smooth(x, view = NULL, cond = list(), plot_all = NULL,
-  rm.ranef = NULL, n.grid = 30, rug = TRUE, add = FALSE, se = 1.96,
-  shade = TRUE, eegAxis = FALSE, col = NULL, lwd = NULL, lty = NULL,
-  print.summary = getOption("itsadug_print"), main = NULL, xlab = NULL,
-  ylab = NULL, xlim = NULL, ylim = NULL, h0 = 0, v0 = NULL,
-  transform = NULL, transform.view = NULL, legend_plot_all = NULL,
-  hide.label = FALSE, ...)
+  rm.ranef = NULL, n.grid = 30, rug = NULL, add = FALSE, se = 1.96,
+  sim.ci = FALSE, shade = TRUE, eegAxis = FALSE, col = NULL,
+  lwd = NULL, lty = NULL, print.summary = getOption("itsadug_print"),
+  main = NULL, xlab = NULL, ylab = NULL, xlim = NULL, ylim = NULL,
+  h0 = 0, v0 = NULL, transform = NULL, transform.view = NULL,
+  legend_plot_all = NULL, hide.label = FALSE, ...)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -34,17 +34,32 @@ Default is TRUE.}
 \item{n.grid}{The number of grid nodes in each direction used for 
 calculating the plotted surface.}
 
-\item{rug}{Logical: when TRUE (default) then the covariate to which the 
-plot applies is displayed as a rug plot at the foot of each plot of a 1-d 
-smooth. Setting to FALSE will speed up plotting for large datasets.}
+\item{rug}{Logical: when TRUE then the covariate to which the 
+plot applies is displayed as a rug plot at the foot of each plot. 
+By default set to NULL, which sets rug to TRUE when 
+the dataset size is <= 10000 and FALSE otherwise.
+Setting to FALSE will speed up plotting for large datasets.}
 
 \item{add}{Logical: whether or not to add the lines to an existing plot, or 
 start a new plot (default).}
 
 \item{se}{If less than or equal to zero then only the predicted surface is 
 plotted, but if greater than zero, then the predicted values plus 
-confidence intervals are plotted. The value of se will be multiplied with 
-the standard error (i.e., 1.96 results in 95\%CI and 2.58).}
+confidence intervals are plotted. 
+The value of \code{se} will be multiplied with 
+the standard error (i.e., 1.96 results in 95\%CI and 2.58). 
+Default is set to 1.96 (95\%CI).}
+
+\item{sim.ci}{Logical: Using simultaneous confidence intervals or not 
+(default set to FALSE). The implementation of simultaneous CIs follows 
+Gavin Simpson's blog of December 15, 2016: 
+\url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+This interval is calculated from simulations based. 
+Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+covariance matrix of the parameters is uncertainty corrected 
+(\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+smoothness parameters.}
 
 \item{shade}{Logical: Set to TRUE to produce shaded regions as confidence 
 bands for smooths (not avaliable for parametric terms, which are plotted 
@@ -114,6 +129,7 @@ predictors. For plotting partial effects, see the function
 \code{\link{get_modelterm}} for more flexibility (e.g., plotting using the 
 \code{lattice} package or \code{ggplots}).
 }
+
 \examples{
 data(simdat)
 
@@ -160,6 +176,16 @@ plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"))
 # (Note that this plot generates warning)
 plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"), cond=list(Subject="a01"))
 
+# Using sim.ci: simultaneous CI instead of pointwise CI
+dev.new(width=8, height=4) # use x11(,8,4) on Linux
+par(mfrow=c(1,2))
+plot_smooth(m2, view='Time', plot_all="Group", rm.ranef=TRUE)
+plot_smooth(m2, view='Time', rm.ranef=TRUE, plot_all="Group", sim.ci=TRUE, 
+    add=TRUE, shade=FALSE, xpd=TRUE)
+plot_smooth(m2, view='Time', rm.ranef=TRUE, sim.ci=TRUE, col='red')
+
+
+
 # Using transform
 # Plot log-transformed dependent predictor on original scale:
 plot_smooth(m1, view="Time", rm.ranef=TRUE, transform=exp)
@@ -170,14 +196,12 @@ plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log)
 # adjusting the x-axis helps:
 plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log,
    xlim=c(1,2000))
+
 }
 
 # and for a quick overview of plotfunctions:
 vignette("overview", package="itsadug")
 
-}
-\author{
-Jacolien van Rij and Martijn Wieling.
 }
 \seealso{
 \code{\link[mgcv]{plot.gam}}, \code{\link{plot_diff}}
@@ -187,4 +211,6 @@ Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{plot_data}}, \code{\link{plot_parametric}},
   \code{\link{plot_topo}}, \code{\link{pvisgam}}
 }
-
+\author{
+Jacolien van Rij and Martijn Wieling.
+}

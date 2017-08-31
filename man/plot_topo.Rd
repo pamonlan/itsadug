@@ -6,7 +6,8 @@
 \usage{
 plot_topo(model, view, el.pos = NULL, fun = "fvisgam",
   add.color.legend = TRUE, size = 5, n.grid = 100, col = 1, pch = 21,
-  bg = alpha(1), color = "topo", xlab = "", ylab = "", ...)
+  bg = alpha(1), color = "topo", xlab = "", ylab = "",
+  setmargins = TRUE, ...)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -46,6 +47,9 @@ The value NA will suppress the plotting of electrode positions.}
 
 \item{ylab}{Label y-axis. Default excluded.}
 
+\item{setmargins}{Logical: whether or not to automatically set the margins. 
+By default set to TRUE. If set to false, the size can}
+
 \item{...}{other options to pass on to \code{\link{fvisgam}},
 \code{\link{pvisgam}}, or \code{\link{plot_diff2}}.}
 }
@@ -60,6 +64,7 @@ hemisphere.
 Y-positions of electrodes should have lower values for electrodes at the 
 back of the head than for the frontal electrodes.
 }
+
 \examples{
 
 data(eeg)
@@ -72,6 +77,8 @@ m1 <- gam(Ampl ~ te(Time, X, Y, k=c(10,5,5),
 # topo plot, by default uses fvisgam 
 # and automatically selects a timestamp (270ms):
 plot_topo(m1, view=c("X", "Y"))
+# or:
+plot_topo(m1, view=c("X", "Y"), setmargins=FALSE, size=1)
 
 # add electrodes:
 electrodes <- eeg[,c('X','Y','Electrode')]
@@ -120,13 +127,12 @@ text(electrodes[['X']], electrodes[['Y']],
     xpd=TRUE)
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{gamtabs}}, \code{\link{inspect_random}},
   \code{\link{plot_data}}, \code{\link{plot_parametric}},
   \code{\link{plot_smooth}}, \code{\link{pvisgam}}
 }
-
+\author{
+Jacolien van Rij
+}

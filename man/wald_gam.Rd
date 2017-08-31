@@ -58,6 +58,7 @@ considered as a partial effect comparison. For comparing the averages
 of conditions use \code{\link{get_difference}}, which outputs the 
 difference in summed effects for different factor levels.
 }
+
 \examples{
 data(simdat)
 # Convert Condition to factorial predictor for illustration purposes:
@@ -126,9 +127,6 @@ infoMessages('on')
 
 }
 }
-\author{
-Petar Milin and Jacolien van Rij.
-}
 \seealso{
 \code{\link{plot_parametric}}, \code{\link{plot_diff}}, 
 \code{\link{plot_diff2}}
@@ -137,4 +135,6 @@ Other Testing for significance: \code{\link{compareML}},
   \code{\link{plot_diff2}}, \code{\link{plot_diff}},
   \code{\link{report_stats}}
 }
-
+\author{
+Petar Milin and Jacolien van Rij.
+}

@@ -32,13 +32,12 @@ coef(m0)[grepl(convertNonAlphanumeric("s(Subject)"), names(coef(m0)))]
 coef(m0)[grepl(convertNonAlphanumeric("s(Time,Subject)"), names(coef(m0)))]
 
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{diff_terms}},
   \code{\link{find_difference}}, \code{\link{missing_est}},
   \code{\link{print_summary}}, \code{\link{summary_data}},
   \code{\link{timeBins}}
 }
-
+\author{
+Jacolien van Rij
+}

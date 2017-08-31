@@ -25,4 +25,3 @@ A dataset containing the sine wave data with random noise added.
 Jacolien van Rij
 }
 \keyword{datasets}
-

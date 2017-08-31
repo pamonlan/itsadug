@@ -24,4 +24,3 @@ A dataset containing a single EEG trial.
 Jacolien van Rij
 }
 \keyword{datasets}
-

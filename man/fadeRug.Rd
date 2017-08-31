@@ -44,6 +44,7 @@ On Linux \code{\link{x11}} devices may not support transparency.
 In that case, a solution might be to write the plots immediately to a file 
 using functions such as \code{\link{pdf}}, or \code{\link{png}}.
 }
+
 \examples{
 data(simdat)
 
@@ -84,14 +85,13 @@ fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
 points(newdat$Time, newdat$Trial)
 fadeRug(newdat$Time, newdat$Trial, n.grid=c(100,10), col='gray')
 }
-\author{
-Jacolien van Rij, based on Simon N. Wood's 
-\code{\link[mgcv]{exclude.too.far}}
-}
 \seealso{
 \code{\link[graphics]{rug}}, \code{\link[graphics]{contour}}, 
 \code{\link[graphics]{image}}
 
 Other Functions for plotting: \code{\link{rug_model}}
 }
-
+\author{
+Jacolien van Rij, based on Simon N. Wood's 
+\code{\link[mgcv]{exclude.too.far}}
+}

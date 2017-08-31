@@ -5,7 +5,8 @@
 \title{Get model predictions for differences between conditions.}
 \usage{
 get_difference(model, comp, cond = NULL, rm.ranef = NULL, se = TRUE,
-  f = 1.96, print.summary = getOption("itsadug_print"))
+  sim.ci = FALSE, f = 1.96, return.n.posterior = 0,
+  print.summary = getOption("itsadug_print"))
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -26,9 +27,27 @@ mdoelterm number of the random effect(s) to remove.
 \item{se}{Logical: whether or not to return the confidence interval or 
 standard error around the estimates.}
 
+\item{sim.ci}{Logical: Using simultaneous confidence intervals or not 
+(default set to FALSE). The implementation of simultaneous CIs follows 
+Gavin Simpson's blog of December 15, 2016: 
+\url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+This interval is calculated from simulations based. 
+Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+In addition, make sure to specify at least 200 points for each smooth 
+for the simulations when using simultaneous CI.
+Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+covariance matrix of the parameters is uncertainty corrected 
+(\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+smoothness parameters.}
+
 \item{f}{A number to scale the standard error. Defaults to 1.96, resulting 
 in 95\% confidence intervals. For 99\% confidence intervals use a value of 
 2.58.}
+
+\item{return.n.posterior}{Numeric: N samples from 
+the posterior distribution of the fitted model are returned. 
+Default value is 0 (no samples returned). 
+Only workes when \code{sim.ci=TRUE}.}
 
 \item{print.summary}{Logical: whether or not to print a summary of the 
 values selected for each predictor. 
@@ -51,6 +70,7 @@ or included as random slopes, it may be useful to specify the values
 of other predictors with \code{cond} or remove the random effects with
 \code{rm.ranef}.
 }
+
 \examples{
 data(simdat)
 
@@ -62,12 +82,11 @@ diff <- get_difference(m1, comp=list(Group=c('Adults', 'Children')),
     cond=list(Time=seq(0,500,length=100)))
 head(diff)
 }
-\author{
-Jacolien van Rij, Martijn Wieling
-}
 \seealso{
 Other Model predictions: \code{\link{get_coefs}},
   \code{\link{get_fitted}}, \code{\link{get_modelterm}},
   \code{\link{get_predictions}}, \code{\link{get_random}}
 }
-
+\author{
+Jacolien van Rij, Martijn Wieling
+}

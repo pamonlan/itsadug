@@ -6,10 +6,11 @@
 \usage{
 fvisgam(x, view = NULL, cond = list(), n.grid = 30, too.far = 0,
   col = NA, color = "topo", contour.col = NULL, add.color.legend = TRUE,
-  se = -1, plot.type = "contour", xlim = NULL, ylim = NULL,
-  zlim = NULL, nCol = 50, rm.ranef = NULL,
+  se = -1, sim.ci = FALSE, plot.type = "contour", xlim = NULL,
+  ylim = NULL, zlim = NULL, nCol = 50, rm.ranef = NULL,
   print.summary = getOption("itsadug_print"), transform = NULL,
-  transform.view = NULL, hide.label = FALSE, dec = NULL, ...)
+  transform.view = NULL, hide.label = FALSE, dec = NULL,
+  show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, ...)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -36,7 +37,8 @@ predictor variables are excluded.}
 \item{col}{The colors for the facets of the plot.}
 
 \item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw".}
+"cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+can be provided for a custom color palette (see examples).}
 
 \item{contour.col}{sets the color of contours when using plot.}
 
@@ -48,6 +50,17 @@ Default is TRUE. If FALSE (omitted), one could use the function
 plotted, but if greater than zero, then 3 surfaces are plotted, one at the 
 predicted values minus se standard errors, one at the predicted values and 
 one at the predicted values plus se standard errors.}
+
+\item{sim.ci}{Logical: Using simultaneous confidence intervals or not 
+(default set to FALSE). The implementation of simultaneous CIs follows 
+Gavin Simpson's blog of December 15, 2016: 
+\url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+This interval is calculated from simulations based. 
+Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+covariance matrix of the parameters is uncertainty corrected 
+(\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+smoothness parameters.}
 
 \item{plot.type}{one of "contour" or "persp" (default is "contour").}
 
@@ -85,6 +98,15 @@ When NULL, no rounding (default). If -1, automatically determined.
 Note: if value = -1, rounding will be applied also when 
 \code{zlim} is provided.}
 
+\item{show.diff}{Logical: whether or not to indicate the regions that 
+are significantly different from zero. Note that these regions are just 
+an indication and dependent on the value of \code{n.grid}. 
+Defaults to FALSE.}
+
+\item{col.diff}{Color to shade the nonsignificant areas.}
+
+\item{alpha.diff}{Level of transparency to mark the nonsignificant areas.}
+
 \item{...}{other options to pass on to persp, image or contour. In 
 particular ticktype="detailed" will add proper axes labeling to the plots.}
 }
@@ -94,13 +116,26 @@ predictions of the additive effects interactions.
 The code is based on the script for \code{\link[mgcv]{vis.gam}}, 
 but allows to cancel random effects.
 }
+\section{Warning}{
+
+When the argument \code{show.diff} is set to TRUE a shading area indicates 
+where the confidence intervals include zero. Or, in other words, the areas 
+that are not significantly different from zero. Be careful with the 
+interpretation, however, as the precise shape of the surface is dependent 
+on model constraints such as the value of \code{\link[mgcv]{choose.k}} and the 
+smooth function used, and the size of the confidence intervals are 
+dependent on the model fit and model characteristics 
+(see \code{vignette('acf', package='itsadug')}). In addition, the value of 
+\code{n.grid} determines the precision of the plot.
+}
+
 \examples{
 data(simdat)
 
 \dontrun{
 # Model with random effect and interactions:
 m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
-    data=simdat)
+    data=simdat, discrete=TRUE)
 
 # Plot summed effects:
 vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
@@ -125,6 +160,12 @@ fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
      dec=3)
 par(mar=oldmar) # restore to default settings
 
+# changing the color palette:
+fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+    color="terrain")
+fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+    color=c("blue", "white", "red"), col=1)
+
 # Using transform
 # Plot log-transformed dependent predictor on measurement scale:
 fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE, transform=exp)
@@ -141,11 +182,6 @@ fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
 # see the vignette for examples:
 vignette("inspect", package="itsadug")
 }
-\author{
-Jacolien van Rij and Martijn Wieling. 
-Modification of \code{\link[mgcv]{vis.gam}} from 
-package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
-}
 \seealso{
 \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 
@@ -154,4 +190,8 @@ Other Functions for model inspection: \code{\link{gamtabs}},
   \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
   \code{\link{plot_topo}}, \code{\link{pvisgam}}
 }
-
+\author{
+Jacolien van Rij and Martijn Wieling. 
+Modification of \code{\link[mgcv]{vis.gam}} from 
+package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
+}

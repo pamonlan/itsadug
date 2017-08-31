@@ -12,7 +12,7 @@ simdat[sample(nrow(simdat), 15),]$Y <- NA
 ## ------------------------------------------------------------------------
 simdat$Condition <- as.factor(simdat$Condition)
 # Note: this is really not the best fitting model for the data:
-m1 <- bam(Y ~ Group * Condition + s(Time) + s(Trial) + ti(Time, Trial) + s(Time, Subject, bs='fs', m=1, k=5), data=simdat)
+m1 <- bam(Y ~ Group * Condition + s(Time) + s(Trial) + ti(Time, Trial) + s(Time, Subject, bs='fs', m=1, k=5), data=simdat, discrete=TRUE)
 
 ## ------------------------------------------------------------------------
 summary(m1)

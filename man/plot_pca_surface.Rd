@@ -112,6 +112,11 @@ predictions of the additive effects interactions.
 The code is based on the script for \code{\link[mgcv]{vis.gam}}, 
 but allows to cancel random effects.
 }
+\seealso{
+\code{\link{fvisgam}}, \code{\link{pvisgam}}
+
+Other Functions for PCA interpretation: \code{\link{get_pca_predictions}}
+}
 \author{
 Jacolien van Rij
 data(simdat)
@@ -150,9 +155,3 @@ plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"],
     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
     cond=list(Group="Children"))
 }
-\seealso{
-\code{\link{fvisgam}}, \code{\link{pvisgam}}
-
-Other Functions for PCA interpretation: \code{\link{get_pca_predictions}}
-}
-

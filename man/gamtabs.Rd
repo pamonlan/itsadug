@@ -44,6 +44,7 @@ This function is useful for markdown documents using the package
 \code{knitr} to integrate R code with Latex and Sweave. This 
 function requires the package \code{xtable}.
 }
+
 \examples{
 data(simdat)
 \dontrun{
@@ -56,9 +57,6 @@ gamtabs(m1, caption='Summary of m1')
 # See for more examples:
 vignette("inspect", package="itsadug")
 }
-\author{
-R. Harald Baayen
-}
 \seealso{
 \code{\link[mgcv]{summary.gam}}, \code{\link[mgcv]{gam}}, 
 \code{\link[mgcv]{bam}}.
@@ -68,4 +66,6 @@ Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
   \code{\link{plot_topo}}, \code{\link{pvisgam}}
 }
-
+\author{
+R. Harald Baayen
+}

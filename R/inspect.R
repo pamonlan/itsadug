@@ -29,7 +29,8 @@
 #' predictor variables are excluded.
 #' @param col The colors for the facets of the plot.
 #' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". 
+#' "cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+#' can be provided for a custom color palette (see examples).
 #' @param contour.col sets the color of contours when using plot.
 #' @param add.color.legend Logical: whether or not to add a color legend. 
 #' Default is TRUE. If FALSE (omitted), one could use the function
@@ -38,6 +39,16 @@
 #' plotted, but if greater than zero, then 3 surfaces are plotted, one at the 
 #' predicted values minus se standard errors, one at the predicted values and 
 #' one at the predicted values plus se standard errors.
+#' @param sim.ci Logical: Using simultaneous confidence intervals or not 
+#' (default set to FALSE). The implementation of simultaneous CIs follows 
+#' Gavin Simpson's blog of December 15, 2016: 
+#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' This interval is calculated from simulations based. 
+#' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+#' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+#' covariance matrix of the parameters is uncertainty corrected 
+#' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+#' smoothness parameters.
 #' @param plot.type one of "contour" or "persp" (default is "contour").
 #' @param zlim A two item array giving the lower and upper limits for the z-
 #' axis scale. NULL to choose automatically.
@@ -63,8 +74,24 @@
 #' When NULL, no rounding (default). If -1, automatically determined.  
 #' Note: if value = -1, rounding will be applied also when 
 #' \code{zlim} is provided.
+#' @param show.diff Logical: whether or not to indicate the regions that 
+#' are significantly different from zero. Note that these regions are just 
+#' an indication and dependent on the value of \code{n.grid}. 
+#' Defaults to FALSE.
+#' @param col.diff Color to shade the nonsignificant areas.
+#' @param alpha.diff Level of transparency to mark the nonsignificant areas.
 #' @param ... other options to pass on to persp, image or contour. In 
 #' particular ticktype="detailed" will add proper axes labeling to the plots.
+#' @section Warning:
+#' When the argument \code{show.diff} is set to TRUE a shading area indicates 
+#' where the confidence intervals include zero. Or, in other words, the areas 
+#' that are not significantly different from zero. Be careful with the 
+#' interpretation, however, as the precise shape of the surface is dependent 
+#' on model constraints such as the value of \code{\link[mgcv]{choose.k}} and the 
+#' smooth function used, and the size of the confidence intervals are 
+#' dependent on the model fit and model characteristics 
+#' (see \code{vignette('acf', package='itsadug')}). In addition, the value of 
+#' \code{n.grid} determines the precision of the plot.
 #'
 #' @examples
 #' data(simdat)
@@ -72,7 +99,7 @@
 #' \dontrun{
 #' # Model with random effect and interactions:
 #' m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
-#'     data=simdat)
+#'     data=simdat, discrete=TRUE)
 #'
 #' # Plot summed effects:
 #' vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
@@ -96,6 +123,12 @@
 #' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
 #'      dec=3)
 #' par(mar=oldmar) # restore to default settings
+#' 
+#' # changing the color palette:
+#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#'     color="terrain")
+#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#'     color=c("blue", "white", "red"), col=1)
 #'
 #' # Using transform
 #' # Plot log-transformed dependent predictor on measurement scale:
@@ -120,11 +153,11 @@
 #' @family Functions for model inspection
 fvisgam <- function(x, view = NULL, cond = list(), 
     n.grid = 30, too.far = 0, col = NA, color = "topo", contour.col = NULL, 
-    add.color.legend=TRUE, se = -1, plot.type = "contour", 
+    add.color.legend=TRUE, se = -1, sim.ci=FALSE, plot.type = "contour", 
     xlim=NULL, ylim=NULL, zlim = NULL, nCol = 50, 
     rm.ranef=NULL, print.summary=getOption('itsadug_print'), 
     transform=NULL, transform.view=NULL, hide.label=FALSE, 
-    dec=NULL, ...) {
+    dec=NULL, show.diff=FALSE, col.diff=1, alpha.diff=.5, ...) {
     # check info me
        
     fac.seq <- function(fac, n.grid) {
@@ -139,8 +172,14 @@ fvisgam <- function(x, view = NULL, cond = list(),
         }
         mf
     }
+    # For simultaneous CI, n.grid needs to be at least 100, 
+    # otherwise the simulations for the simultaneous CI is not adequate
+    if (sim.ci==TRUE) { 
+        n.grid = max(n.grid,100) 
+    }
     dnm <- names(list(...))
     v.names <- names(x$var.summary)
+    zlab <- as.character(formula(x$terms)[2])  
     if (is.null(view)) {
         stop("Specify two view predictors for the x- and y-axis.")
     } else {
@@ -181,8 +220,8 @@ fvisgam <- function(x, view = NULL, cond = list(),
     }
     cond[[view[1]]] <- m1
     cond[[view[2]]] <- m2
-    newd <- get_predictions(x, cond=cond, se=ifelse(se>0, TRUE, FALSE), 
-        f=ifelse(se>0, se, 1.96), rm.ranef=rm.ranef,
+    newd <- get_predictions(x, cond=cond, se=TRUE, 
+        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, rm.ranef=rm.ranef,
         print.summary=print.summary)
     newd <- newd[order(newd[,view[1]], newd[, view[2]]),]
     # transform values x- and y-axes:
@@ -282,19 +321,19 @@ fvisgam <- function(x, view = NULL, cond = list(),
         surf.col <- surf.col/(max.z - min.z)
         surf.col <- round(surf.col * nCol)
         con.col <- 1
-        if (color == "heat") {
+        if (color[1] == "heat") {
             pal <- heat.colors(nCol)
             con.col <- 3
-        } else if (color == "topo") {
+        } else if (color[1] == "topo") {
             pal <- topo.colors(nCol)
             con.col <- 2
-        } else if (color == "cm") {
+        } else if (color[1] == "cm") {
             pal <- cm.colors(nCol)
             con.col <- 1
-        } else if (color == "terrain") {
+        } else if (color[1] == "terrain") {
             pal <- terrain.colors(nCol)
             con.col <- 2
-        } else if (color == "bpy") {
+        } else if (color[1] == "bpy") {
             if (requireNamespace("sp", quietly = TRUE)) {
                 pal <- sp::bpy.colors(nCol)
                 con.col <- 1
@@ -304,10 +343,17 @@ fvisgam <- function(x, view = NULL, cond = list(),
                 pal <- topo.colors(nCol)
                 con.col <- 2
             }
-        } else if (color == "gray" || color == "bw") {
+        } else if (color[1] == "gray" || color[1] == "bw") {
             pal <- gray(seq(0.1, 0.9, length = nCol))
             con.col <- 1
-        } else stop("color scheme not recognized")
+        }else {
+            if( all(plotfunctions::isColor(color)) ){
+                pal <- colorRampPalette(color)(nCol)
+                con.col <- 1
+            }else{
+                stop("color scheme not recognised")
+            }  
+        } 
         if (is.null(contour.col)) 
             contour.col <- con.col
         surf.col[surf.col < 1] <- 1
@@ -318,7 +364,7 @@ fvisgam <- function(x, view = NULL, cond = list(),
         if (plot.type == "contour") {
             stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
                 dnm, "", ",main=zlab"), ",...)", sep = "")
-            if (color != "bw") {
+            if (color[1] != "bw") {
                 txt <- paste("image(m1,m2,z,col=pal,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
                 txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z)", ifelse("add" %in% dnm, "", ",add=TRUE"), 
@@ -341,6 +387,9 @@ fvisgam <- function(x, view = NULL, cond = list(),
 	        			addlabel = paste(addlabel, "excl. random", sep=", ")
 	        		}
 	        	}
+                if(sim.ci==TRUE){
+                    addlabel = paste(addlabel, "simult.CI", sep=", ")
+                }
 	        	mtext(addlabel, side=4, line=0, adj=0, 
 	        		cex=.75, col='gray35', xpd=TRUE)
 	        	if(!is.null(transform)){
@@ -352,7 +401,7 @@ fvisgam <- function(x, view = NULL, cond = list(),
         }else{
              stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
                 dnm, "", ",main=zlab"), ",...)", sep = "")
-            if (color == "bw") {
+            if (color[1] == "bw") {
                 op <- par(bg = "white")
                 txt <- paste("persp(m1,m2,z,col=\"white\",zlim=c(min.z,max.z) ", stub, sep = "")
                 eval(parse(text = txt))
@@ -382,12 +431,16 @@ fvisgam <- function(x, view = NULL, cond = list(),
         z.fit <- newd$fit
         z.cil <- newd$fit - newd$CI
         z.ciu <- newd$fit + newd$CI
+        if(sim.ci==TRUE){
+            z.cil <- newd$fit - newd$sim.CI
+            z.ciu <- newd$fit + newd$sim.CI
+        }
         if(!is.null(transform)){
             z.fit <- sapply(z.fit, transform)
             z.cil <- sapply(z.cil, transform)
             z.ciu <- sapply(z.ciu, transform)
         }
-        if (color == "bw" || color == "gray") {
+        if (color[1] == "bw" || color[1] == "gray") {
             subs <- paste("grey are +/-", se, "s.e.")
             lo.col <- "gray"
             hi.col <- "gray"
@@ -434,6 +487,15 @@ fvisgam <- function(x, view = NULL, cond = list(),
         		mtext("transformed", side=4, line=.75, adj=0, 
         		cex=.75, col='gray35', xpd=TRUE)
         	}
+        }
+    }
+    if(plot.type=="contour" & show.diff==TRUE){
+        plot_signifArea(newd, view=view, predictor="fit", valCI="CI", col=col.diff, alpha=alpha.diff)
+        if(print.summary & se <= 0){
+            cat("\t* Note: Shaded areas indicate areas that include 0 within the 95%CI.\n")
+        }else if (print.summary & se > 0){
+        	cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI.\n", 
+        		round(2*pnorm(se)-1, 2)*100))
         }
     }
     invisible(list(fv = newd, m1 = m1, m2 = m2, zlim=c(min.z, max.z), too.far = ex.tf,
@@ -1305,15 +1367,29 @@ plot_parametric <- function(x, pred, cond = list(),
 #' Default is TRUE.
 #' @param n.grid  The number of grid nodes in each direction used for 
 #' calculating the plotted surface. 
-#' @param rug Logical: when TRUE (default) then the covariate to which the 
-#' plot applies is displayed as a rug plot at the foot of each plot of a 1-d 
-#' smooth. Setting to FALSE will speed up plotting for large datasets. 
+#' @param rug Logical: when TRUE then the covariate to which the 
+#' plot applies is displayed as a rug plot at the foot of each plot. 
+#' By default set to NULL, which sets rug to TRUE when 
+#' the dataset size is <= 10000 and FALSE otherwise.
+#' Setting to FALSE will speed up plotting for large datasets. 
 #' @param add Logical: whether or not to add the lines to an existing plot, or 
 #' start a new plot (default).
 #' @param se If less than or equal to zero then only the predicted surface is 
 #' plotted, but if greater than zero, then the predicted values plus 
-#' confidence intervals are plotted. The value of se will be multiplied with 
-#' the standard error (i.e., 1.96 results in 95\%CI and 2.58).
+#' confidence intervals are plotted. 
+#' The value of \code{se} will be multiplied with 
+#' the standard error (i.e., 1.96 results in 95\%CI and 2.58). 
+#' Default is set to 1.96 (95\%CI).
+#' @param sim.ci Logical: Using simultaneous confidence intervals or not 
+#' (default set to FALSE). The implementation of simultaneous CIs follows 
+#' Gavin Simpson's blog of December 15, 2016: 
+#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' This interval is calculated from simulations based. 
+#' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+#' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+#' covariance matrix of the parameters is uncertainty corrected 
+#' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+#' smoothness parameters.
 #' @param shade Logical: Set to TRUE to produce shaded regions as confidence 
 #' bands for smooths (not avaliable for parametric terms, which are plotted 
 #' using termplot).
@@ -1403,6 +1479,16 @@ plot_parametric <- function(x, pred, cond = list(),
 #' # (Note that this plot generates warning)
 #' plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"), cond=list(Subject="a01"))
 #'
+#' # Using sim.ci: simultaneous CI instead of pointwise CI
+#' dev.new(width=8, height=4) # use x11(,8,4) on Linux
+#' par(mfrow=c(1,2))
+#' plot_smooth(m2, view='Time', plot_all="Group", rm.ranef=TRUE)
+#' plot_smooth(m2, view='Time', rm.ranef=TRUE, plot_all="Group", sim.ci=TRUE, 
+#'     add=TRUE, shade=FALSE, xpd=TRUE)
+#' plot_smooth(m2, view='Time', rm.ranef=TRUE, sim.ci=TRUE, col='red')
+#' 
+#' 
+#' 
 #' # Using transform
 #' # Plot log-transformed dependent predictor on original scale:
 #' plot_smooth(m1, view="Time", rm.ranef=TRUE, transform=exp)
@@ -1413,6 +1499,7 @@ plot_parametric <- function(x, pred, cond = list(),
 #' # adjusting the x-axis helps:
 #' plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log,
 #'    xlim=c(1,2000))
+#' 
 #' }
 #'
 #' # and for a quick overview of plotfunctions:
@@ -1424,15 +1511,28 @@ plot_parametric <- function(x, pred, cond = list(),
 #' @family Functions for model inspection
 plot_smooth <- function(x, view = NULL, cond = list(), 
     plot_all=NULL, rm.ranef=NULL,
-    n.grid = 30, rug = TRUE, add=FALSE, 
-    se = 1.96, shade = TRUE, eegAxis=FALSE, 
+    n.grid = 30, rug = NULL, add=FALSE, 
+    se = 1.96, sim.ci=FALSE, shade = TRUE, eegAxis=FALSE, 
     col=NULL, lwd=NULL, lty=NULL,
     print.summary=getOption('itsadug_print'),
     main=NULL, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, h0=0, v0=NULL, 
     transform=NULL, transform.view=NULL, legend_plot_all=NULL, 
     hide.label=FALSE, ...) {
        
+    # For simultaneous CI, n.grid needs to be at least 200, 
+    # otherwise the simulations for the simultaneous CI is not adequate
+    if (sim.ci==TRUE) { 
+        n.grid = max(n.grid,200) 
+    }
+    if(is.null(rug)){
+        if(nrow(x$model) < 10000){
+            rug = TRUE
+        }else{
+            rug = FALSE
+        }
+    }
     v.names <- names(x$var.summary)
+    cond.data <- list()
     if (is.null(view)) {
         stop("Specify one view predictors for the x-axis.")
     } else {
@@ -1449,13 +1549,29 @@ plot_smooth <- function(x, view = NULL, cond = list(),
     }
     if(!is.null(cond)){
         cn <- names(cond)
-        test <- sapply(cn, function(x){
-            if(length(unique(cond[[x]]))>1){
-                stop("Do not specify more than 1 value for conditions listed in the argument cond.")
-            }else{
-                TRUE
-            }
+        # test <- sapply(cn, function(x){
+        #     if(length(unique(cond[[x]]))>1){
+        #         stop("Do not specify more than 1 value for conditions listed in the argument cond.")
+        #     }else{
+        #         TRUE
+        #     }
+        # })
+        test <- sapply(cn, function(y){
+        	# check predictors:
+        	if( ! y %in% v.names ){
+        		stop(paste(c("Cond predictor must be one of", v.names), collapse = ", "))
+        	}
+        	# check values:
+        	else if( inherits(x$var.summary[[y]], "factor") ){
+        		if( ! all(cond[[y]] %in% levels(x$var.summary[[y]])) ){
+        			stop( sprintf("Not all specified values for %s are found in the model data.",y))
+        		}
+        	}
+        	else{
+        		TRUE
+        	}
         })
+        cond.data <- cond
     }
     if(!is.null(plot_all)){
         if(!is.vector(plot_all)){
@@ -1465,7 +1581,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
             if(any(plot_all %in% names(cond))){
                 warning(sprintf("%s in cond and in plot_all. Not all levels are being plotted.",
                     paste(plot_all[plot_all %in% names(cond)], collapse=', ')))
-                plot_all <- plot_all[!plot_all %in% names(cond)]
+                # plot_all <- plot_all[!plot_all %in% names(cond)]
             }
             # check if plot_all are column names
             if(any(! plot_all %in% v.names)){
@@ -1476,7 +1592,14 @@ plot_smooth <- function(x, view = NULL, cond = list(),
             # check length:
             if(length(plot_all)>0){
                 for(i in plot_all){
-                    cond[[i]] <- unique(as.character(x$model[,i]))
+                	if( !i %in% names(cond) ){
+						if(! inherits( x$model[,i], c("factor") )){
+	                        cond[[i]] <- unique(x$model[,i])
+	                        warning(sprintf("Predictor %s is not a factor.", i))
+	                    }else{
+	                        cond[[i]] <- unique(as.character(x$model[,i]))
+	                    }
+                	}
                 }
             }else{
                 plot_all <- NULL
@@ -1494,7 +1617,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
     }
     cond[[view[1]]] <- m1
     newd <- get_predictions(x, cond=cond, se=ifelse(se>0, TRUE, FALSE), 
-        f=ifelse(se>0, se, 1.96), rm.ranef=rm.ranef,
+        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, rm.ranef=rm.ranef,
         print.summary=print.summary)
     if(se > 0){
         if(("ul" %in% names(newd)) |("ll" %in% names(newd))){
@@ -1502,6 +1625,10 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         }
         newd$ul <- with(newd, fit+CI)
         newd$ll <- with(newd, fit-CI)
+        if(sim.ci==TRUE){
+        	newd$ul <- with(newd, fit+sim.CI)
+        	newd$ll <- with(newd, fit-sim.CI)
+        }
         if(!is.null(transform)){
             newd$ul <- sapply(newd$ul, transform)
             newd$ll <- sapply(newd$ll, transform)
@@ -1524,13 +1651,14 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         if(print.summary){
             if(rug==TRUE){
                 rug=FALSE
-                cat("\t* Note: X-values are transformed, so no rug are printed.\n")
+                cat("\t* Note: X-values are transformed, no rug are printed.\n")
             }else{
                 cat("\t* Note: X-values are transformed.\n")
             }
         }
     }
-    if(is.null(main)){ main <- view[1] }
+    # default layout settings
+    if(is.null(main)){ main <- "" }
     if(is.null(xlab)){ xlab <- view[1] }
     if(is.null(ylab)){ ylab <- names(x$model)[!names(x$model) %in% v.names]}
     if(is.null(ylim)){ 
@@ -1550,15 +1678,18 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         lty = 1
     }
     if(add==FALSE){
-            emptyPlot(range(newd[,view[1]]), ylim,
-                main=main, xlab=xlab, ylab=ylab,
-                h0=h0, v0=v0, eegAxis=eegAxis, ...)
+        emptyPlot(range(newd[,view[1]]), ylim,
+            main=main, xlab=xlab, ylab=ylab,
+            h0=h0, v0=v0, eegAxis=eegAxis, ...)
         if(hide.label==FALSE){
             addlabel = "fitted values"
             if(!is.null(rm.ranef)){
                 if(rm.ranef !=FALSE){
                     addlabel = paste(addlabel, "excl. random", sep=", ")
                 }
+            }
+            if(sim.ci==TRUE){
+                addlabel = paste(addlabel, "simult.CI", sep=", ")
             }
             mtext(addlabel, side=4, line=0, adj=0, 
                 cex=.75, col='gray35', xpd=TRUE)
@@ -1588,6 +1719,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         ltys = 1
         lwds = 1
         tmpname <- plot_all
+        newd <- droplevels(newd)
         if(length(plot_all)>1){
             tmpname <- sub("/", "", tempfile(pattern = "event", 
                 tmpdir = "plotsmooth", fileext = ""), fixed=TRUE)
@@ -1595,6 +1727,10 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         }
         alllevels <- length(levels(newd[,tmpname]))
         plotlevels <- levels(newd[,tmpname])
+        if(is.null(plotlevels)){
+            alllevels <- length(unique(newd[,tmpname]))
+            plotlevels <- unique(newd[,tmpname])
+        }
         cols=rainbow(alllevels)
         ltys=rep(1, alllevels)
         lwds=rep(1, alllevels)
@@ -1608,21 +1744,21 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         }
         if(!is.null(lty)){
             if(length(lty) < alllevels){
-                cols = rep(lty, ceiling(alllevels/length(lty)))
+                ltys = rep(lty, ceiling(alllevels/length(lty)))
             }else{
-                cols = lty
+                ltys = lty
             }
         }
         if(!is.null(lwd)){
             if(length(lwd) < alllevels){
-                cols = rep(lwd, ceiling(alllevels/length(lwd)))
+                lwds = rep(lwd, ceiling(alllevels/length(lwd)))
             }else{
-                cols = lwd
+                lwds = lwd
             }
         }
             
         cnt <- 1
-        for(i in levels(newd[,tmpname])){
+        for(i in plotlevels){
             if(se > 0){
                 plot_error(newd[newd[,tmpname]==i,view[1]], 
                     newd[newd[,tmpname]==i,]$fit, 
@@ -1649,6 +1785,16 @@ plot_smooth <- function(x, view = NULL, cond = list(),
                 text.font=2,
                 xjust=1, yjust=1,
                 bty='n', xpd=TRUE)
+        }else if( is.logical(legend_plot_all) ){
+            if(legend_plot_all ==  TRUE){
+                gfc <- getFigCoords()
+                legend(gfc[2], gfc[4],
+                    legend=plotlevels,
+                    text.col=cols,
+                    text.font=2,
+                    xjust=1, yjust=1,
+                    bty='n', xpd=TRUE)
+            }
         }else{
             legend(legend_plot_all,
                 legend=plotlevels,
@@ -1704,6 +1850,8 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #' @param bg The background color of the points.
 #' @param xlab Label x-axis. Default excluded.
 #' @param ylab Label y-axis. Default excluded.
+#' @param setmargins Logical: whether or not to automatically set the margins. 
+#' By default set to TRUE. If set to false, the size can 
 #' @param ... other options to pass on to \code{\link{fvisgam}},  
 #' \code{\link{pvisgam}}, or \code{\link{plot_diff2}}. 
 #' @section Notes:
@@ -1725,6 +1873,8 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #' # topo plot, by default uses fvisgam 
 #' # and automatically selects a timestamp (270ms):
 #' plot_topo(m1, view=c("X", "Y"))
+#' # or:
+#' plot_topo(m1, view=c("X", "Y"), setmargins=FALSE, size=1)
 #' 
 #' # add electrodes:
 #' electrodes <- eeg[,c('X','Y','Electrode')]
@@ -1776,17 +1926,24 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam', 
 	add.color.legend=TRUE, 
 	size=5, n.grid=100, col=1, pch=21, bg=alpha(1), 
-	color='topo', xlab="", ylab="", ...){
+	color='topo', xlab="", ylab="", 
+	setmargins=TRUE, ...){
 	# save old settings
 	oldpar =  list(mai=par()$mai, pin=par()$pin,
+		mar=par()$mar,
 		xaxt = par()$xaxt, yaxt = par()$yaxt,
 		bty = par()$bty)
-	# if( !is.null( names(dev.list()) )){
-	# 	if(round( par()$fin[1], 4) != round( par()$fin[2], 4)){
-	# 		dev.new(width=size, height=size)
-	# 	}
-	# }
-	par(pin=c(size,size), mai=rep(.5,4), xaxt='n', yaxt='n', bty='n')
+	
+	if( is.null( names(dev.list()) ) & (setmargins==TRUE)){
+		if(round( par()$fin[1], 4) != round( par()$fin[2], 4)){
+			dev.new(width=size, height=size)
+		}
+	}
+	if(setmargins){
+		par(pin=c(size,size), mai=rep(.5,4), xaxt='n', yaxt='n', bty='n')
+	}else{
+		par(pin=c(size,size), xaxt='n', yaxt='n', bty='n')
+	}
 	# range X
 	r.x <- range(model$model[,view[1]])
 	# range Y
@@ -1842,11 +1999,20 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 		gradientLegend(round(pp$zlim,3), color=color, pos=0.125, side=1, inside=FALSE)
 	}
 	
-	for(i in names(oldpar)){
-		eval(parse(text=sprintf("par(%s=%s)", i, 
-			ifelse(is.character(oldpar[[i]]), 
-				sprintf("'%s'", oldpar[[i]]), 
-				sprintf("c(%s)", paste(oldpar[[i]], collapse=","))))))
+	if(setmargins){
+		for(i in names(oldpar)){
+			eval(parse(text=sprintf("par(%s=%s)", i, 
+				ifelse(is.character(oldpar[[i]]), 
+					sprintf("'%s'", oldpar[[i]]), 
+					sprintf("c(%s)", paste(oldpar[[i]], collapse=","))))))
+		}		
+	}else{
+		for(i in c("pin", "xaxt", "yaxt", "bty")){
+			eval(parse(text=sprintf("par(%s=%s)", i, 
+				ifelse(is.character(oldpar[[i]]), 
+					sprintf("'%s'", oldpar[[i]]), 
+					sprintf("c(%s)", paste(oldpar[[i]], collapse=","))))))
+		}
 	}
 }
 
@@ -1894,7 +2060,8 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' predictor variables are excluded.
 #' @param col The colors for the facets of the plot.
 #' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". 
+#' "cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+#' can be provided for a custom color palette (see examples).
 #' @param contour.col sets the color of contours when using plot.
 #' @param add.color.legend Logical: whether or not to add a color legend. 
 #' Default is TRUE. If FALSE (omitted), one could use the function
@@ -1903,8 +2070,6 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' plotted, but if greater than zero, then 3 surfaces are plotted, one at the 
 #' predicted values minus se standard errors, one at the predicted values and 
 #' one at the predicted values plus se standard errors.
-#' @param type "link" to plot on linear predictor scale and "response" to plot 
-#' on the response scale.
 #' @param plot.type one of "contour" or "persp" (default is "contour").
 #' @param zlim A two item array giving the lower and upper limits for the z-
 #' axis scale. NULL to choose automatically.
@@ -1923,18 +2088,35 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' When NULL (default), no rounding. If -1 the values are automatically determined. 
 #' Note: if value = -1 (default), rounding will be applied also when 
 #' \code{zlim} is provided.
+#' @param show.diff Logical: whether or not to indicate the regions that 
+#' are significantly different from zero. Note that these regions are just 
+#' an indication and dependent on the value of \code{n.grid}. 
+#' Defaults to FALSE.
+#' @param col.diff Color to shade the nonsignificant areas.
+#' @param alpha.diff Level of transparency to mark the nonsignificant areas.
 #' @param ... other options to pass on to persp, image or contour. In 
 #' particular ticktype="detailed" will add proper axes labeling to the plots.
 #' @section Warnings:
-#' In contrast to vis.gam, do not specify other predictors in \code{cond} that 
+#' \itemize{
+#' \item In contrast to vis.gam, do not specify other predictors in \code{cond} that 
 #' are not to be plotted.
+#' \item When the argument \code{show.diff} is set to TRUE a shading area indicates 
+#' where the confidence intervals include zero. Or, in other words, the areas 
+#' that are not significantly different from zero. Be careful with the 
+#' interpretation, however, as the precise shape of the surface is dependent 
+#' on model constraints such as the value of \code{\link[mgcv]{choose.k}} and the 
+#' smooth function used, and the size of the confidence intervals are 
+#' dependent on the model fit and model characteristics 
+#' (see \code{vignette('acf', package='itsadug')}). In addition, the value of 
+#' \code{n.grid} determines the precision of the plot.
+#' }
 #' @examples
 #' data(simdat)
 #' 
 #' \dontrun{
 #' # Model with random effect and interactions:
 #' m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
-#'     data=simdat)
+#'     data=simdat, discrete=TRUE)
 #'
 #' # Plot summed effects:
 #' vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
@@ -1946,6 +2128,10 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' # Alternatives:
 #' pvisgam(m1, view=c("Trial", "Time"), select=1)
 #' pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20))
+#' pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
+#'     color="terrain")
+#' pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
+#'     color=c("blue", "white", "red"))
 #'
 #' # Notes on the color legend:
 #' # Labels can easily fall off the plot, therefore the numbers are 
@@ -1971,10 +2157,11 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30, 
     too.far = 0, col = NA, color = "topo", contour.col = NULL, 
     add.color.legend=TRUE,
-    se = -1, type = "link", plot.type = "contour", zlim = NULL, 
+    se = -1, plot.type = "contour", zlim = NULL, 
     xlim=NULL, ylim=NULL,
     nCol = 50, labcex=.6, hide.label=FALSE,
     print.summary=getOption('itsadug_print'),
+    show.diff=FALSE, col.diff=1, alpha.diff=.5,
     dec=NULL,...) {
     
     # This modfication of vis.gam allows the user to specify one condition to plot as partial effect surface.  Use: 1)
@@ -2097,14 +2284,7 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
     names(newd) <- v.names
     newd[[view[1]]] <- v1
     newd[[view[2]]] <- v2
-    if (type == "link") {
-        zlab <- paste("linear predictor")
-    } else if (type == "response") {
-        zlab <- type
-    } else stop("type must be \"link\" or \"response\"")
-    
-    # -------------------------------------------- NEW:
-    
+    zlab <- as.character(formula(x$terms)[2])  
     X1 <- mgcv::predict.gam(x, newdata = newd, type = "terms", se.fit = TRUE)
     
     fv <- NULL
@@ -2153,7 +2333,6 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
             }
         }
         
-        
         if (length(colnamesX1) == 1) {
             fv <- data.frame(fit = X1$fit[, colnamesX1])
             fv$se.fit <- X1$se.fit[, colnamesX1]
@@ -2166,13 +2345,18 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         }
     }
     
-    # END NEW --------------------------------------------
-    
     z <- fv$fit
+    too.far.raster <- rep(alpha('white', f=0), nrow(fv))
     if (too.far > 0) {
         ex.tf <- mgcv::exclude.too.far(v1, v2, x$model[, view[1]], x$model[, view[2]], dist = too.far)
-        fv$se.fit[ex.tf] <- fv$fit[ex.tf] <- NA
+        # fv$se.fit[ex.tf] <- fv$fit[ex.tf] <- NA
+        fv.toofar <- fv
+        fv.toofar$se.fit[ex.tf] <- fv.toofar$fit[ex.tf] <- NA
+        too.far.raster[ex.tf] <- 'white'
     }
+    # raster images are row-first, in contrast to images...
+    too.far.raster <- matrix(too.far.raster, byrow=FALSE, n.grid, n.grid)
+    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1,])
     if (is.factor(m1)) {
         m1 <- as.numeric(m1)
         m1 <- seq(min(m1) - 0.5, max(m1) + 0.5, length = n.grid)
@@ -2181,7 +2365,7 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         m2 <- as.numeric(m2)
         m2 <- seq(min(m1) - 0.5, max(m2) + 0.5, length = n.grid)
     }
-    if (se <= 0) {
+    # if (se <= 0) {
         old.warn <- options(warn = -1)
         av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), n.grid, n.grid - 1)
         options(old.warn)
@@ -2219,19 +2403,19 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         surf.col <- surf.col/(max.z - min.z)
         surf.col <- round(surf.col * nCol)
         con.col <- 1
-        if (color == "heat") {
+        if (color[1] == "heat") {
             pal <- heat.colors(nCol)
             con.col <- 3
-        } else if (color == "topo") {
+        } else if (color[1] == "topo") {
             pal <- topo.colors(nCol)
             con.col <- 2
-        } else if (color == "cm") {
+        } else if (color[1] == "cm") {
             pal <- cm.colors(nCol)
             con.col <- 1
-        } else if (color == "terrain") {
+        } else if (color[1] == "terrain") {
             pal <- terrain.colors(nCol)
             con.col <- 2
-        } else if (color == "bpy") {
+        } else if (color[1] == "bpy") {
             if (requireNamespace("sp", quietly = TRUE)) {
                 pal <- sp::bpy.colors(nCol)
                 con.col <- 1
@@ -2241,10 +2425,17 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
                 pal <- topo.colors(nCol)
                 con.col <- 2
             }
-        } else if (color == "gray" || color == "bw") {
+        } else if (color[1] == "gray" || color[1] == "bw") {
             pal <- gray(seq(0.1, 0.9, length = nCol))
             con.col <- 1
-        } else stop("color scheme not recognised")
+        } else {
+            if( all(plotfunctions::isColor(color)) ){
+                pal <- colorRampPalette(color)(nCol)
+                con.col <- 1
+            }else{
+                stop("color scheme not recognised")
+            }  
+        }
         if (is.null(contour.col)) 
             contour.col <- con.col
         surf.col[surf.col < 1] <- 1
@@ -2252,10 +2443,11 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         if (is.na(col)) 
             col <- pal[as.array(surf.col)]
         z <- matrix(fv$fit, n.grid, n.grid)
+    if (se <= 0) {
         if (plot.type == "contour") {
             stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
                 dnm, "", ",main=zlab"), ",...)", sep = "")
-            if (color != "bw") {
+            if (color[1] != "bw") {
                 txt <- paste("image(m1,m2,z,col=pal,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
                 txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z), labcex=labcex", ifelse("add" %in% dnm, "", ",add=TRUE"), 
@@ -2265,6 +2457,8 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
                 txt <- paste("contour(m1,m2,z,col=1,zlim=c(min.z,max.z), labcex=labcex", stub, sep = "")
                 eval(parse(text = txt))
             }
+            gfc <- getFigCoords('p')
+            rasterImage(too.far.raster, xleft=gfc[1], xright=gfc[2], ybottom=gfc[3], ytop=gfc[4])
             if(add.color.legend){
                 gradientLegend(round(c(min.z, max.z), 3), n.seg=3, pos=.875, color=pal, dec=dec)
             }
@@ -2292,7 +2486,9 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
             }                      
         }
     } else {
-        if (color == "bw" || color == "gray") {
+        # lo.col <- hi.col <- NULL
+        # z.min <- z.max <- NULL
+        if (color[1] == "bw" || color[1] == "gray") {
             subs <- paste("grey are +/-", se, "s.e.")
             lo.col <- "gray"
             hi.col <- "gray"
@@ -2300,6 +2496,7 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
             subs <- paste("red/green are +/-", se, "s.e.")
             lo.col <- "green"
             hi.col <- "red"
+            con.col <- 'black'
         }
         if (!is.null(zlim)) {
             if (length(zlim) != 2 || zlim[1] >= zlim[2]) 
@@ -2313,25 +2510,52 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         zlim <- c(z.min, z.max)
         z <- fv$fit - fv$se.fit * se
         z <- matrix(z, n.grid, n.grid)
-        if (plot.type == "contour") 
-            warning("sorry no option for contouring with errors: try plot.gam")
-        stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("zlab" %in% 
-            dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, sep = "")
-        eval(parse(text = txt))
-        par(new = TRUE)
-        z <- fv$fit
-        z <- matrix(z, n.grid, n.grid)
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), stub, sep = "")
-        eval(parse(text = txt))
-        par(new = TRUE)
-        z <- fv$fit + se * fv$se.fit
-        z <- matrix(z, n.grid, n.grid)
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, sep = "")
-        eval(parse(text = txt))
+        if (plot.type == "contour"){
+            zlim <- c(z.min, z.max)
+            z.max <- max(fv$fit, na.rm = TRUE)
+            z.min <- min(fv$fit, na.rm = TRUE)
+            newd <- data.frame(fit=fv$fit,
+                se.fit = fv$se.fit,
+                XX1 = rep(m1, n.grid),
+                XX2 = rep(m2, each=n.grid))
+            names(newd)[3:4] = view
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
+                dnm, "", ",main=zlab"), ",...)", sep = "")
+            txt <- paste("plotsurface(newd, view=view, predictor='fit', valCI='se.fit', color=pal, col=con.col, ci.col=c(lo.col, hi.col), zlim=c(z.min,z.max)", stub, sep = "")
+            eval(parse(text = txt))
+        }else{
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("zlab" %in% 
+                dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
+            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, sep = "")
+            eval(parse(text = txt))
+            par(new = TRUE)
+            z <- fv$fit
+            z <- matrix(z, n.grid, n.grid)
+            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), stub, sep = "")
+            eval(parse(text = txt))
+            par(new = TRUE)
+            z <- fv$fit + se * fv$se.fit
+            z <- matrix(z, n.grid, n.grid)
+            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, sep = "")
+            eval(parse(text = txt))
+        }
         if(hide.label==FALSE){
             mtext("partial effect", side=4, line=0, adj=0, 
                 cex=.75, col='gray35', xpd=TRUE)
+        }
+    }
+    if(show.diff==TRUE){
+        if(plot.type=="contour"){
+            newd$CI <- se*fv$se.fit
+            plot_signifArea(newd, view=view, predictor="fit", valCI="CI", col=col.diff, alpha=alpha.diff)
+            if(print.summary & se <= 0){
+                cat("\t* Note: Shaded areas indicate areas that include 0 within the 95%CI.\n")
+            }else if (print.summary & se > 0){
+                cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI.\n", 
+                    round(2*pnorm(se)-1, 2)*100))
+            }
+        }else{
+            warning("show.diff is only implemented for contour plots (plot.type=='contour').")
         }
     }
     invisible(list(fv = fv, m1 = m1, m2 = m2, zlim=c(min.z,max.z)))

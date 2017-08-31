@@ -53,13 +53,12 @@ x <- find_difference(avg$x[,'mean'], avg$x[,'sd'], xVals=avg$Time)
 abline(v=c(x$start, x$end), lty=3, col='red')
 arrows(x0=x$start, x1=x$end, y0=-5, y1=-5, code=3, length=.1, col='red')
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
   \code{\link{diff_terms}}, \code{\link{missing_est}},
   \code{\link{print_summary}}, \code{\link{summary_data}},
   \code{\link{timeBins}}
 }
-
+\author{
+Jacolien van Rij
+}

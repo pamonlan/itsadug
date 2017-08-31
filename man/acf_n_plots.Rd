@@ -103,9 +103,6 @@ acf_n_plots(simdat$res, split_by=list(simdat$Subject, simdat$Trial))
 # see the vignette for examples:
 vignette("acf", package="itsadug")
 }
-\author{
-Jacolien van Rij, R. Harald Baayen
-}
 \seealso{
 Use \code{\link[stats]{acf}} for the original ACF function, 
 and \code{\link{acf_plot}} for an ACF that takes into account time series 
@@ -116,4 +113,6 @@ Other functions for model criticism: \code{\link{acf_plot}},
   \code{\link{resid_gam}}, \code{\link{start_event}},
   \code{\link{start_value_rho}}
 }
-
+\author{
+Jacolien van Rij, R. Harald Baayen
+}

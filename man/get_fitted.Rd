@@ -51,13 +51,12 @@ head(get_fitted(m1, rm.ranef=TRUE))
 infoMessages("on")
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Model predictions: \code{\link{get_coefs}},
   \code{\link{get_difference}},
   \code{\link{get_modelterm}},
   \code{\link{get_predictions}}, \code{\link{get_random}}
 }
-
+\author{
+Jacolien van Rij
+}

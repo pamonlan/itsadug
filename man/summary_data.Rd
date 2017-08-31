@@ -25,13 +25,12 @@ Similar to the function \code{\link[utils]{str}}, but easier readable.
 data(simdat)
 summary_data(simdat)
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
   \code{\link{diff_terms}}, \code{\link{find_difference}},
   \code{\link{missing_est}}, \code{\link{print_summary}},
   \code{\link{timeBins}}
 }
-
+\author{
+Jacolien van Rij
+}

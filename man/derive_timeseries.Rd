@@ -41,13 +41,12 @@ acf_resid(m1, split_pred=list(Event=simdat$Event))
 acf_resid(m1, split_pred="AR.start")
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other functions for model criticism: \code{\link{acf_n_plots}},
   \code{\link{acf_plot}}, \code{\link{acf_resid}},
   \code{\link{resid_gam}}, \code{\link{start_event}},
   \code{\link{start_value_rho}}
 }
-
+\author{
+Jacolien van Rij
+}

@@ -48,9 +48,6 @@ rhom1 <- start_value_rho(m1, plot=TRUE)
 # see the vignette for examples:
 vignette("acf", package="itsadug")
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Use \code{\link[stats]{acf}} for the original ACF function, 
 and \code{\link{acf_plot}}, or \code{\link{acf_resid}}.
@@ -60,4 +57,6 @@ Other functions for model criticism: \code{\link{acf_n_plots}},
   \code{\link{derive_timeseries}}, \code{\link{resid_gam}},
   \code{\link{start_event}}
 }
-
+\author{
+Jacolien van Rij
+}

@@ -4,8 +4,9 @@
 \alias{get_predictions}
 \title{Get model predictions for specific conditions.}
 \usage{
-get_predictions(model, cond = NULL, se = TRUE, f = 1.96,
-  rm.ranef = NULL, print.summary = getOption("itsadug_print"))
+get_predictions(model, cond = NULL, rm.ranef = NULL, se = TRUE,
+  sim.ci = FALSE, f = 1.96, return.n.posterior = 0,
+  print.summary = getOption("itsadug_print"))
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -15,16 +16,34 @@ get_predictions(model, cond = NULL, se = TRUE, f = 1.96,
 Variables omitted from this list will have the closest observed value to 
 the median for continuous variables, or the reference level for factors.}
 
+\item{rm.ranef}{Logical: whether or not to remove random effects. 
+Default is FALSE. Alternatively a vector with numbers (modelterms) 
+of the random effect(s) to remove.}
+
 \item{se}{Logical: whether or not to return the confidence interval or 
 standard error around the estimates.}
+
+\item{sim.ci}{Logical: Using simultaneous confidence intervals or not 
+(default set to FALSE). The implementation of simultaneous CIs follows 
+Gavin Simpson's blog of December 15, 2016: 
+\url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+This interval is calculated from simulations based. 
+Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
+In addition, make sure to specify at least 200 points for each smooth 
+for the simulations when using simultaneous CI.
+Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
+covariance matrix of the parameters is uncertainty corrected 
+(\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
+smoothness parameters.}
 
 \item{f}{A number to scale the standard error. Defaults to 1.96, resulting 
 in 95\% confidence intervals. For 99\% confidence intervals use a value of 
 2.58.}
 
-\item{rm.ranef}{Logical: whether or not to remove random effects. 
-Default is FALSE. Alternatively a vector with numbers (modelterms) 
-of the random effect(s) to remove.}
+\item{return.n.posterior}{Numeric: N samples from 
+the posterior distribution of the fitted model are returned. 
+Default value is 0 (no samples returned). 
+Only workes when \code{sim.ci=TRUE}.}
 
 \item{print.summary}{Logical: whether or not to print a summary of the 
 values selected for each predictor. 
@@ -61,15 +80,30 @@ pp <- get_predictions(m1,
 # plot of predictions that are not supported by data:
 emptyPlot(c(-500,0), range(pp$fit), h=0)
 plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE) 
-}
+
+m2 <- bam(Y ~ Group + s(Time, by=Group)
+    + s(Time, Subject, bs='fs', m=1), 
+    data=simdat, discrete=TRUE)
+# Simultaneous CI vs pointwise CI
+# NOTE: USE AT LEST 200 DATAPOINTS FOR SIMULTANEOUS CI
+pp <- get_predictions(m2, 
+    cond=list(Group="Adults", Time=seq(0,2000,length=200)), 
+    rm.ranef=TRUE, sim.ci=TRUE)
+head(pp)
+# plot:
+emptyPlot(2000, range(pp$fit), h=0)
+plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE)
+plot_error(pp$Time, pp$fit, pp$sim.CI, shade=FALSE, col=2, xpd=TRUE)
+
 
 }
-\author{
-Jacolien van Rij
+
 }
 \seealso{
 Other Model predictions: \code{\link{get_coefs}},
   \code{\link{get_difference}}, \code{\link{get_fitted}},
   \code{\link{get_modelterm}}, \code{\link{get_random}}
 }
-
+\author{
+Jacolien van Rij
+}

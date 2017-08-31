@@ -28,4 +28,3 @@ infoMessages(FALSE)
 \seealso{
 Other Functions for package use: \code{\link{info}}
 }
-

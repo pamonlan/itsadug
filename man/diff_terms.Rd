@@ -26,13 +26,12 @@ gam2 <- bam(Y ~ Group+s(Time), data=simdat)
 diff_terms(gam1, gam2)
 
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
   \code{\link{find_difference}}, \code{\link{missing_est}},
   \code{\link{print_summary}}, \code{\link{summary_data}},
   \code{\link{timeBins}}
 }
-
+\author{
+Jacolien van Rij
+}

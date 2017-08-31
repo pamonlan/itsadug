@@ -62,6 +62,7 @@ considered as parametric terms. If \code{cond} does not specify a value for
 these continuous predictors, the closes value to the mean is automatically  
 selected.
 }
+
 \examples{
 data(simdat)
 \dontrun{
@@ -83,9 +84,6 @@ print(out)
 # see the vignette for examples:
 vignette("overview", package="itsadug")
 }
-\author{
-Jacolien van Rij, based on a function of Fabian Tomaschek
-}
 \seealso{
 \code{\link[mgcv]{plot.gam}}
 
@@ -94,4 +92,6 @@ Other Functions for model inspection: \code{\link{fvisgam}},
   \code{\link{plot_data}}, \code{\link{plot_smooth}},
   \code{\link{plot_topo}}, \code{\link{pvisgam}}
 }
-
+\author{
+Jacolien van Rij, based on a function of Fabian Tomaschek
+}

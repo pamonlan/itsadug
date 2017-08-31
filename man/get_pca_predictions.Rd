@@ -98,12 +98,11 @@ plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"],
     view=c("Time", "Trial"), cond=list(Group="Children"),rm.ranef=TRUE)
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 \code{plot_pca_surface}, \code{\link[stats]{prcomp}}
 
 Other Functions for PCA interpretation: \code{\link{plot_pca_surface}}
 }
-
+\author{
+Jacolien van Rij
+}

@@ -27,13 +27,12 @@ na.el <- missing_est(lm1)
 length(na.el)
 
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
   \code{\link{diff_terms}}, \code{\link{find_difference}},
   \code{\link{print_summary}}, \code{\link{summary_data}},
   \code{\link{timeBins}}
 }
-
+\author{
+Jacolien van Rij
+}

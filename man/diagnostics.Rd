@@ -43,6 +43,7 @@ See examples below.
   \item Printing distributions of numeric predictors.
 }
 }
+
 \examples{
 
 data(simdat)
@@ -89,11 +90,10 @@ diagnostics(m5, plot=5, ask=FALSE)
 
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Model evaluation: \code{\link{check_resid}},
   \code{\link{plot_modelfit}}
 }
-
+\author{
+Jacolien van Rij
+}

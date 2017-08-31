@@ -49,6 +49,7 @@ mean of all time series.
 }
 See the examples on how to specify a selection of these plots.
 }
+
 \examples{
 data(simdat)
 
@@ -82,11 +83,10 @@ check_resid(m1, split_pred="AR.start", ask=FALSE)
 }
 
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Model evaluation: \code{\link{diagnostics}},
   \code{\link{plot_modelfit}}
 }
-
+\author{
+Jacolien van Rij
+}

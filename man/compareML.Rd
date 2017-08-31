@@ -4,8 +4,8 @@
 \alias{compareML}
 \title{Function for comparing two GAMM models.}
 \usage{
-compareML(model1, model2, signif.stars = TRUE,
-  print.output = getOption("itsadug_print"))
+compareML(model1, model2, signif.stars = TRUE, suggest.report = FALSE,
+  print.output = TRUE)
 }
 \arguments{
 \item{model1}{First model.}
@@ -15,11 +15,16 @@ compareML(model1, model2, signif.stars = TRUE,
 \item{signif.stars}{Logical (default = TRUE). Whether or not to display 
 stars indicating the level of significance on 95\% confidence level.}
 
+\item{suggest.report}{Logical (default = FALSE). Whether or not to 
+present a suggestion on how one could report the information. If 
+\code{print.output} is set to FALSE, \code{suggest.report} will 
+set to FALSE too. Please inspect yourself whether the label between 
+square bracket fits your own standards. Note: the \code{X2} should be 
+replaced by a proper Chi-Square symbol \eqn{\chi^2}{}.}
+
 \item{print.output}{Logical: whether or not to print the output. 
-By default controlled globally in the package options:  
-If the function \code{\link{infoMessages}} is set to TRUE, the output 
-will be automatically printed.
-Could be also set by explicitly providing TRUE or FALSE. See notes.}
+By default set to true, even if the the messages are not allowed by 
+a global package option using the function \code{\link{infoMessages}}.}
 }
 \value{
 Optionally returns the Chi-Square test table.
@@ -52,12 +57,12 @@ Model comparison is only implemented for the methods GCV, fREML, REML, and ML.
 }
 \section{Notes}{
 
-If no output is provided in the command window, set info messages to TRUE: 
-\code{infoMessages("on")} and try again.
 For suppressing the output and all warnings, set infoMessages to FALSE 
-(\code{infoMessages("on")} ) and use the function 
+(\code{infoMessages("off")} ), set the argument \code{print.output} to FALSE,
+and use the function 
 \code{\link{suppressWarnings}} to suppress warning messages.
 }
+
 \examples{
 data(simdat)
 
@@ -79,18 +84,11 @@ compareML(m1, m3)
 # do not print output, but save table for later use:
 cml <- compareML(m1, m2, print.output=FALSE)$table
 cml
-# alternative way:
-infoMessages('off')
-cml <- compareML(m1, m2, print.output=FALSE)$table
-infoMessages('on')
 
 # Use suppressWarnings to also suppress warnings:
 suppressWarnings(cml <- compareML(m1, m2, print.output=FALSE)$table)
 
 }
-}
-\author{
-Jacolien van Rij. With many thanks to Simon N. Wood for his feedback.
 }
 \seealso{
 For models without AR1 model or random effects \code{\link{AIC}} can be used.
@@ -99,4 +97,6 @@ Other Testing for significance: \code{\link{plot_diff2}},
   \code{\link{plot_diff}}, \code{\link{report_stats}},
   \code{\link{wald_gam}}
 }
-
+\author{
+Jacolien van Rij. With many thanks to Simon N. Wood for his feedback.
+}

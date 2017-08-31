@@ -95,7 +95,7 @@
 #'
 #' Maintainer: Jacolien van Rij (\email{vanrij.jacolien@gmail.com})
 #'
-#' University of Groningen, The Netherlands & University of Tuebingen, Germany
+#' University of Groningen, The Netherlands
 #' @docType package
 #' @name itsadug
 NULL
@@ -145,7 +145,7 @@ infoMessages <- function(input){
   	options(itsadug_print=TRUE)
   }
   if(getOption('itsadug_print')){
-  	packageStartupMessage('Loaded package itsadug 2.2 (see \'help("itsadug")\' ).')
+  	packageStartupMessage('Loaded package itsadug 2.3 (see \'help("itsadug")\' ).')
   }
 }
 

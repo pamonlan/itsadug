@@ -51,7 +51,7 @@ We start with a somewhat weird model, for illustration purposes. We would like t
 ```{r}
 simdat$Condition <- as.factor(simdat$Condition)
 # Note: this is really not the best fitting model for the data:
-m1 <- bam(Y ~ Group * Condition + s(Time) + s(Trial) + ti(Time, Trial) + s(Time, Subject, bs='fs', m=1, k=5), data=simdat)
+m1 <- bam(Y ~ Group * Condition + s(Time) + s(Trial) + ti(Time, Trial) + s(Time, Subject, bs='fs', m=1, k=5), data=simdat, discrete=TRUE)
 ```
 
 The summary shows two parts: the first summary are the parametric terms, i.e., the 'linear' part, and the second summary presents the nonlinear smooths. 

@@ -52,10 +52,9 @@ rug_model(m1, view="Time", cond=list(Group="Adults"))
 rug_model(m1, view="Trial", cond=list(Group="Adults"), side=2)
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Functions for plotting: \code{\link{fadeRug}}
 }
-
+\author{
+Jacolien van Rij
+}

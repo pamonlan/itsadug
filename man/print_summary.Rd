@@ -14,13 +14,12 @@ print_summary(sumlist, title = NULL)
 \description{
 Print a named list of strings, output from \code{\link{summary_data}}.
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
   \code{\link{diff_terms}}, \code{\link{find_difference}},
   \code{\link{missing_est}}, \code{\link{summary_data}},
   \code{\link{timeBins}}
 }
-
+\author{
+Jacolien van Rij
+}

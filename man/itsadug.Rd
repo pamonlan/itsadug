@@ -109,11 +109,11 @@ HTML files available.
 \code{help(package="itsadug")}.
 }
 }
+
 \author{
 Jacolien van Rij, Martijn Wieling, R.Harald Baayen, Hedderik van Rijn
 
 Maintainer: Jacolien van Rij (\email{vanrij.jacolien@gmail.com})
 
-University of Groningen, The Netherlands & University of Tuebingen, Germany
+University of Groningen, The Netherlands
 }
-

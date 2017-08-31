@@ -34,13 +34,12 @@ head(simdat)
 simdat$Timebin2 <- timeBins(simdat$Time, 200, pos=0)
 head(simdat)
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Utility functions: \code{\link{convertNonAlphanumeric}},
   \code{\link{diff_terms}}, \code{\link{find_difference}},
   \code{\link{missing_est}}, \code{\link{print_summary}},
   \code{\link{summary_data}}
 }
-
+\author{
+Jacolien van Rij
+}

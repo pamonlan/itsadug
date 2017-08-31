@@ -89,6 +89,7 @@ of the same participant.
 This function plots the fitted effects, including intercept and other 
 predictors.
 }
+
 \examples{
 data(simdat)
 
@@ -129,11 +130,10 @@ plot_modelfit(m3, view="Time", event=simdat$Event,
     cond=list(Subject="a01"), n=-1, ylim=c(-13,13))
 }
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Other Model evaluation: \code{\link{check_resid}},
   \code{\link{diagnostics}}
 }
-
+\author{
+Jacolien van Rij
+}

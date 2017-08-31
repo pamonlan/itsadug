@@ -82,9 +82,6 @@ acf_resid(m3, split_pred=c("Subject", "Trial"))
 # see the vignette for examples:
 vignette("acf", package="itsadug")
 }
-\author{
-Jacolien van Rij
-}
 \seealso{
 Use \code{\link[stats]{acf}} for the original ACF function, 
 and \code{\link{acf_plot}}, or \code{\link{acf_n_plots}}.
@@ -94,4 +91,6 @@ Other functions for model criticism: \code{\link{acf_n_plots}},
   \code{\link{resid_gam}}, \code{\link{start_event}},
   \code{\link{start_value_rho}}
 }
-
+\author{
+Jacolien van Rij
+}
