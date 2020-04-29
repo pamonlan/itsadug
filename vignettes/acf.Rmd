@@ -222,7 +222,7 @@ Different functions can be applied, including `median`, `sd`, and custom functio
 ```{r, fig.width=4, fig.height=4}
 tmp <- simdat[!is.na(simdat$Y),]
 # default function is mean:
-acf.y <- acf_plot(tmp$res.m1, 
+acf.y <- acf_plot(tmp$res.m1AR1, 
          split_by=list(Subject=tmp$Subject, Trial=tmp$Trial),
          main="ACF with standard deviation")
 points(as.numeric(names(acf.y)),acf.y, pch=16, cex=.5)
@@ -230,8 +230,8 @@ points(as.numeric(names(acf.y)),acf.y, pch=16, cex=.5)
 acf.se <- acf_plot(tmp$res.m1AR1, 
          split_by=list(Subject=tmp$Subject, Trial=tmp$Trial),
          fun=sd, plot=FALSE)
-add_bars(as.numeric(names(acf.se)), y=acf.y+acf.se, y0=acf.y-acf.se, col=NA, border=2, width=.5)
-legend('topright', legend="sd", fill=NA, border=2, bty='n')
+add_bars(as.numeric(names(acf.se)), y=acf.y+acf.se, y0=acf.y-acf.se, col=alpha('red', f=.25), border=NA, width=.5)
+legend('topright', legend="sd", fill=alpha('red', f=.25), border=NA, bty='n')
 ```
 
 

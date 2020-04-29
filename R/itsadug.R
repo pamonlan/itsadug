@@ -6,14 +6,14 @@
 #' 
 #' @section Tutorials:
 #' \itemize{
-#' \item \code{vignette("inspect", package="itsadug")} - summarizes different 
+#' \item \code{vignette('inspect', package='itsadug')} - summarizes different 
 #' functions for visualizing the model.
-#' \item \code{vignette("test", package="itsadug")} - summarizes 
+#' \item \code{vignette('test', package='itsadug')} - summarizes 
 #' different functions for significance testing.
-#' \item \code{vignette("acf", package="itsadug")} - summarizes how to check 
+#' \item \code{vignette('acf', package='itsadug')} - summarizes how to check 
 #' and account for autocorrelation in the residuals.
 #' }
-#' Also available online: \url{www.jacolienvanrij.com/itsadug}.
+#' Also available online on \url{https://www.jacolienvanrij.com}.
 #'
 #' @section Interpretation and visualization:
 #' Main functions that are provided in \code{itsadug} for interpretation and 
@@ -63,8 +63,8 @@
 #' Further, there are some wrappers around the \code{\link[mgcv]{predict.gam}}
 #' function to facilitate the extraction of model predictions. These can be 
 #' used for customized plots. See for an example in the vignette 
-#' "plotfunctions" 
-#' (\code{vignette("plotfunctions", package="itsadug")}).
+#' 'plotfunctions' 
+#' (\code{vignette('plotfunctions', package='itsadug')}).
 #' \itemize{
 #'   \item \code{\link{get_predictions}} for getting the estimates for given 
 #' settings of some or all of the model predictors;
@@ -87,7 +87,7 @@
 #' using \code{ssh -X} instead of \code{ssh} may make the 
 #' HTML files available.
 #' \item A list of all available functions is provided in 
-#' \code{help(package="itsadug")}.
+#' \code{help(package='itsadug')}.
 #' }
 #'
 #' @author
@@ -108,32 +108,31 @@ NULL
 #' 
 #' @export
 #' @param input Input variable indicating to print info messages 
-#' ("on", or 1, or TRUE) or not ("off", 0, or FALSE).
+#' ('on', or 1, or TRUE) or not ('off', 0, or FALSE).
 #' @examples
 #' # To turn on the info messages (all the same):
-#' infoMessages("on")
+#' infoMessages('on')
 #' infoMessages(1)
 #' infoMessages(TRUE)
 #' # To turn off the info messages (all the same):
-#' infoMessages("off")
+#' infoMessages('off')
 #' infoMessages(0)
 #' infoMessages(FALSE)
 #' # checking output:
 #' (out <- infoMessages(FALSE))
 #' @family Functions for package use
-infoMessages <- function(input){
-	if(is.logical(input)){
-		options(itsadug_print=input)
-	}else if(is.numeric(input)){
-		options(itsadug_print=ifelse(input<=0, FALSE, TRUE))
-	}else if(is.character(input)){
-		options(itsadug_print=ifelse(input=="off", FALSE, 
-			ifelse(input=="on",TRUE, getOption('itsadug_print'))))
-	}else{
-		stop(sprintf("Cannot interpret input value %s. Try to use logical values TRUE or FALSE.", input))
-	}
-	invisible(list(value=getOption('itsadug_print'), 
-		effect=ifelse(getOption('itsadug_print')==TRUE, "messages printed", "no messages printed")))
+infoMessages <- function(input) {
+    if (is.logical(input)) {
+        options(itsadug_print = input)
+    } else if (is.numeric(input)) {
+        options(itsadug_print = ifelse(input <= 0, FALSE, TRUE))
+    } else if (is.character(input)) {
+        options(itsadug_print = ifelse(input == "off", FALSE, ifelse(input == "on", TRUE, getOption("itsadug_print"))))
+    } else {
+        stop(sprintf("Cannot interpret input value %s. Try to use logical values TRUE or FALSE.", input))
+    }
+    invisible(list(value = getOption("itsadug_print"), effect = ifelse(getOption("itsadug_print") == TRUE, 
+        "messages printed", "no messages printed")))
 }
 
 
@@ -141,12 +140,12 @@ infoMessages <- function(input){
 
 
 .onAttach <- function(...) {
-  if(is.null(getOption('itsadug_print'))){
-  	options(itsadug_print=TRUE)
-  }
-  if(getOption('itsadug_print')){
-  	packageStartupMessage('Loaded package itsadug 2.3 (see \'help("itsadug")\' ).')
-  }
+    if (is.null(getOption("itsadug_print"))) {
+        options(itsadug_print = TRUE)
+    }
+    if (getOption("itsadug_print")) {
+        packageStartupMessage("Loaded package itsadug 2.4 (see 'help(\"itsadug\")' ).")
+    }
 }
 
 
@@ -158,26 +157,25 @@ infoMessages <- function(input){
 #' @export
 #' @import utils
 #' @param input Optional parameter. Normally (NULL) the citation info is 
-#' printed. If value "version" then only the version is printed.
+#' printed. If value 'version' then only the version is printed.
 #' @examples
 #' info()
-#' info("version")
-#' citation(package="itsadug")
+#' info('version')
+#' citation(package='itsadug')
 #' # To get info about R version:
 #' R.version.string
 #' @seealso
 #' \code{\link[utils]{citation}}, \code{\link[base]{R.version}},
 #' \code{\link[utils]{sessionInfo}}
 #' @family Functions for package use
-info <- function(input=NULL){
-	if(is.null(input)){
-		citation(package="itsadug")
-	}else if(input=="version"){
-		cat(sprintf("Package itsadug, version %s\n", 
-			packageVersion("itsadug")))
-	}else{
-		help(package="itsadug")
-	}
+info <- function(input = NULL) {
+    if (is.null(input)) {
+        citation(package = "itsadug")
+    } else if (input == "version") {
+        cat(sprintf("Package itsadug, version %s\n", packageVersion("itsadug")))
+    } else {
+        help(package = "itsadug")
+    }
 }
 
 

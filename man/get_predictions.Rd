@@ -4,9 +4,16 @@
 \alias{get_predictions}
 \title{Get model predictions for specific conditions.}
 \usage{
-get_predictions(model, cond = NULL, rm.ranef = NULL, se = TRUE,
-  sim.ci = FALSE, f = 1.96, return.n.posterior = 0,
-  print.summary = getOption("itsadug_print"))
+get_predictions(
+  model,
+  cond = NULL,
+  rm.ranef = TRUE,
+  se = TRUE,
+  sim.ci = FALSE,
+  f = 1.96,
+  return.n.posterior = 0,
+  print.summary = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -17,7 +24,7 @@ Variables omitted from this list will have the closest observed value to
 the median for continuous variables, or the reference level for factors.}
 
 \item{rm.ranef}{Logical: whether or not to remove random effects. 
-Default is FALSE. Alternatively a vector with numbers (modelterms) 
+Default is TRUE. Alternatively a vector with numbers (modelterms) 
 of the random effect(s) to remove.}
 
 \item{se}{Logical: whether or not to return the confidence interval or 
@@ -63,12 +70,12 @@ data(simdat)
 m1 <- bam(Y ~ Group + s(Time, by=Group), data=simdat)
 
 # Time value is automatically set:
-pp <- get_predictions(m1, cond=list(Group="Adults"))
+pp <- get_predictions(m1, cond=list(Group='Adults'))
 head(pp)
 
 # Range of time values:
 pp <- get_predictions(m1, 
-    cond=list(Group="Adults", Time=seq(0,500,length=100)))
+    cond=list(Group='Adults', Time=seq(0,500,length=100)))
 # plot:
 emptyPlot(500, range(pp$fit), h=0)
 plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE)
@@ -76,7 +83,7 @@ plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE)
 # Warning: also unrealistical values are possible
 range(simdat$Time)
 pp <- get_predictions(m1, 
-    cond=list(Group="Adults", Time=seq(-500,0,length=100)))
+    cond=list(Group='Adults', Time=seq(-500,0,length=100)))
 # plot of predictions that are not supported by data:
 emptyPlot(c(-500,0), range(pp$fit), h=0)
 plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE) 
@@ -87,7 +94,7 @@ m2 <- bam(Y ~ Group + s(Time, by=Group)
 # Simultaneous CI vs pointwise CI
 # NOTE: USE AT LEST 200 DATAPOINTS FOR SIMULTANEOUS CI
 pp <- get_predictions(m2, 
-    cond=list(Group="Adults", Time=seq(0,2000,length=200)), 
+    cond=list(Group='Adults', Time=seq(0,2000,length=200)), 
     rm.ranef=TRUE, sim.ci=TRUE)
 head(pp)
 # plot:
@@ -100,10 +107,14 @@ plot_error(pp$Time, pp$fit, pp$sim.CI, shade=FALSE, col=2, xpd=TRUE)
 
 }
 \seealso{
-Other Model predictions: \code{\link{get_coefs}},
-  \code{\link{get_difference}}, \code{\link{get_fitted}},
-  \code{\link{get_modelterm}}, \code{\link{get_random}}
+Other Model predictions: 
+\code{\link{get_coefs}()},
+\code{\link{get_difference}()},
+\code{\link{get_fitted}()},
+\code{\link{get_modelterm}()},
+\code{\link{get_random}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model predictions}

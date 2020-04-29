@@ -28,7 +28,7 @@
 #'
 #' This method is preferred over other functions such as \code{\link{AIC}} for 
 #' models that include an AR1 model or random effects (especially nonlinear 
-#' random smooths using \code{bs="fs"}). CompareML also reports the AIC 
+#' random smooths using \code{bs='fs'}). CompareML also reports the AIC 
 #' difference, but that value should be treated with care.
 #' 
 #' Note that the Chi-Square test will result in a very low p-value
@@ -42,7 +42,7 @@
 #'
 #' @section Notes:
 #' For suppressing the output and all warnings, set infoMessages to FALSE 
-#' (\code{infoMessages("off")} ), set the argument \code{print.output} to FALSE,
+#' (\code{infoMessages('off')} ), set the argument \code{print.output} to FALSE,
 #' and use the function 
 #' \code{\link{suppressWarnings}} to suppress warning messages.
 #' @return Optionally returns the Chi-Square test table.
@@ -52,17 +52,17 @@
 #' data(simdat)
 #'
 #' \dontrun{
-#' infoMessages("on")
+#' infoMessages('on')
 #' # some arbitrary models:
-#' m1 <- bam(Y~Group + s(Time, by=Group), method="fREML", data=simdat)
-#' m2 <- bam(Y~Group + s(Time), method="fREML", data=simdat)
+#' m1 <- bam(Y~Group + s(Time, by=Group), method='fREML', data=simdat)
+#' m2 <- bam(Y~Group + s(Time), method='fREML', data=simdat)
 #' 
 #' compareML(m1, m2)
 #'
 #' # exclude significance stars:
 #' compareML(m1, m2, signif.stars=FALSE)
 #'
-#' m3 <- bam(Y~Group + s(Time, by=Group, k=25), method="fREML", 
+#' m3 <- bam(Y~Group + s(Time, by=Group, k=25), method='fREML', 
 #'     data=simdat)
 #' compareML(m1, m3)
 #' 
@@ -75,11 +75,9 @@
 #' 
 #' }
 #' @family Testing for significance
-compareML <- function(model1, model2,
-    signif.stars=TRUE, suggest.report=FALSE,
-    print.output=TRUE) {
+compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALSE, print.output = TRUE) {
     # check gam or bam model:
-    if((!"gam" %in% class(model1)) | (!"gam" %in% class(model2))){
+    if ((!"gam" %in% class(model1)) | (!"gam" %in% class(model2))) {
         stop("Models are not gam objects (i.e., build with bam()/gam()).")
     }
     
@@ -94,177 +92,142 @@ compareML <- function(model1, model2,
     ml1 <- model1$gcv.ubre[1]
     ml2 <- model2$gcv.ubre[1]
     
-    ### OLD METHOD, SIMON SAYS NOT OK! ### edf1 <- sum(model1$edf) edf2 <- sum(model2$edf) 
-    ## NEW METHOD: ###
-    ndf1 <- length(model1$sp) + model1$nsdf + ifelse(length(model1$smooth)>0,
-        sum(sapply(model1$smooth, FUN = function(x) {
+    ### OLD METHOD, SIMON SAYS NOT OK! ### edf1 <- sum(model1$edf) edf2 <- sum(model2$edf) NEW METHOD: ###
+    ndf1 <- length(model1$sp) + model1$nsdf + ifelse(length(model1$smooth) > 0, sum(sapply(model1$smooth, 
+        FUN = function(x) {
             x$null.space.dim
-            }, USE.NAMES = FALSE)), 0)
-    ndf2 <- length(model2$sp) + model2$nsdf + ifelse(length(model2$smooth)>0,
-        sum(sapply(model2$smooth, FUN = function(x) {
+        }, USE.NAMES = FALSE)), 0)
+    ndf2 <- length(model2$sp) + model2$nsdf + ifelse(length(model2$smooth) > 0, sum(sapply(model2$smooth, 
+        FUN = function(x) {
             x$null.space.dim
-            }, USE.NAMES = FALSE)), 0)
+        }, USE.NAMES = FALSE)), 0)
     
-    if (! model1$method %in%  c("fREML", "REML", "ML")) {
+    if (!model1$method %in% c("fREML", "REML", "ML")) {
         type <- "AIC"
         ml1 <- AIC(model1)
         ml2 <- AIC(model2)
         
-	    ndf1 <- length(model1$sp) + model1$nsdf + ifelse(length(model1$smooth)>0,
-	        sum(sapply(model1$smooth, FUN = function(x) {
-	            x$null.space.dim
-	            }, USE.NAMES = FALSE)), 0)
-	    ndf2 <- length(model2$sp) + model2$nsdf + ifelse(length(model2$smooth)>0,
-	        sum(sapply(model2$smooth, FUN = function(x) {
-	            x$null.space.dim
-	            }, USE.NAMES = FALSE)), 0)
-        warning(sprintf("\nCompareML is not implemented for smoothing parameter estimation method %s. AIC scores are used for model comparison. Consider running the model with REML, fREML, or ML as method.\n-----\n", model1$method))
+        ndf1 <- length(model1$sp) + model1$nsdf + ifelse(length(model1$smooth) > 0, sum(sapply(model1$smooth, 
+            FUN = function(x) {
+                x$null.space.dim
+            }, USE.NAMES = FALSE)), 0)
+        ndf2 <- length(model2$sp) + model2$nsdf + ifelse(length(model2$smooth) > 0, sum(sapply(model2$smooth, 
+            FUN = function(x) {
+                x$null.space.dim
+            }, USE.NAMES = FALSE)), 0)
+        warning(sprintf("\nCompareML is not implemented for smoothing parameter estimation method %s. AIC scores are used for model comparison. Consider running the model with REML, fREML, or ML as method.\n-----\n", 
+            model1$method))
     }
     
     
-    # pchisq(4, .5, lower.tail=F) # p < .1 pchisq(-4, .5, lower.tail=F) # p = 1 pchisq(4, -.5, lower.tail=F) # NaN
+    # pchisq(4, .5, lower.tail=F) # p < .1 pchisq(-4, .5, lower.tail=F) # p = 1 pchisq(4, -.5, lower.tail=F) #
+    # NaN
     
     # Book keeping;
-    info <- sprintf("%s: %s\n\n%s: %s\n", deparse(substitute(model1)), paste(deparse(model1$formula), collapse="\n"),
-        deparse(substitute(model2)), paste(deparse(model2$formula), collapse="\n"))
-    if(print.output){
+    info <- sprintf("%s: %s\n\n%s: %s\n", deparse(substitute(model1)), paste(deparse(model1$formula), collapse = "\n"), 
+        deparse(substitute(model2)), paste(deparse(model2$formula), collapse = "\n"))
+    if (print.output) {
         cat(info)
     }
     
-    out      <- NULL
-    advice   <- NULL
-    warning  <- NULL
-    report   <- NULL
+    out <- NULL
+    advice <- NULL
+    warning <- NULL
+    report <- NULL
     
-    # if (type != 'AIC') {
-    # Situation 1: model 1 has lower score, but model 2 has lower df. Is it significantly better model than model 2?
-	# Situation 0: equal df
-	if(abs(round(ndf2 - ndf1)) < .5){
-		if( ml1 < ml2){
+    # if (type != 'AIC') { Situation 1: model 1 has lower score, but model 2 has lower df. Is it significantly
+    # better model than model 2?  Situation 0: equal df
+    if (abs(round(ndf2 - ndf1)) < 0.5) {
+        if (ml1 < ml2) {
             advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and equal df (%.3f).\n-----\n", 
-                deparse(substitute(model1)), 
-                type, ml2 - ml1, ndf2 - ndf1)
+                deparse(substitute(model1)), type, ml2 - ml1, ndf2 - ndf1)
             
-            out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), 
-            	Score = c(ml2, ml1), 
-            	Edf = c(ndf2, ndf1), 
-            	Difference = c("", sprintf("%.3f", ml2 - ml1)), 
-            	Df = c("", sprintf("%.3f", ndf1 - ndf2)),
-                p.value = c("",NA),
-                Sign. = c("", ""))
-		}else{
+            out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), Score = c(ml2, 
+                ml1), Edf = c(ndf2, ndf1), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
+                ndf1 - ndf2)), p.value = c("", NA), Sign. = c("", ""), stringsAsFactors = FALSE)
+        } else {
             advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and equal df (%.3f).\n-----\n", 
-            	deparse(substitute(model2)), 
-                type, ml1 - ml2, ndf1 - ndf2)
-            out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), 
-            	Score = c(ml1, ml2), 
-            	Edf = c(ndf1, ndf2),
-            	Difference = c("", sprintf("%.3f", ml2 - ml1)), 
-            	Df = c("", sprintf("%.3f", ndf1 - ndf2)),
-                p.value = c("",NA),
-                Sign. = c("", ""))
-		}
-	# Situation 1: model 1 has lower score, but model 2 has lower df. Is it significantly better model than model 2?
-    }else if ((ml1 < ml2) & (ndf2 < ndf1)) {
+                deparse(substitute(model2)), type, ml1 - ml2, ndf1 - ndf2)
+            out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), Score = c(ml1, 
+                ml2), Edf = c(ndf1, ndf2), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
+                ndf1 - ndf2)), p.value = c("", NA), Sign. = c("", ""), stringsAsFactors = FALSE)
+        }
+        # Situation 1: model 1 has lower score, but model 2 has lower df. Is it significantly better model than
+        # model 2?
+    } else if ((ml1 < ml2) & (ndf2 < ndf1)) {
         
         # twice the amount of difference in likelihood
         h1 <- pchisq(2 * (ml2 - ml1), abs(ndf1 - ndf2), lower.tail = F)
         
-        out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), 
-        	Score = c(ml2, ml1), 
-        	Edf = c(ndf2, ndf1), 
-            Difference = c("", sprintf("%.3f", ml2 - ml1)), 
-            Df = c("", sprintf("%.3f", abs(ndf1 - ndf2))), 
-            p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), 
-            	ifelse(h1 < 0.001, sprintf("%.3e", h1), 
-            	ifelse(h1 < 0.01, sprintf("%.3f", h1), 
-            	ifelse(h1 < 0.05, sprintf("%.3f", h1), sprintf("%.3f", h1)))))), 
-            Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), 
-            	ifelse(h1 < 0.01, sprintf("** ", h1), 
-            	ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))))
+        out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), Score = c(ml2, 
+            ml1), Edf = c(ndf2, ndf1), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
+            abs(ndf1 - ndf2))), p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), ifelse(h1 < 0.001, 
+            sprintf("%.3e", h1), ifelse(h1 < 0.01, sprintf("%.3f", h1), ifelse(h1 < 0.05, sprintf("%.3f", 
+                h1), sprintf("%.3f", h1)))))), Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), ifelse(h1 < 
+            0.01, sprintf("** ", h1), ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))), stringsAsFactors = FALSE)
         report <- sprintf("\nReport suggestion: The Chi-Square test on the %s scores indicates that model %s is [%s?] better than model %s (X2(%.2f)=%.3f, p%s).\n-----\n", 
-                type, deparse(substitute(model1)), 
-                ifelse(h1 > .1, "not significantly", ifelse(h1 > .05, "not significantly / marginally", ifelse(h1 > .01, "marginally / significantly", "significantly"))),
-                deparse(substitute(model2)),
-                abs(ndf1 - ndf2), abs(ml1 - ml2), 
-                ifelse(h1 < 2e-16, "<2e-16", ifelse(h1 < .001, "<.001", ifelse(h1 < .01, "<.01", ifelse(h1 < .1, sprintf("%.3f", h1), ">.1")))))
+            type, deparse(substitute(model1)), ifelse(h1 > 0.1, "not significantly", ifelse(h1 > 0.05, "not significantly / marginally", 
+                ifelse(h1 > 0.01, "marginally / significantly", "significantly"))), deparse(substitute(model2)), 
+            abs(ndf1 - ndf2), abs(ml1 - ml2), ifelse(h1 < 2e-16, "<2e-16", ifelse(h1 < 0.001, "<.001", ifelse(h1 < 
+                0.01, "<.01", ifelse(h1 < 0.1, sprintf("%.3f", h1), ">.1")))))
         
-    # Situation 2: model 2 has lower score, but model 1 has lower df. Is it significantly better model than model 1?
+        # Situation 2: model 2 has lower score, but model 1 has lower df. Is it significantly better model than
+        # model 1?
     } else if ((ml2 < ml1) & (ndf1 < ndf2)) {
         
         h1 <- pchisq(2 * (ml1 - ml2), abs(ndf1 - ndf2), lower.tail = F)
         
-        out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), 
-        	Score = c(ml1, ml2), 
-        	Edf = c(ndf1, ndf2), 
-        	Difference = c("", sprintf("%.3f", ml1 - ml2)), 
-        	Df = c("", sprintf("%.3f", abs(ndf1 - ndf2))), 
-        	p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), 
-        		ifelse(h1 < 0.001, sprintf("%.3e", h1), 
-            	ifelse(h1 < 0.01, sprintf("%.3f", h1), 
-            	ifelse(h1 < 0.05, sprintf("%.3f", h1), sprintf("%.3f", h1)))))), 
-            Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), 
-            	ifelse(h1 < 0.01, sprintf("** ", h1), 
-            	ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))))
+        out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), Score = c(ml1, 
+            ml2), Edf = c(ndf1, ndf2), Difference = c("", sprintf("%.3f", ml1 - ml2)), Df = c("", sprintf("%.3f", 
+            abs(ndf1 - ndf2))), p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), ifelse(h1 < 0.001, 
+            sprintf("%.3e", h1), ifelse(h1 < 0.01, sprintf("%.3f", h1), ifelse(h1 < 0.05, sprintf("%.3f", 
+                h1), sprintf("%.3f", h1)))))), Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), ifelse(h1 < 
+            0.01, sprintf("** ", h1), ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))), stringsAsFactors = FALSE)
         report <- sprintf("\nReport suggestion: The Chi-Square test on the %s scores indicates that model %s is [%s] better than model %s (X2(%.2f)=%.3f, p%s).\n-----\n", 
-                type, deparse(substitute(model2)), 
-                ifelse(h1 > .1, "not significantly", ifelse(h1 > .05, "not significantly / marginally", ifelse(h1 > .01, "marginally / significantly", "significantly"))),
-                deparse(substitute(model1)),
-                abs(ndf1 - ndf2), abs(ml1 - ml2), 
-                ifelse(h1 < 2e-16, "<2e-16", ifelse(h1 < .001, "<.001", ifelse(h1 < .01, "<.01", ifelse(h1 < .1, sprintf("%.3f", h1), ">.1")))))
+            type, deparse(substitute(model2)), ifelse(h1 > 0.1, "not significantly", ifelse(h1 > 0.05, "not significantly / marginally", 
+                ifelse(h1 > 0.01, "marginally / significantly", "significantly"))), deparse(substitute(model1)), 
+            abs(ndf1 - ndf2), abs(ml1 - ml2), ifelse(h1 < 2e-16, "<2e-16", ifelse(h1 < 0.001, "<.001", ifelse(h1 < 
+                0.01, "<.01", ifelse(h1 < 0.1, sprintf("%.3f", h1), ">.1")))))
         
-    # Situation 3: model 1 has lower score, and also lower df.
+        # Situation 3: model 1 has lower score, and also lower df.
     } else if ((ml1 < ml2) & (ndf1 < ndf2)) {
-        advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and lower df (%.3f).\n-----\n", 
-        	deparse(substitute(model1)), 
-        	type, ml2 - ml1, ndf2 - ndf1)
-        out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), 
-        	Score = c(ml2, ml1), 
-        	Edf = c(ndf2, ndf1), 
-        	Difference = c("", sprintf("%.3f", ml2 - ml1)), 
-        	Df = c("", sprintf("%.3f", ndf1 - ndf2)),
-            p.value = c("",NA),
-            Sign. = c("", ""))
+        advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and lower df (%.3f).\n-----\n", deparse(substitute(model1)), 
+            type, ml2 - ml1, ndf2 - ndf1)
+        out <- data.frame(Model = c(deparse(substitute(model2)), deparse(substitute(model1))), Score = c(ml2, 
+            ml1), Edf = c(ndf2, ndf1), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
+            ndf1 - ndf2)), p.value = c("", NA), Sign. = c("", ""), stringsAsFactors = FALSE)
         
-    # Situation 4: model 2 has lower score, and also lower df.
+        # Situation 4: model 2 has lower score, and also lower df.
     } else if ((ml2 < ml1) & (ndf2 < ndf1)) {
-        advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and lower df (%.3f).\n-----\n", 
-        	deparse(substitute(model2)), 
+        advice <- sprintf("\nModel %s preferred: lower %s score (%.3f), and lower df (%.3f).\n-----\n", deparse(substitute(model2)), 
             type, ml1 - ml2, ndf1 - ndf2)
-        out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), 
-        	Score = c(ml1, ml2), 
-        	Edf = c(ndf1, ndf2), 
-        	Difference = c("", sprintf("%.3f", ml2 - ml1)), 
-        	Df = c("", sprintf("%.3f", ndf1 - ndf2)),
-            p.value = c("",NA),
-            Sign. = c("", ""))
-    # Other cases:
+        out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), Score = c(ml1, 
+            ml2), Edf = c(ndf1, ndf2), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
+            ndf1 - ndf2)), p.value = c("", NA), Sign. = c("", ""), stringsAsFactors = FALSE)
+        # Other cases:
     } else {
         advice <- "No preference:\n-----\n"
-        out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), 
-        	Score = c(ml1, ml2), Edf = c(ndf1, ndf2), 
-        	Difference = c("", sprintf("%.3f", ml2 - ml1)), 
-        	Df = c("", sprintf("%.3f", ndf1 - ndf2)),
-            p.value = c("",NA),
-            Sign. = c("", ""))
+        out <- data.frame(Model = c(deparse(substitute(model1)), deparse(substitute(model2))), Score = c(ml1, 
+            ml2), Edf = c(ndf1, ndf2), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
+            ndf1 - ndf2)), p.value = c("", NA), Sign. = c("", ""), stringsAsFactors = FALSE)
     }
     rownames(out) <- NULL
-    if(signif.stars==FALSE){
-        out <- out[,1:6]
+    if (signif.stars == FALSE) {
+        out <- out[, 1:6]
     }
-    if(print.output){
-        if(is.null(advice)){
-            if(suggest.report==TRUE & !is.null(report)){
+    if (print.output) {
+        if (is.null(advice)) {
+            if (suggest.report == TRUE & !is.null(report)) {
                 cat(report)
-            }else{
+            } else {
                 cat(sprintf("\nChi-square test of %s scores\n-----\n", type))
             }
-        }else{
+        } else {
             cat(advice)
         }
-        if(is.na(out$p.value[2])){
-            print(out[,1:5])
-        }else{
+        if (is.na(out$p.value[2])) {
+            print(out[, 1:5])
+        } else {
             print(out)
         }
         
@@ -285,36 +248,26 @@ compareML <- function(model1, model2,
         }
         # AIC message:
         if (AIC(model1) == AIC(model2)) {
-          aicmessage <- sprintf("AIC difference: 0.\n\n")
+            aicmessage <- sprintf("AIC difference: 0.\n\n")
         } else {
-          aicmessage <- sprintf("AIC difference: %.2f, model %s has lower AIC.\n\n", 
-            AIC(model1) - AIC(model2), 
-            ifelse(AIC(model1) >= AIC(model2), 
-                deparse(substitute(model2)), 
-                deparse(substitute(model1))))
+            aicmessage <- sprintf("AIC difference: %.2f, model %s has lower AIC.\n\n", AIC(model1) - AIC(model2), 
+                ifelse(AIC(model1) >= AIC(model2), deparse(substitute(model2)), deparse(substitute(model1))))
         }
-        if(print.output){
+        if (print.output) {
             cat(aicmessage)
         }
-        if (rho1 != 0 | rho2 != 0) {
-            # AIC is useless for models with rho
-            warning(sprintf(" AIC might not be reliable, as an AR1 model is included (rho1 = %f, rho2 = %f). ", 
-                rho1, rho2))
-        }
+        # if (rho1 != 0 | rho2 != 0) { # AIC is useless for models with rho warning(sprintf(' AIC might not be
+        # reliable, as an AR1 model is included (rho1 = %f, rho2 = %f). ', rho1, rho2)) }
     }
     
     if (abs(ml1 - ml2) <= 5) {
         warning(sprintf("Only small difference in %s...\n", type))
     }
     
-    invisible( list(method=type,
-    	m1=list(Model=model1$formula, Score=ml1, Df=ndf1),
-    	m2=list(Model=model2$formula, Score=ml2, Df=ndf2),
-    	table = out,
-        advice = ifelse(is.null(advice), NA, advice),
-        AIC = ifelse(is.null(aicmessage), NA, aicmessage) ) )
+    invisible(list(method = type, m1 = list(Model = model1$formula, Score = ml1, Df = ndf1), m2 = list(Model = model2$formula, 
+        Score = ml2, Df = ndf2), table = out, advice = ifelse(is.null(advice), NA, advice), AIC = ifelse(is.null(aicmessage), 
+        NA, aicmessage)))
 }
- 
 
 
 
@@ -355,7 +308,7 @@ compareML <- function(model1, model2,
 #' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
 #' smoothness parameters.
 #' @param rm.ranef Logical: whether or not to remove random effects. 
-#' Default is FALSE. Alternatively a string (or vector of strings) with the 
+#' Default is TRUE. Alternatively a string (or vector of strings) with the 
 #' name of the random effect(s) to remove.
 #' @param mark.diff Logical: whether or not marking where the difference 
 #' is significantly different from 0.
@@ -383,7 +336,7 @@ compareML <- function(model1, model2,
 #' the values on the x-axis. Defaults to NULL (no transformation). 
 #' (See \code{\link{plot_smooth}} for more info.)
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "difference"). Default is FALSE.
+#' (i.e., 'difference'). Default is FALSE.
 #' @param print.summary Logical: whether or not to print the summary. 
 #' Default set to the print info messages option 
 #' (see \code{\link{infoMessages}}).
@@ -399,20 +352,20 @@ compareML <- function(model1, model2,
 #' m1 <- bam(Y ~ Group + te(Time, Trial, by=Group)
 #'     + s(Time, Subject, bs='fs', m=1),
 #'     data=simdat, discrete=TRUE)
-#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")))
+#' plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')))
 #' # in this model, excluding random effects does not change the difference:
-#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+#' plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
 #'     rm.ranef=TRUE)
 #' # simultaneous CI:
-#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+#' plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
 #'     rm.ranef=TRUE, sim.ci=TRUE)
 #' # Reversed y-axis (for EEG data) and no shading:
-#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+#' plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
 #'     eegAxis=TRUE, shade=FALSE)
-#' plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")),
+#' plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')),
 #' density=15, angle=90, ci.lwd=3)
 #' # Retrieving plot values...
-#' out <- plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+#' out <- plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
 #'    plot=FALSE)
 #' #... which might be used for indicating differences:
 #' x <- find_difference(out$est, out$se, f=1.96, xVals=out$xVals)
@@ -421,168 +374,173 @@ compareML <- function(model1, model2,
 #' }
 #'
 #' @family Testing for significance
-plot_diff <- function(model, view, comp, cond=NULL, 
-	se=1.96, sim.ci = FALSE, n.grid=100, add=FALSE,
-	rm.ranef=NULL, mark.diff=TRUE, col.diff ='red',
-	col="black", eegAxis=FALSE, transform.view=NULL, 
-	print.summary=getOption('itsadug_print'), plot=TRUE, 
-	main=NULL, ylab=NULL, xlab=NULL, xlim=NULL, ylim=NULL, 
-	hide.label=FALSE, ...) { 
-	# For simultaneous CI, n.grid needs to be at least 200, 
-    # otherwise the simulations for the simultaneous CI is not adequate
-    if (sim.ci==TRUE) { 
-        n.grid = max(n.grid,200) 
+plot_diff <- function(model, view, comp, cond = NULL, se = 1.96, sim.ci = FALSE, n.grid = 100, add = FALSE, 
+    rm.ranef = TRUE, mark.diff = TRUE, col.diff = "red", col = "black", eegAxis = FALSE, transform.view = NULL, 
+    print.summary = getOption("itsadug_print"), plot = TRUE, main = NULL, ylab = NULL, xlab = NULL, xlim = NULL, 
+    ylim = NULL, hide.label = FALSE, ...) {
+    # For simultaneous CI, n.grid needs to be at least 200, otherwise the simulations for the simultaneous CI
+    # is not adequate
+    if (sim.ci == TRUE) {
+        n.grid = max(n.grid, 200)
     }
- 	# global variables
-	dat = model$model
-	xvar <- NULL
-	by_predictor <- NULL
-	# check view
-	if(length(view) > 1){
-		warning("Only first element of 'view' is being used. Use plot_diff2 for plotting difference surfaces.")
-	}else{
-		xvar <- view[1]
-		if(xvar %in% names(cond)){
-			warning(sprintf('Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.', xvar, xvar))
-		}else{
-			cond[[xvar]] <- seq(min(na.exclude(dat[,xvar])), max(na.exclude(dat[,xvar])), length=n.grid)
-		}
-	}
-	if(!is.null(xlim)){
-        if(length(xlim) != 2){
+    # global variables
+    dat = model$model
+    xvar <- NULL
+    by_predictor <- NULL
+    # check view
+    if (length(view) > 1) {
+        warning("Only first element of 'view' is being used. Use plot_diff2 for plotting difference surfaces.")
+    } else {
+        xvar <- view[1]
+        if (xvar %in% names(cond)) {
+            warning(sprintf("Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.", 
+                xvar, xvar))
+        } else {
+            cond[[xvar]] <- seq(min(na.exclude(dat[, xvar])), max(na.exclude(dat[, xvar])), length = n.grid)
+        }
+    }
+    if (!is.null(xlim)) {
+        if (length(xlim) != 2) {
             warning("Invalid xlim values specified. Argument xlim is being ignored.")
-        }else{ 
-        	cond[[xvar]] <- seq(xlim[1], xlim[2], length=n.grid)
+        } else {
+            cond[[xvar]] <- seq(xlim[1], xlim[2], length = n.grid)
         }
     }
     # generate predictions:
-	newd <- c()
-	newd <- get_difference(model, comp=comp, cond=cond,
-		se=ifelse(se>0, TRUE, FALSE), 
-        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, 
-		print.summary=print.summary, rm.ranef=rm.ranef)
-	# transform values x-axis:
-    errormessage <- function(){
+    newd <- c()
+    newd <- get_difference(model, comp = comp, cond = cond, se = ifelse(se > 0, TRUE, FALSE), f = ifelse(se > 
+        0, se, 1.96), sim.ci = sim.ci, print.summary = print.summary, rm.ranef = rm.ranef)
+    # for certainty:
+    newd <- as.data.frame(unclass(newd), stringsAsFactors = TRUE)
+    # transform values x-axis:
+    errormessage <- function() {
         return("Error: the function specified in transformation.view cannot be applied to x-values, because infinite or missing values are not allowed.")
-    
-    }
-    if(!is.null(transform.view)){
-        tryCatch(newd[,xvar] <- sapply(newd[,xvar], transform.view), 
-                error=function(x){},
-                warning=function(x){})
         
-        if(any(is.infinite(newd[,xvar])) | any(is.nan(newd[,xvar])) | any(is.na(newd[,xvar]))){
+    }
+    if (!is.null(transform.view)) {
+        tryCatch(newd[, xvar] <- sapply(newd[, xvar], transform.view), error = function(x) {
+        }, warning = function(x) {
+        })
+        
+        if (any(is.infinite(newd[, xvar])) | any(is.nan(newd[, xvar])) | any(is.na(newd[, xvar]))) {
             stop(errormessage())
         }
-            
-        if(print.summary){
+        
+        if (print.summary) {
             cat("\t* Note: x-values are transformed.\n")
         }
     }
     # output data:
-	out <- data.frame(est=newd$difference,
-		x=newd[,xvar])
-	names(out)[2] <- xvar
-	if(se > 0){
-		out$CI <- newd$CI
-		out$f  <- se
-		if(sim.ci==TRUE){
-			out$sim.CI <- newd$sim.CI
-		}
-	}
-	out$comp=list2str(names(comp), comp)
+    out <- data.frame(est = newd$difference, x = newd[, xvar], stringsAsFactors = TRUE)
+    names(out)[2] <- xvar
+    if (se > 0) {
+        out$CI <- newd$CI
+        out$f <- se
+        if (sim.ci == TRUE) {
+            out$sim.CI <- newd$sim.CI
+        }
+    }
+    out$comp = list2str(names(comp), comp)
     # graphical parameters:
-	if (is.null(main)) {
-		levels1 <- paste(sapply(comp, function(x) x[1]), collapse='.')
-		levels2 <- paste(sapply(comp, function(x) x[2]), collapse='.')
-		main = sprintf('Difference %s - %s', levels1, levels2)
-	} 
-	if(is.null(ylab)) {
-		ylab = sprintf("Est. difference in %s", as.character(model$formula[[2]]))
-	}
-	if(is.null(xlab)) {
-		xlab = xvar
-	}
-	if(is.null(ylim)){
-		ylim <- range(newd$difference)
-		if (se > 0) { 
-			ylim <- with(newd, range(c(difference+CI, difference-CI)))
-		}
-	}
-	if(is.null(xlim)){
-		xlim <- range(newd[,xvar])
-	}
+    if (is.null(main)) {
+        levels1 <- paste(sapply(comp, function(x) x[1]), collapse = ".")
+        levels2 <- paste(sapply(comp, function(x) x[2]), collapse = ".")
+        main = sprintf("Difference %s - %s", levels1, levels2)
+    }
+    if (is.null(ylab)) {
+        ylab = sprintf("Est. difference in %s", as.character(model$formula[[2]]))
+    }
+    if (is.null(xlab)) {
+        xlab = xvar
+    }
+    if (is.null(ylim)) {
+        ylim <- range(newd$difference)
+        if (se > 0) {
+            ylim <- with(newd, range(c(difference + CI, difference - CI)))
+        }
+    }
+    if (is.null(xlim)) {
+        xlim <- range(newd[, xvar])
+    }
     par = list(...)
-    if(! "h0" %in% names(par)){
-    	par[['h0']] <- 0
+    # check for 'f'
+    if ("f" %in% names(par)) {
+        warning("Parameter f is deprecated. Change the value of se instead.")
     }
-    if(!"shade" %in% names(par)){
-    	par[['shade']] <- TRUE
+    if (!"h0" %in% names(par)) {
+        par[["h0"]] <- 0
     }
-    area.par <- c("shade", "type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre", "ci.lty", "ci.lwd", "border", "alpha", "density", "angle") 
-    line.par <- c("type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre") 
+    if (!"shade" %in% names(par)) {
+        par[["shade"]] <- TRUE
+    }
+    area.par <- c("shade", "type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre", "ci.lty", 
+        "ci.lwd", "border", "alpha", "density", "angle")
+    line.par <- c("type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre")
     area.args <- list2str(area.par, par)
     line.args <- list2str(line.par, par)
-    plot.args <- list2str(x=names(par)[!names(par) %in% c(line.par, area.par)], par)
-	# plot:
-	if(plot==TRUE){
-		if(add==FALSE){
-			eval(parse(text=sprintf("emptyPlot(xlim, ylim, 
-				main=main, xlab=xlab, ylab=ylab, 
-				eegAxis=eegAxis, %s)", plot.args)))
-			if(hide.label==FALSE){
-	            addlabel = "difference"
-	            if(!is.null(rm.ranef)){
-	                if(rm.ranef !=FALSE){
-	                    addlabel = paste(addlabel, "excl. random", sep=", ")
-	                }
-	            }
-	            if(sim.ci==TRUE){
-	                addlabel = paste(addlabel, "simult.CI", sep=", ")
-	            }
-	            mtext(addlabel, side=4, line=0, adj=0, 
-	                cex=.75, col='gray35', xpd=TRUE)
-	        }        			
-		}
-		if(se>0){
-			if(sim.ci==TRUE){
-				eval(parse(text=sprintf("plot_error(newd[,xvar], newd$difference, newd$sim.CI, col=col, %s)",
-					area.args)))
-			}else{
-				eval(parse(text=sprintf("plot_error(newd[,xvar], newd$difference, newd$CI, col=col, %s)",
-					area.args)))
-			}
-		}else{
-			if(line.args==""){
-				lines(newd[,xvar], newd$difference, col=col)
-			}else{
-				eval(parse(text=sprintf("lines(newd[,xvar], newd$difference, col=col, %s)", line.args)))
-			}
-		}
-		if(mark.diff==TRUE){
-			diff <- find_difference(newd$difference, newd$CI, newd[,xvar])
-			if(sim.ci==TRUE){
-				diff <- find_difference(newd$difference, newd$sim.CI, newd[,xvar])
-			}
-			if(length(diff$start) > 0){
-				addInterval(pos=getFigCoords('p')[3], diff$start, diff$end, col=col.diff, lwd=2*par()$lwd, length=0, xpd=TRUE)
-				abline(v=c(diff$start, diff$end), lty=3, col=col.diff)
-			}
-		}
-		if(print.summary){
-			if(length(diff$start) > 0){
-				tmp <- c(sprintf("%s window(s) of significant difference(s):",xvar), sprintf("\t%f - %f", diff$start, diff$end))
-			}else{
-				tmp <- "Difference is not significant."
-			}
-			cat("\n")
-			cat(paste(tmp, collapse="\n"))
-			cat("\n")
-		}
-		invisible(out)
-	}else{
-		return(out)
-	}
+    plot.args <- list2str(x = names(par)[!names(par) %in% c(line.par, area.par)], par)
+    # plot:
+    if (plot == TRUE) {
+        if (add == FALSE) {
+            eval(parse(text = sprintf("emptyPlot(xlim, ylim, 
+\t\t\t\tmain=main, xlab=xlab, ylab=ylab, 
+\t\t\t\teegAxis=eegAxis, %s)", 
+                plot.args)))
+            if (hide.label == FALSE) {
+                addlabel = "difference"
+                if (!is.null(rm.ranef)) {
+                  if (rm.ranef != FALSE) {
+                    addlabel = paste(addlabel, "excl. random", sep = ", ")
+                  }
+                }
+                if (sim.ci == TRUE) {
+                  addlabel = paste(addlabel, "simult.CI", sep = ", ")
+                }
+                mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            }
+        }
+        if (se > 0) {
+            if (sim.ci == TRUE) {
+                eval(parse(text = sprintf("plot_error(newd[,xvar], newd$difference, newd$sim.CI, col=col, %s)", 
+                  area.args)))
+            } else {
+                eval(parse(text = sprintf("plot_error(newd[,xvar], newd$difference, newd$CI, col=col, %s)", 
+                  area.args)))
+            }
+        } else {
+            if (line.args == "") {
+                lines(newd[, xvar], newd$difference, col = col)
+            } else {
+                eval(parse(text = sprintf("lines(newd[,xvar], newd$difference, col=col, %s)", line.args)))
+            }
+        }
+        diff <- find_difference(newd$difference, newd$CI, newd[, xvar])
+        if (sim.ci == TRUE) {
+            diff <- find_difference(newd$difference, newd$sim.CI, newd[, xvar])
+        }
+        if (mark.diff == TRUE) {
+            
+            if (length(diff$start) > 0) {
+                addInterval(pos = getFigCoords("p")[3], lowVals = diff$start, highVals = diff$end, col = col.diff, 
+                  lwd = 2 * par()$lwd, length = 0, xpd = TRUE)
+                abline(v = c(diff$start, diff$end), lty = 3, col = col.diff)
+            }
+        }
+        if (print.summary) {
+            if (length(diff$start) > 0) {
+                tmp <- c(sprintf("%s window(s) of significant difference(s):", xvar), sprintf("\t%f - %f", 
+                  diff$start, diff$end))
+            } else {
+                tmp <- "Difference is not significant."
+            }
+            cat("\n")
+            cat(paste(tmp, collapse = "\n"))
+            cat("\n")
+        }
+        invisible(out)
+    } else {
+        return(out)
+    }
 }
 
 
@@ -606,8 +564,8 @@ plot_diff <- function(model, view, comp, cond=NULL,
 #' and the 2 levels to calculate the difference for.
 #' @param cond Named list of the values to use for the other predictor terms 
 #' (not in view). 
-#' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+#' @param color The color scheme to use for plots. One of 'topo', 'heat', 
+#' 'cm', 'terrain', 'gray' or 'bw'. Alternatively a vector with some colors 
 #' can be provided for a custom color palette.
 #' @param nCol Range of colors of background of contour plot.
 #' @param col Line color.
@@ -648,7 +606,7 @@ plot_diff <- function(model, view, comp, cond=NULL,
 #' @param xlab Label x-axis.
 #' @param ylab Label y-axis.
 #' @param rm.ranef Logical: whether or not to remove random effects. 
-#' Default is FALSE. Alternatively a string (or vector of strings) with the 
+#' Default is TRUE. Alternatively a string (or vector of strings) with the 
 #' name of the random effect(s) to remove.
 #' @param transform.view List with two functions for transforming 
 #' the values on the x- and y-axis respectively. If one of the axes 
@@ -658,11 +616,14 @@ plot_diff <- function(model, view, comp, cond=NULL,
 #' Default set to the print info messages option 
 #' (see \code{\link{infoMessages}}).
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "difference"). Default is FALSE.
+#' (i.e., 'difference'). Default is FALSE.
 #' @param dec Numeric: number of decimals for rounding the color legend. 
 #' When NULL (default), no rounding. If -1 (default), automatically determined. 
 #' Note: if value = -1 (default), rounding will be applied also when 
 #' \code{zlim} is provided.
+#' @param f Scaling factor to determine the CI from the se, for marking the 
+#' difference with 0. Only applies when \code{se} is smaller or equal to zero 
+#' and \code{show.diff} is set to TRUE. 
 #' @param ... Optional arguments for \code{\link[plotfunctions]{plotsurface}}.
 #' @section Warning:
 #' When the argument \code{show.diff} is set to TRUE a shading area indicates 
@@ -685,158 +646,151 @@ plot_diff <- function(model, view, comp, cond=NULL,
 #' m1 <- bam(Y ~ Group + te(Time, Trial, by=Group),
 #'     data=simdat)
 #' plot_diff2(m1, view=c('Time', 'Trial'), 
-#'     comp=list(Group=c("Children", "Adults")))
+#'     comp=list(Group=c('Children', 'Adults')))
 #' }
 #' @family Testing for significance
 # plots differences in 2D plot
-plot_diff2 <- function(model, view, comp, cond=NULL, 
-	color='topo', nCol=100, col=NULL, add.color.legend=TRUE,
-	se=1.96, sim.ci=FALSE, show.diff=FALSE, col.diff=1, alpha.diff=.5,
-    n.grid=30, nlevels=10, 
-	zlim=NULL, xlim=NULL, ylim=NULL, 
-	main=NULL, xlab=NULL, ylab=NULL,
-	rm.ranef=NULL, transform.view=NULL,
-	hide.label=FALSE,
-	dec=NULL,
-	print.summary=getOption('itsadug_print'), ...) { 
-	dat = model$model
-	xvar <- NULL
-	yvar <- NULL
-	by_predictor <- NULL
-	# check view
-	if(length(view) < 2){
-		stop('Provide predictors for x- and y-axes in view.')
-	}else{
-		xvar <- view[1]
-		yvar <- view[2]
-		if(xvar %in% names(cond)){
-			warning(sprintf('Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.', xvar, xvar))
-		}else{
-			cond[[xvar]] <- seq(min(na.exclude(dat[,xvar])), max(na.exclude(dat[,xvar])), length=n.grid)
-			if(!is.null(xlim)){
-        		if(length(xlim) != 2){
-            		warning("Invalid xlim values specified. Argument xlim is being ignored.")
-        		}else{ 
-            		cond[[xvar]] <- seq(xlim[1], xlim[2], length=n.grid)
-        		}
-    		}
-		}
-		if(yvar %in% names(cond)){
-			warning(sprintf('Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.', yvar, yvar))
-			cond[[yvar]] <- NULL
-		}else{
-			cond[[yvar]] <- seq(min(na.exclude(dat[,yvar])), max(na.exclude(dat[,yvar])), length=n.grid)
-			if(!is.null(ylim)){
-        		if(length(ylim) != 2){
-            		warning("Invalid ylim values specified. Argument ylim is being ignored.")
-        		}else{ 
-            		cond[[yvar]] <- seq(ylim[1], ylim[2], length=n.grid)
-        		}
-    		}
-		}
-	}
-	newd <- c()
-	newd <- get_difference(model, comp=comp, cond=cond, 
-        se=ifelse(se>0, TRUE, FALSE), 
-        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, 
-		print.summary=print.summary, rm.ranef=rm.ranef)
-	# transform values x- and y-axes:
-    errormessage <- function(name){
-        return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", name))
-    
+plot_diff2 <- function(model, view, comp, cond = NULL, color = "terrain", nCol = 100, col = NULL, add.color.legend = TRUE, 
+    se = 1.96, sim.ci = FALSE, show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, n.grid = 30, nlevels = 10, 
+    zlim = NULL, xlim = NULL, ylim = NULL, main = NULL, xlab = NULL, ylab = NULL, rm.ranef = TRUE, transform.view = NULL, 
+    hide.label = FALSE, dec = NULL, f=1.96, print.summary = getOption("itsadug_print"), ...) {
+    dat = model$model
+    xvar <- NULL
+    yvar <- NULL
+    by_predictor <- NULL
+    # check view
+    if (length(view) < 2) {
+        stop("Provide predictors for x- and y-axes in view.")
+    } else {
+        xvar <- view[1]
+        yvar <- view[2]
+        if (xvar %in% names(cond)) {
+            warning(sprintf("Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.", 
+                xvar, xvar))
+        } else {
+            cond[[xvar]] <- seq(min(na.exclude(dat[, xvar])), max(na.exclude(dat[, xvar])), length = n.grid)
+            if (!is.null(xlim)) {
+                if (length(xlim) != 2) {
+                  warning("Invalid xlim values specified. Argument xlim is being ignored.")
+                } else {
+                  cond[[xvar]] <- seq(xlim[1], xlim[2], length = n.grid)
+                }
+            }
+        }
+        if (yvar %in% names(cond)) {
+            warning(sprintf("Predictor %s specified in view and cond. Values in cond being used, rather than the whole range of %s.", 
+                yvar, yvar))
+            cond[[yvar]] <- NULL
+        } else {
+            cond[[yvar]] <- seq(min(na.exclude(dat[, yvar])), max(na.exclude(dat[, yvar])), length = n.grid)
+            if (!is.null(ylim)) {
+                if (length(ylim) != 2) {
+                  warning("Invalid ylim values specified. Argument ylim is being ignored.")
+                } else {
+                  cond[[yvar]] <- seq(ylim[1], ylim[2], length = n.grid)
+                }
+            }
+        }
     }
-    if(!is.null(transform.view)){
-        if(length(transform.view)==1){
-            tryCatch(newd[,xvar] <- sapply(newd[,xvar], transform.view), 
-                error=function(x){},
-                warning=function(x){})
-            tryCatch(newd[,yvar] <- sapply(newd[,yvar], transform.view), 
-                error=function(x){},
-                warning=function(x){})
-            if(any(is.infinite(newd[,xvar])) | any(is.nan(newd[,xvar])) | any(is.na(newd[,xvar]))){
+    newd <- c()
+    newd <- get_difference(model, comp = comp, cond = cond, se = ifelse(se > 0 | show.diff==TRUE, TRUE, FALSE), f = ifelse(se > 
+        0, se, f), sim.ci = sim.ci, print.summary = print.summary, rm.ranef = rm.ranef)
+    # transform values x- and y-axes:
+    errormessage <- function(name) {
+        return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", 
+            name))
+        
+    }
+    if (!is.null(transform.view)) {
+        if (length(transform.view) == 1) {
+            tryCatch(newd[, xvar] <- sapply(newd[, xvar], transform.view), error = function(x) {
+            }, warning = function(x) {
+            })
+            tryCatch(newd[, yvar] <- sapply(newd[, yvar], transform.view), error = function(x) {
+            }, warning = function(x) {
+            })
+            if (any(is.infinite(newd[, xvar])) | any(is.nan(newd[, xvar])) | any(is.na(newd[, xvar]))) {
                 stop(errormessage("x"))
             }
-            if(any(is.infinite(newd[,yvar])) | any(is.nan(newd[,yvar])) | any(is.na(newd[,yvar]))){
+            if (any(is.infinite(newd[, yvar])) | any(is.nan(newd[, yvar])) | any(is.na(newd[, yvar]))) {
                 stop(errormessage("y"))
             }
-            if(print.summary){
+            if (print.summary) {
                 cat("\t* Note: The same transformation is applied to values of x-axis and y-axis.\n")
             }
-        }else if(length(transform.view) >= 2){
-            if(!is.null(transform.view[[1]])){
-                tryCatch(newd[,xvar] <- sapply(newd[,xvar], transform.view[[1]]), 
-                    error=function(x){},
-                    warning=function(x){})
-                if(any(is.infinite(newd[,xvar])) | any(is.nan(newd[,xvar])) | any(is.na(newd[,xvar]))){
-                    stop(errormessage("x"))
+        } else if (length(transform.view) >= 2) {
+            if (!is.null(transform.view[[1]])) {
+                tryCatch(newd[, xvar] <- sapply(newd[, xvar], transform.view[[1]]), error = function(x) {
+                }, warning = function(x) {
+                })
+                if (any(is.infinite(newd[, xvar])) | any(is.nan(newd[, xvar])) | any(is.na(newd[, xvar]))) {
+                  stop(errormessage("x"))
                 }
             }
-            if(!is.null(transform.view[[2]])){
-                tryCatch(newd[,yvar] <- sapply(newd[,yvar], transform.view[[2]]), 
-                    error=function(x){},
-                    warning=function(x){})
-                if(any(is.infinite(newd[,yvar])) | any(is.nan(newd[,yvar])) | any(is.na(newd[,yvar]))){
-                    stop(errormessage("y"))
+            if (!is.null(transform.view[[2]])) {
+                tryCatch(newd[, yvar] <- sapply(newd[, yvar], transform.view[[2]]), error = function(x) {
+                }, warning = function(x) {
+                })
+                if (any(is.infinite(newd[, yvar])) | any(is.nan(newd[, yvar])) | any(is.na(newd[, yvar]))) {
+                  stop(errormessage("y"))
                 }
             }
-            if(print.summary){
+            if (print.summary) {
                 cat("\t* Note: Transformation function(s) applied to values of x-axis and / or y-axis.\n")
             }
-        }          
+        }
     }
-	if (is.null(main)) {
-		levels1 <- paste(sapply(comp, function(x) x[1]), collapse='.')
-		levels2 <- paste(sapply(comp, function(x) x[2]), collapse='.')
-		main = sprintf('Difference between %s and %s', levels1, levels2)
-	} 
-	if(is.null(ylab)) {
-		ylab = view[2]
-	}
-	if(is.null(xlab)) {
-		xlab = view[1]
-	}
-	if(se > 0){
-		p <- plotfunctions::plotsurface(newd, view=view, predictor="difference", valCI='CI',
-			main=main, xlab=xlab, ylab=ylab, 
-			zlim=zlim, 
-			col=col, color=color, nCol=nCol, add.color.legend=add.color.legend,
-			nlevels=nlevels, dec=dec, ...)
-        if(hide.label==FALSE){
+    if (is.null(main)) {
+        levels1 <- paste(sapply(comp, function(x) x[1]), collapse = ".")
+        levels2 <- paste(sapply(comp, function(x) x[2]), collapse = ".")
+        main = sprintf("Difference between %s and %s", levels1, levels2)
+    }
+    if (is.null(ylab)) {
+        ylab = view[2]
+    }
+    if (is.null(xlab)) {
+        xlab = view[1]
+    }
+    # recognize color scheme:
+    getcol <- get_palette(color, nCol = nCol, col = col)
+    pal <- getcol[["color"]]
+    con.col <- getcol[["col"]]
+    if (se > 0) {
+        p <- plotfunctions::plotsurface(newd, view = view, predictor = "difference", valCI = "CI", main = main, 
+            xlab = xlab, ylab = ylab, zlim = zlim, col = con.col, color = pal, nCol = nCol, add.color.legend = add.color.legend, 
+            nlevels = nlevels, dec = dec, ...)
+        if (hide.label == FALSE) {
             addlabel = "difference"
-            if(!is.null(rm.ranef)){
-                if(rm.ranef !=FALSE){
-                    addlabel = paste(addlabel, "excl. random", sep=", ")
+            if (!is.null(rm.ranef)) {
+                if (rm.ranef != FALSE) {
+                  addlabel = paste(addlabel, "excl. random", sep = ", ")
                 }
             }
-            mtext(addlabel, side=4, line=0, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
-        }     		
-	}else{
-		p <- plotfunctions::plotsurface(newd, view=view, predictor="difference", 
-			main=main, xlab=xlab, ylab=ylab, 
-			zlim=zlim, 
-			col=col, color=color, nCol=nCol, add.color.legend=add.color.legend,
-			nlevels=nlevels, dec=dec, ...)	
-        if(hide.label==FALSE){
+            mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+        }
+    } else {
+        p <- plotfunctions::plotsurface(newd, view = view, predictor = "difference", main = main, xlab = xlab, 
+            ylab = ylab, zlim = zlim, col = con.col, color = pal, nCol = nCol, add.color.legend = add.color.legend, 
+            nlevels = nlevels, dec = dec, ...)
+        if (hide.label == FALSE) {
             addlabel = "difference"
-            if(!is.null(rm.ranef)){
-                if(rm.ranef !=FALSE){
-                    addlabel = paste(addlabel, "excl. random", sep=", ")
+            if (!is.null(rm.ranef)) {
+                if (rm.ranef != FALSE) {
+                  addlabel = paste(addlabel, "excl. random", sep = ", ")
                 }
             }
-            if(sim.ci==TRUE){
-                addlabel = paste(addlabel, "simult.CI", sep=", ")
+            if (sim.ci == TRUE) {
+                addlabel = paste(addlabel, "simult.CI", sep = ", ")
             }
-            mtext(addlabel, side=4, line=0, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
-        }  	
-	}
-    if(show.diff){
-        plot_signifArea(newd, view=view, predictor="difference", valCI="CI", col=col.diff, alpha=alpha.diff)
+            mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+        }
     }
-	
-	p[['zlim']] <- zlim
-	invisible(p)
+    if (show.diff) {
+        plot_signifArea(newd, view = view, predictor = "difference", valCI = "CI", col = col.diff, alpha = alpha.diff)
+    }
+    
+    p[["zlim"]] <- zlim
+    invisible(p)
 }
 
 
@@ -869,42 +823,39 @@ plot_diff2 <- function(model, view, comp, cond=NULL,
 #'
 #' @author Jacolien van Rij
 #' @family Testing for significance
-report_stats <- function(model, summary=NULL, print.summary=getOption('itsadug_print')){
-	if(!inherits(model, "gam")){
-		stop("Function is only implemented for GAMMs.")
-	}
-	m.sum <- NULL
-	if(!is.null(summary)){
-		m.sum <- summary$s.table
-	}else{
-		m.sum <- summary(model)$s.table
-	}
-	if(colnames(m.sum)[3]=="F"){
-		m.sum <-  as.data.frame(m.sum)
-		edf2 <- length(model$y) - sum(model$edf)
-		p <- ifelse(m.sum[,4]>=.01, sprintf("p=%.3f",m.sum[,4]),
-				ifelse(m.sum[,4]>=.001, "p<.01","p<.001"))
-		report <- sprintf("F(%.3f, %.3f)=%.2f; %s", 
-			m.sum[,1], edf2, m.sum[,3], p)
-		report <- data.frame(smooth.term=rownames(m.sum),
-			report=report)
-		if(print.summary){
-			print(report)
-		}
-		invisible(report)
-	}else{
-		m.sum <-  as.data.frame(m.sum)
-		p <- ifelse(m.sum[,4]>=.01, sprintf("p=%.3f",m.sum[,4]),
-				ifelse(m.sum[,4]>=.001, "p<.01","p<.001"))
-		report <- sprintf("%s(%.3f)=%.2f; %s", 
-			colnames(m.sum)[3], m.sum[,1],m.sum[,3], p)
-		report <- data.frame(smooth.term=rownames(m.sum),
-			report=report)
-		if(print.summary){
-			print(report)
-		}
-		invisible(report)
-	}
+# Old code:
+report_stats <- function(model, summary = NULL, print.summary = getOption("itsadug_print")) {
+    if (!inherits(model, "gam")) {
+        stop("Function is only implemented for GAMMs.")
+    }
+    m.sum <- NULL
+    if (!is.null(summary)) {
+        m.sum <- summary$s.table
+    } else {
+        m.sum <- summary(model)$s.table
+    }
+    if (colnames(m.sum)[3] == "F") {
+        m.sum <- as.data.frame(m.sum)
+        edf2 <- length(model$y) - sum(model$edf)
+        p <- ifelse(m.sum[, 4] >= 0.01, sprintf("p=%.3f", m.sum[, 4]), ifelse(m.sum[, 4] >= 0.001, "p<.01", 
+            "p<.001"))
+        report <- sprintf("F(%.3f, %.3f)=%.2f; %s", m.sum[, 1], edf2, m.sum[, 3], p)
+        report <- data.frame(smooth.term = rownames(m.sum), report = report)
+        if (print.summary) {
+            print(report)
+        }
+        invisible(report)
+    } else {
+        m.sum <- as.data.frame(m.sum)
+        p <- ifelse(m.sum[, 4] >= 0.01, sprintf("p=%.3f", m.sum[, 4]), ifelse(m.sum[, 4] >= 0.001, "p<.01", 
+            "p<.001"))
+        report <- sprintf("%s(%.3f)=%.2f; %s", colnames(m.sum)[3], m.sum[, 1], m.sum[, 3], p)
+        report <- data.frame(smooth.term = rownames(m.sum), report = report)
+        if (print.summary) {
+            print(report)
+        }
+        invisible(report)
+    }
 }
 
 
@@ -959,15 +910,15 @@ report_stats <- function(model, summary=NULL, print.summary=getOption('itsadug_p
 #' # Convert Condition to factorial predictor for illustration purposes:
 #' simdat$Condition <- as.factor(simdat$Condition)
 #' 
-#' infoMessages("on")
+#' infoMessages('on')
 #' 
 #' \dontrun{
 #' # some arbitrary model:
 #' m1 <- bam(Y ~ Condition*Group  
-#' 	+ s(Time, by=Condition) 
-#' 	+ s(Time, by=Group)
-#' 	+ s(Subject, bs='re'), 
-#' 	data=simdat)
+#' \t+ s(Time, by=Condition) 
+#' \t+ s(Time, by=Group)
+#' \t+ s(Subject, bs='re'), 
+#' \tdata=simdat)
 #' 
 #' # print summary to inspect parametric terms:
 #' summary(m1)
@@ -979,8 +930,8 @@ report_stats <- function(model, summary=NULL, print.summary=getOption('itsadug_p
 #' # return only contrasts for Adults:
 #' wald_gam(m1, comp=list(Condition=levels(simdat$Condition)))
 #' # return specific contrasts:
-#' wald_gam(m1, comp=list(Condition=c("-1", "0", "1"), 
-#'     Group=c("Adults", "Children")))
+#' wald_gam(m1, comp=list(Condition=c('-1', '0', '1'), 
+#'     Group=c('Adults', 'Children')))
 #' 
 #' # USE OF SELECT
 #' # Specify contrast matrix. 
@@ -1000,260 +951,255 @@ report_stats <- function(model, summary=NULL, print.summary=getOption('itsadug_p
 #' # USE OF T.TEST
 #' # This option is not implemented for use with select
 #' # Compare with second line of parametric summary:
-#' wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-#'     Group="Children"), t.test=TRUE)
+#' wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+#'     Group='Children'), t.test=TRUE)
 #' # Compare with Wald test:
-#' wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-#'     Group="Children"))
+#' wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+#'     Group='Children'))
 #' 
 #' # exclude significance stars:
-#' wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-#'     Group="Children"), signif.stars=FALSE)
+#' wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+#'     Group='Children'), signif.stars=FALSE)
 #' 
 #' # do not print output, but save table for later use:
-#' test <- wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-#'     Group="Children"), print.output=FALSE)
+#' test <- wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+#'     Group='Children'), print.output=FALSE)
 #' test
 #' # alternative way:
 #' infoMessages('off')
-#' test2 <- wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-#'     Group="Children"))
+#' test2 <- wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+#'     Group='Children'))
 #' infoMessages('on')
 #'
 #' }
 #' @family Testing for significance
-wald_gam <- function(model,
-	comp=NULL, select=NULL, 
-	t.test = FALSE,
-	null.hypothesis=0, summ=NULL,
-	signif.stars=TRUE,
-    print.output=getOption('itsadug_print')) {
-	convertPval <- function(x, signif.stars=TRUE){
-		out   <-  	sapply(x, function(y){
-			if(y < 2e-16){
-				return("< 2e-16")
-			}else if(y < .001){
-				return(sprintf("= %.2e", y))
-			}else{
-				return(sprintf("= %.3f", y))
-			}
-		})
-		stars = rep("", length(x))
-		if(signif.stars==TRUE){
-			stars <- sapply(x, function(y){
-				if(y < .001){
-					return("***")
-				}else if(y < .01){
-					return("**")
-				}else if(y < .05){
-					return("*")
-				}else if(y < .1){
-					return(".")
-				}else{
-					return("")
-				}
-			})
-		}
-		return(cbind(pvalue=out, signif=stars))
-	}
-	# variables:
-	all = TRUE
-	par.terms = NULL
-	info <- sprintf("%s: %s\n", deparse(substitute(model)), paste(deparse(model$formula), collapse="\n") )
-	if(is.null(summ)){
-		summ <- summary(model)
-	}
-		
-	if(!all(c("p.coeff", "cov.scaled") %in% names(summ) )){
-		stop(sprintf("Function not (yet) implemented for class %s.", gsub("summary\\.", "", class(summ)[1])))
-	}
-	b <- summ$p.coeff
-	numFix <- length(b)
-	var = model$var.summary
-	if(!is.null(select)){
-		if(!is.null(comp)){
-			warning("Both comp and select specified. Select is used instead of comp.")
-			comp = NULL
-		}
-		all = FALSE
-		if (is.list(select)){
-			if(length(select) != 2){
-				stop("If select is psecified as list, it much have two elements. See examples in the help file.")
-			}
-			tmp <- rep(0, numFix)
-			el1 <- length(select[[1]])
-			el2 <- length(select[[2]])
-			if((min(select[[1]]) < 1) | (max(select[[1]]) > numFix)){
-				stop("Select should indicate the numbers of the parametric summary. See examples in the help file.")
-			}
-			if((min(select[[2]]) < 1) | (max(select[[2]]) > numFix)){
-				stop("Select should indicate the numbers of the parametric summary. See examples in the help file.")
-			}
-			tmp[select[[1]]] <- -1*el2
-			tmp[select[[2]]] <- el1
-			if(sum(tmp != 0) != (el1+el2)){
-				stop("Select is specified incorrectly. Rows should not be selected more than once.")
-			}
-			select = tmp
-		}
-		if(is.vector(select)){
-			select = matrix(select, nrow=1)
-			if(select[1]>0){
-				warning("Please check contrasts, as intercept is selected. See examples in the help file for using vectors to specify contrasts. If you are not sure, please use comp.")
-			}
-		}else if (!is.matrix(select)){
-			stop("Please specify select as matrix.")
-		}
-		if(ncol(select) != numFix){
-			stop("Number of selection is not equal to the number of parametric coefficients.")
-		}	
-		# calculate:
-		vc <- summ$cov.scaled[1:numFix,1:numFix]
-		w  <- t(select%*%b-null.hypothesis)%*%solve(select%*%vc%*%t(select))%*%(select%*%b-null.hypothesis)
-		p1 <- pchisq(w[1], length(null.hypothesis), lower.tail=FALSE)
-		chisq = data.frame(Chisq=w, Df=length(null.hypothesis), p.value=p1)
-		pw <- convertPval(p1, signif.stars)
-		# output:
-		if(print.output==TRUE){
-			cat(sprintf("\nWald test\n-----\n%s\n", info))
-			cat("Parametric effects:\n")
-			print(b)
-			cat('\nContrasts:\n')
-			print(select)
-			cat('\nNull hypothesis = ', null.hypothesis, "\n\n")
-			print(sprintf('Chi-square(%.3f) = %.3f, p %s %s', 
-				length(null.hypothesis), 
-				w[1], pw[1], pw[2]))
-		}
-		invisible(chisq)
-	}else{
-		# organize input:
-		if(!is.null(comp)){
-			par.terms <- names(comp)
-			par.terms.string = list()
-			for(i in par.terms){
-				if(!i %in% names(var)){
-					stop(sprintf("%s is not a modelterm.", i))
-				}
-				if(!any(inherits(var[[i]], c("factor", "character")))) {
-					warning(sprintf("Predictor %s is not a factor and will not be considered.",i))
-				}else{
-					par.terms.string <- c(par.terms.string, sprintf("%s=c(%s)", i, 
-						paste(sprintf("'%s'", comp[[i]]), collapse=',')))
-				}
-			}
-			par.terms.string <- paste(par.terms.string, collapse=",")
-			eval(parse(text=sprintf("newdat <- expand.grid(%s)", par.terms.string)))
-			names(newdat) <- par.terms
-		}else{
-			par.terms <- attr(model$pterms, "factors")
-			par.terms <- row.names(par.terms)[rowSums(par.terms) > 0]
-			par.terms.string <- paste(sprintf("levels(model$var.summary[['%s']])", par.terms), collapse=",")
-			eval(parse(text=sprintf("newdat <- expand.grid(%s)", par.terms.string)))
-			names(newdat) <- par.terms
-		}
-		othersettings <- c()
-		all.p.terms <- attr(model$pterms, "factors")
-		all.p.terms <- row.names(all.p.terms)[rowSums(all.p.terms) > 0]
-		for(i in names(var)){
-			if(!i %in% par.terms){
-				if(inherits(var[[i]], c("numeric", "integer"))){
-					newdat[,i] <- var[[i]][2]
-				}else if(inherits(var[[i]], c("factor"))){
-					newdat[,i] <- as.character(var[[i]])
-					if(i %in% all.p.terms){
-						othersettings <- c(othersettings, i)
-					}
-				}else{
-					newdat[,i] <- var[[i]][1]
-				}
-			}
-		}
-		fv <- predict(model, newdat, type='lpmatrix')
-		el <- 1:ncol(fv)
-		el <- el[el > numFix]
-		fv[, el] <- 0
-		out <- c()
-		message <- ""
-		for(i in 1:(nrow(newdat)-1)){
-			for(j in (i+1):nrow(newdat)){
-				cond <- data.frame(C1 = as.character(interaction(newdat[i,par.terms])),
-					C2 = as.character(interaction(newdat[j,par.terms])) )
-				if(length(othersettings)>0){
-					cond[, othersettings] <- newdat[i, othersettings]
-				}
-				est <- (fv[j,]-fv[i,]) %*% coef(model)
-				ci  <- sqrt(rowSums(((fv[j,]-fv[i,]) %*%vcov(model))*(fv[j,]-fv[i,]) ))
-				diff <- data.frame(Estimate=est, SE=ci, CI=1.96*ci)
-				# chisq:
-				R  <- matrix( (fv[j,]-fv[i,])[1:numFix], nrow=1)
-				vc <- summ$cov.scaled[1:numFix,1:numFix]
-				w  <- t(R%*%b-null.hypothesis)%*%solve(R%*%vc%*%t(R))%*%(R%*%b-null.hypothesis)
-				p1 <- pchisq(w[1], length(null.hypothesis), lower.tail=FALSE)
-				chisq = data.frame(Chisq=w, Df=length(null.hypothesis), p.value=p1)
-				# t-test:
-				if((t.test==TRUE) & (model$family$family=="gaussian")){
-					t1 <- est/ci
-					p1 <- 2*pt(-abs(t1),df=summ$n-1)	
-					t1 = data.frame(T=t1, n=summ$n, p.value2=p1)	
-					if(length(out)> 1){
-						out <- rbind(out, cbind(cond, diff, chisq, t1)	)
-					}else{
-						out <- cbind(cond, diff, chisq, t1)	
-					}
-				}else{
-					t.test = FALSE
-					if(length(out)> 1){
-						out <- rbind(out, cbind(cond, diff, chisq)	)
-					}else{
-						out <- cbind(cond, diff, chisq)	
-					}	
-				}
-			}
-		}
-		out <- out[order(out$Estimate),]
-		# output:
-		if(print.output==TRUE){
-			cat(sprintf("\nWald test\n-----\n%s\n", info))
-			cat("Parametric effects:\n")
-			print(b)
-			cat('\nNull hypothesis = ', null.hypothesis, "\n\n")
-			if(length(othersettings)>0){
-				for(i in othersettings){
-					out[,i] <- as.character(out[,i])
-				}
-				if(t.test==TRUE){
-					pval <- convertPval(out$p.value2, signif.stars)
-					for(i in 1:nrow(out)){
-						cat(sprintf('Comparing %s with %s (%s):\n\tEst. = %f, SE = %f, t-score = %.3f, p %s %s\n\n', 
-						out[i,]$C1, out[i,]$C2, paste(out[i,othersettings], collapse=', '), 
-						out[i,]$Estimate, out[i,]$SE, 
-						out[i,]$T, pval[i,1], pval[i,2]))
-					}
-				}else{
-					pval <- convertPval(out$p.value, signif.stars)
-					for(i in 1:nrow(out)){
-						cat(sprintf('Comparing %s with %s (%s):\n\tX2(%.3f) = %.3f, p %s %s\n\n', 
-						out[i,]$C1, out[i,]$C2,paste(out[i,othersettings], collapse=', '),
-						out[i,]$Df, out[i,]$Chisq, pval[i,1], pval[i,2]))
-					}
-				}
-			}else{
-				if(t.test==TRUE){
-					pval <- convertPval(out$p.value2, signif.stars)
-					cat(sprintf('Comparing %s with %s:\n\tEst. = %f, SE = %f, t-score = %.3f, p %s %s\n\n', 
-						out$C1, out$C2, 
-						out[i,]$Estimate, out[i,]$SE, 
-						out$T, pval[,1], pval[,2]))
-				}else{
-					pval <- convertPval(out$p.value, signif.stars)
-					cat(sprintf('Comparing %s with %s:\n\tX2(%.3f) = %.3f, p %s %s\n\n', 
-						out$C1, out$C2,out$Df, out$Chisq, pval[,1], pval[,2]))
-				}
-			}
-		}
-		invisible(out)
-	}
+wald_gam <- function(model, comp = NULL, select = NULL, t.test = FALSE, null.hypothesis = 0, summ = NULL, 
+    signif.stars = TRUE, print.output = getOption("itsadug_print")) {
+    convertPval <- function(x, signif.stars = TRUE) {
+        out <- sapply(x, function(y) {
+            if (y < 2e-16) {
+                return("< 2e-16")
+            } else if (y < 0.001) {
+                return(sprintf("= %.2e", y))
+            } else {
+                return(sprintf("= %.3f", y))
+            }
+        })
+        stars = rep("", length(x))
+        if (signif.stars == TRUE) {
+            stars <- sapply(x, function(y) {
+                if (y < 0.001) {
+                  return("***")
+                } else if (y < 0.01) {
+                  return("**")
+                } else if (y < 0.05) {
+                  return("*")
+                } else if (y < 0.1) {
+                  return(".")
+                } else {
+                  return("")
+                }
+            })
+        }
+        return(cbind(pvalue = out, signif = stars))
+    }
+    # variables:
+    all = TRUE
+    par.terms = NULL
+    info <- sprintf("%s: %s\n", deparse(substitute(model)), paste(deparse(model$formula), collapse = "\n"))
+    if (is.null(summ)) {
+        summ <- summary(model)
+    }
+    
+    if (!all(c("p.coeff", "cov.scaled") %in% names(summ))) {
+        stop(sprintf("Function not (yet) implemented for class %s.", gsub("summary\\.", "", class(summ)[1])))
+    }
+    b <- summ$p.coeff
+    numFix <- length(b)
+    var = model$var.summary
+    # checking: from:
+    # https://stackoverflow.com/questions/20637360/convert-all-data-frame-character-columns-to-factors
+    var[sapply(var, is.character)] <- lapply(var[sapply(var, is.character)], as.factor)
+    if (!is.null(select)) {
+        if (!is.null(comp)) {
+            warning("Both comp and select specified. Select is used instead of comp.")
+            comp = NULL
+        }
+        all = FALSE
+        if (is.list(select)) {
+            if (length(select) != 2) {
+                stop("If select is psecified as list, it much have two elements. See examples in the help file.")
+            }
+            tmp <- rep(0, numFix)
+            el1 <- length(select[[1]])
+            el2 <- length(select[[2]])
+            if ((min(select[[1]]) < 1) | (max(select[[1]]) > numFix)) {
+                stop("Select should indicate the numbers of the parametric summary. See examples in the help file.")
+            }
+            if ((min(select[[2]]) < 1) | (max(select[[2]]) > numFix)) {
+                stop("Select should indicate the numbers of the parametric summary. See examples in the help file.")
+            }
+            tmp[select[[1]]] <- -1 * el2
+            tmp[select[[2]]] <- el1
+            if (sum(tmp != 0) != (el1 + el2)) {
+                stop("Select is specified incorrectly. Rows should not be selected more than once.")
+            }
+            select = tmp
+        }
+        if (is.vector(select)) {
+            select = matrix(select, nrow = 1)
+            if (select[1] > 0) {
+                warning("Please check contrasts, as intercept is selected. See examples in the help file for using vectors to specify contrasts. If you are not sure, please use comp.")
+            }
+        } else if (!is.matrix(select)) {
+            stop("Please specify select as matrix.")
+        }
+        if (ncol(select) != numFix) {
+            stop("Number of selection is not equal to the number of parametric coefficients.")
+        }
+        # calculate:
+        vc <- summ$cov.scaled[1:numFix, 1:numFix]
+        w <- t(select %*% b - null.hypothesis) %*% solve(select %*% vc %*% t(select)) %*% (select %*% b - 
+            null.hypothesis)
+        p1 <- pchisq(w[1], length(null.hypothesis), lower.tail = FALSE)
+        chisq = data.frame(Chisq = w, Df = length(null.hypothesis), p.value = p1, stringsAsFactors = FALSE)
+        pw <- convertPval(p1, signif.stars)
+        # output:
+        if (print.output == TRUE) {
+            cat(sprintf("\nWald test\n-----\n%s\n", info))
+            cat("Parametric effects:\n")
+            print(b)
+            cat("\nContrasts:\n")
+            print(select)
+            cat("\nNull hypothesis = ", null.hypothesis, "\n\n")
+            print(sprintf("Chi-square(%.3f) = %.3f, p %s %s", length(null.hypothesis), w[1], pw[1], pw[2]))
+        }
+        invisible(chisq)
+    } else {
+        # organize input:
+        if (!is.null(comp)) {
+            par.terms <- names(comp)
+            par.terms.string = list()
+            for (i in par.terms) {
+                if (!i %in% names(var)) {
+                  stop(sprintf("%s is not a modelterm.", i))
+                }
+                if (!any(inherits(var[[i]], c("factor", "character")))) {
+                  warning(sprintf("Predictor %s is not a factor and will not be considered.", i))
+                } else {
+                  par.terms.string <- c(par.terms.string, sprintf("%s=c(%s)", i, paste(sprintf("'%s'", comp[[i]]), 
+                    collapse = ",")))
+                }
+            }
+            par.terms.string <- paste(par.terms.string, collapse = ",")
+            eval(parse(text = sprintf("newdat <- expand.grid(%s, stringsAsFactors=TRUE)", par.terms.string)))
+            names(newdat) <- par.terms
+        } else {
+            par.terms <- attr(model$pterms, "factors")
+            par.terms <- row.names(par.terms)[rowSums(par.terms) > 0]
+            par.terms.string <- paste(sprintf("levels(model$var.summary[['%s']])", par.terms), collapse = ",")
+            eval(parse(text = sprintf("newdat <- expand.grid(%s, stringsAsFactors=TRUE)", par.terms.string)))
+            names(newdat) <- par.terms
+        }
+        othersettings <- c()
+        all.p.terms <- attr(model$pterms, "factors")
+        all.p.terms <- row.names(all.p.terms)[rowSums(all.p.terms) > 0]
+        for (i in names(var)) {
+            if (!i %in% par.terms) {
+                if (inherits(var[[i]], c("numeric", "integer"))) {
+                  newdat[, i] <- var[[i]][2]
+                } else if (inherits(var[[i]], c("factor"))) {
+                  newdat[, i] <- as.character(var[[i]])
+                  if (i %in% all.p.terms) {
+                    othersettings <- c(othersettings, i)
+                  }
+                } else {
+                  newdat[, i] <- var[[i]][1]
+                }
+            }
+        }
+        fv <- predict(model, newdat, type = "lpmatrix")
+        el <- 1:ncol(fv)
+        el <- el[el > numFix]
+        fv[, el] <- 0
+        out <- c()
+        message <- ""
+        for (i in 1:(nrow(newdat) - 1)) {
+            for (j in (i + 1):nrow(newdat)) {
+                cond <- data.frame(C1 = as.character(interaction(newdat[i, par.terms])), C2 = as.character(interaction(newdat[j, 
+                  par.terms])), stringsAsFactors = FALSE)
+                if (length(othersettings) > 0) {
+                  cond[, othersettings] <- newdat[i, othersettings]
+                }
+                est <- (fv[j, ] - fv[i, ]) %*% coef(model)
+                ci <- sqrt(rowSums(((fv[j, ] - fv[i, ]) %*% vcov(model)) * (fv[j, ] - fv[i, ])))
+                diff <- data.frame(Estimate = est, SE = ci, CI = 1.96 * ci, stringsAsFactors = FALSE)
+                # chisq:
+                R <- matrix((fv[j, ] - fv[i, ])[1:numFix], nrow = 1)
+                vc <- summ$cov.scaled[1:numFix, 1:numFix]
+                w <- t(R %*% b - null.hypothesis) %*% solve(R %*% vc %*% t(R)) %*% (R %*% b - null.hypothesis)
+                p1 <- pchisq(w[1], length(null.hypothesis), lower.tail = FALSE)
+                chisq = data.frame(Chisq = w, Df = length(null.hypothesis), p.value = p1, stringsAsFactors = FALSE)
+                # t-test:
+                if ((t.test == TRUE) & (model$family$family == "gaussian")) {
+                  t1 <- est/ci
+                  p1 <- 2 * pt(-abs(t1), df = summ$n - 1)
+                  t1 = data.frame(T = t1, n = summ$n, p.value2 = p1, stringsAsFactors = FALSE)
+                  if (length(out) > 1) {
+                    out <- rbind(out, cbind(cond, diff, chisq, t1))
+                  } else {
+                    out <- cbind(cond, diff, chisq, t1)
+                  }
+                } else {
+                  t.test = FALSE
+                  if (length(out) > 1) {
+                    out <- rbind(out, cbind(cond, diff, chisq))
+                  } else {
+                    out <- cbind(cond, diff, chisq)
+                  }
+                }
+            }
+        }
+        out <- out[order(out$Estimate), ]
+        # output:
+        if (print.output == TRUE) {
+            cat(sprintf("\nWald test\n-----\n%s\n", info))
+            cat("Parametric effects:\n")
+            print(b)
+            cat("\nNull hypothesis = ", null.hypothesis, "\n\n")
+            if (length(othersettings) > 0) {
+                for (i in othersettings) {
+                  out[, i] <- as.character(out[, i])
+                }
+                if (t.test == TRUE) {
+                  pval <- convertPval(out$p.value2, signif.stars)
+                  for (i in 1:nrow(out)) {
+                    cat(sprintf("Comparing %s with %s (%s):\n\tEst. = %f, SE = %f, t-score = %.3f, p %s %s\n\n", 
+                      out[i, ]$C1, out[i, ]$C2, paste(out[i, othersettings], collapse = ", "), out[i, ]$Estimate, 
+                      out[i, ]$SE, out[i, ]$T, pval[i, 1], pval[i, 2]))
+                  }
+                } else {
+                  pval <- convertPval(out$p.value, signif.stars)
+                  for (i in 1:nrow(out)) {
+                    cat(sprintf("Comparing %s with %s (%s):\n\tX2(%.3f) = %.3f, p %s %s\n\n", out[i, ]$C1, 
+                      out[i, ]$C2, paste(out[i, othersettings], collapse = ", "), out[i, ]$Df, out[i, ]$Chisq, 
+                      pval[i, 1], pval[i, 2]))
+                  }
+                }
+            } else {
+                if (t.test == TRUE) {
+                  pval <- convertPval(out$p.value2, signif.stars)
+                  cat(sprintf("Comparing %s with %s:\n\tEst. = %f, SE = %f, t-score = %.3f, p %s %s\n\n", 
+                    out$C1, out$C2, out[i, ]$Estimate, out[i, ]$SE, out$T, pval[, 1], pval[, 2]))
+                } else {
+                  pval <- convertPval(out$p.value, signif.stars)
+                  cat(sprintf("Comparing %s with %s:\n\tX2(%.3f) = %.3f, p %s %s\n\n", out$C1, out$C2, out$Df, 
+                    out$Chisq, pval[, 1], pval[, 2]))
+                }
+            }
+        }
+        invisible(out)
+    }
 }
 
 

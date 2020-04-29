@@ -27,17 +27,26 @@ m0 <- bam(Y ~ s(Time) + s(Subject, bs='re')
 # get all coefficients:
 coef(m0)
 # to get only the Subject intercepts:
-coef(m0)[grepl(convertNonAlphanumeric("s(Subject)"), names(coef(m0)))]
+coef(m0)[grepl(convertNonAlphanumeric('s(Subject)'), names(coef(m0)))]
 # to get only the Subject slopes:
-coef(m0)[grepl(convertNonAlphanumeric("s(Time,Subject)"), names(coef(m0)))]
+coef(m0)[grepl(convertNonAlphanumeric('s(Time,Subject)'), names(coef(m0)))]
 
 }
 \seealso{
-Other Utility functions: \code{\link{diff_terms}},
-  \code{\link{find_difference}}, \code{\link{missing_est}},
-  \code{\link{print_summary}}, \code{\link{summary_data}},
-  \code{\link{timeBins}}
+Other Utility functions: 
+\code{\link{corfit}()},
+\code{\link{diff_terms}()},
+\code{\link{find_difference}()},
+\code{\link{missing_est}()},
+\code{\link{modeledf}()},
+\code{\link{observations}()},
+\code{\link{print_summary}()},
+\code{\link{refLevels}()},
+\code{\link{res_df}()},
+\code{\link{summary_data}()},
+\code{\link{timeBins}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Utility functions}

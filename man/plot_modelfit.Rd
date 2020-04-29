@@ -4,11 +4,29 @@
 \alias{plot_modelfit}
 \title{Visualization of the model fit for time series data.}
 \usage{
-plot_modelfit(x, view, event = NULL, n = 3, random = TRUE, cond = NULL,
-  col = c(alpha(1), "red"), add = FALSE, eegAxis = FALSE, fill = FALSE,
-  main = NULL, xlab = NULL, ylab = NULL, ylim = NULL, h0 = 0,
-  v0 = NULL, transform = NULL, hide.label = FALSE, hide.legend = FALSE,
-  print.summary = getOption("itsadug_print"), ...)
+plot_modelfit(
+  x,
+  view,
+  event = NULL,
+  n = 3,
+  random = TRUE,
+  cond = NULL,
+  col = c(alpha(1), "red"),
+  add = FALSE,
+  eegAxis = FALSE,
+  fill = FALSE,
+  main = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  ylim = NULL,
+  h0 = 0,
+  v0 = NULL,
+  transform = NULL,
+  hide.label = FALSE,
+  hide.legend = FALSE,
+  print.summary = getOption("itsadug_print"),
+  ...
+)
 }
 \arguments{
 \item{x}{A lm or gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -67,7 +85,7 @@ reference. By default no values provided.}
 Default is NULL.}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "fitted values"). Default is FALSE.}
+(i.e., 'fitted values'). Default is FALSE.}
 
 \item{hide.legend}{Logical: whether or not to hide the legend. 
 Default is FALSE.}
@@ -99,20 +117,20 @@ simdat$Event <- interaction(simdat$Subject, simdat$Trial)
 # model without random effects:
 m1 <- bam(Y ~ te(Time, Trial),
     data=simdat)
-plot_modelfit(m1, view="Time", event=simdat$Event)
+plot_modelfit(m1, view='Time', event=simdat$Event)
 
 # colorizing residuals:
-plot_modelfit(m1, view="Time", event=simdat$Event, fill=TRUE)
+plot_modelfit(m1, view='Time', event=simdat$Event, fill=TRUE)
 
 # All trials of one subject:
 \dontrun{
 # this produces error:
-plot_modelfit(m1, view="Time", event=simdat$Event, 
-    cond=list(Subject="a01"), n=-1)
+plot_modelfit(m1, view='Time', event=simdat$Event, 
+    cond=list(Subject='a01'), n=-1)
 }
 # instead try this:
-simdat$Subj <- ifelse(simdat$Subject=="a01", TRUE, FALSE)
-plot_modelfit(m1, view="Time", event=simdat$Event, 
+simdat$Subj <- ifelse(simdat$Subject=='a01', TRUE, FALSE)
+plot_modelfit(m1, view='Time', event=simdat$Event, 
     cond=list(Subject=simdat$Subj), n=-1)
 
 \dontrun{
@@ -120,20 +138,22 @@ plot_modelfit(m1, view="Time", event=simdat$Event,
 m2 <- bam(Y ~ te(Time, Trial)+s(Subject, bs='re'),
     data=simdat)
 # now selecting a subject works, because it is in the model:
-plot_modelfit(m2, view="Time", event=simdat$Event, 
-    cond=list(Subject="a01"), n=-1, ylim=c(-13,13))
+plot_modelfit(m2, view='Time', event=simdat$Event, 
+    cond=list(Subject='a01'), n=-1, ylim=c(-13,13))
 
 # Model with random effect and interactions:
 m3 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
     data=simdat)
-plot_modelfit(m3, view="Time", event=simdat$Event, 
-    cond=list(Subject="a01"), n=-1, ylim=c(-13,13))
+plot_modelfit(m3, view='Time', event=simdat$Event, 
+    cond=list(Subject='a01'), n=-1, ylim=c(-13,13))
 }
 }
 \seealso{
-Other Model evaluation: \code{\link{check_resid}},
-  \code{\link{diagnostics}}
+Other Model evaluation: 
+\code{\link{check_resid}()},
+\code{\link{diagnostics}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model evaluation}

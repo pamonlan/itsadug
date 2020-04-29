@@ -4,11 +4,29 @@
 \alias{plot_data}
 \title{Visualization of the model fit for time series data.}
 \usage{
-plot_data(model, view, split_by = NULL, cond = NULL, input = "data",
-  rm.ranef = NULL, alpha = NULL, col = NULL, add = FALSE,
-  eegAxis = FALSE, main = NULL, xlab = NULL, ylab = NULL, ylim = NULL,
-  h0 = 0, v0 = NULL, hide.label = FALSE, transform = NULL,
-  transform.view = NULL, print.summary = getOption("itsadug_print"), ...)
+plot_data(
+  model,
+  view,
+  split_by = NULL,
+  cond = NULL,
+  input = "data",
+  rm.ranef = NULL,
+  alpha = NULL,
+  col = NULL,
+  add = FALSE,
+  eegAxis = FALSE,
+  main = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  ylim = NULL,
+  h0 = 0,
+  v0 = NULL,
+  hide.label = FALSE,
+  transform = NULL,
+  transform.view = NULL,
+  print.summary = getOption("itsadug_print"),
+  ...
+)
 }
 \arguments{
 \item{model}{A lm or gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -30,12 +48,12 @@ Generally other columns from the same data frame as the model was fitted on.}
 \item{cond}{A named list of the values to use for the other predictor terms 
 (not in view) or to select specific trials or time series to plot.}
 
-\item{input}{Text string: "data" (default) plots the data, "resid" plots 
-the model residuals, and "fitted" plots the fitted values.}
+\item{input}{Text string: 'data' (default) plots the data, 'resid' plots 
+the model residuals, and 'fitted' plots the fitted values.}
 
 \item{rm.ranef}{Logical: whether or not to include the random effects in 
-the model predictions. Default is TRUE. Relevant for \code{input="fitted"} 
-and \code{input="resid"} (i.e., whether or not the residuals contain the 
+the model predictions. Default is TRUE. Relevant for \code{input='fitted'} 
+and \code{input='resid'} (i.e., whether or not the residuals contain the 
 random effects, TRUE and FALSE respectively ).}
 
 \item{alpha}{Value between 0 and 1 indicating the transparency. 
@@ -71,7 +89,7 @@ reference. By default no values provided.}
 reference. By default no values provided.}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "fitted values"). Default is FALSE.}
+(i.e., 'fitted values'). Default is FALSE.}
 
 \item{transform}{Function for transforming the fitted values. 
 Default is NULL.}
@@ -107,45 +125,51 @@ m1 <- bam(Y ~ te(Time, Trial) + s(Subject, bs='re'),
     data=simdat)
 
 # All data points, without clustering:
-plot_data(m1, view="Time")
+plot_data(m1, view='Time')
 
 # All data, clustered by Trial (very small dots):
-plot_data(m1, view="Time", split_by="Trial",
+plot_data(m1, view='Time', split_by='Trial',
     cex=.25)
 # Add a smooth for each trial:
-plot_smooth(m1, view="Time", plot_all="Trial", 
+plot_smooth(m1, view='Time', plot_all='Trial', 
     add=TRUE, rm.ranef=TRUE)
 # Add the model predictions in same color:
-plot_smooth(m1, view="Time", plot_all="Trial", add=TRUE, rm.ranef=TRUE)
+plot_smooth(m1, view='Time', plot_all='Trial', add=TRUE, rm.ranef=TRUE)
 
 # Alternatively, use data to select events:
-plot_data(m1, view="Time", split_by=list(Event=simdat$Event),
+plot_data(m1, view='Time', split_by=list(Event=simdat$Event),
     type='l')
 # which is the same as:
-plot_data(m1, view="Time", split_by=list(Subject=simdat$Subject, Trial=simdat$Trial),
+plot_data(m1, view='Time', split_by=list(Subject=simdat$Subject, Trial=simdat$Trial),
     type='l')
 # Only for Trial=0
-plot_data(m1, view="Time", split_by=list(Event=simdat$Event),
+plot_data(m1, view='Time', split_by=list(Event=simdat$Event),
    cond=list(Trial=0), type='l')
 # This is the same:
-plot_data(m1, view="Time", split_by="Subject",
+plot_data(m1, view='Time', split_by='Subject',
    cond=list(Trial=0), type='l')
 # Add subject smooths:
-plot_smooth(m1, view="Time", plot_all="Subject", 
+plot_smooth(m1, view='Time', plot_all='Subject', 
     cond=list(Trial=0), add=TRUE)
 
 # Change the colors:
-plot_data(m1, view="Time", split_by="Subject",
+plot_data(m1, view='Time', split_by='Subject',
    cond=list(Trial=0), type='l', col='gray', alpha=1)
 }
 
 }
 \seealso{
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{gamtabs}}, \code{\link{inspect_random}},
-  \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
-  \code{\link{plot_topo}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{gamtabs}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_smooth}()},
+\code{\link{plot_topo}()},
+\code{\link{pvisgam}()}
 }
 \author{
 Jacolien van Rij, idea of Tino Sering
 }
+\concept{Functions for model inspection}

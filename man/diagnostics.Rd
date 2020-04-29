@@ -4,8 +4,12 @@
 \alias{diagnostics}
 \title{Visualization of the model fit for time series data.}
 \usage{
-diagnostics(model, plot = "all", ask = TRUE,
-  print.summary = getOption("itsadug_print"))
+diagnostics(
+  model,
+  plot = "all",
+  ask = TRUE,
+  print.summary = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{model}{A lm or gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -91,9 +95,11 @@ diagnostics(m5, plot=5, ask=FALSE)
 }
 }
 \seealso{
-Other Model evaluation: \code{\link{check_resid}},
-  \code{\link{plot_modelfit}}
+Other Model evaluation: 
+\code{\link{check_resid}()},
+\code{\link{plot_modelfit}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model evaluation}

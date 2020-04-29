@@ -28,11 +28,20 @@ length(na.el)
 
 }
 \seealso{
-Other Utility functions: \code{\link{convertNonAlphanumeric}},
-  \code{\link{diff_terms}}, \code{\link{find_difference}},
-  \code{\link{print_summary}}, \code{\link{summary_data}},
-  \code{\link{timeBins}}
+Other Utility functions: 
+\code{\link{convertNonAlphanumeric}()},
+\code{\link{corfit}()},
+\code{\link{diff_terms}()},
+\code{\link{find_difference}()},
+\code{\link{modeledf}()},
+\code{\link{observations}()},
+\code{\link{print_summary}()},
+\code{\link{refLevels}()},
+\code{\link{res_df}()},
+\code{\link{summary_data}()},
+\code{\link{timeBins}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Utility functions}

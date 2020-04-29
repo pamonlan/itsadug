@@ -57,11 +57,14 @@ get_random(m2, cond=list(Condition=c('2','3')))
 
 }
 \seealso{
-Other Model predictions: \code{\link{get_coefs}},
-  \code{\link{get_difference}}, \code{\link{get_fitted}},
-  \code{\link{get_modelterm}},
-  \code{\link{get_predictions}}
+Other Model predictions: 
+\code{\link{get_coefs}()},
+\code{\link{get_difference}()},
+\code{\link{get_fitted}()},
+\code{\link{get_modelterm}()},
+\code{\link{get_predictions}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model predictions}

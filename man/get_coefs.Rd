@@ -50,10 +50,14 @@ coef(m1)
 
 }
 \seealso{
-Other Model predictions: \code{\link{get_difference}},
-  \code{\link{get_fitted}}, \code{\link{get_modelterm}},
-  \code{\link{get_predictions}}, \code{\link{get_random}}
+Other Model predictions: 
+\code{\link{get_difference}()},
+\code{\link{get_fitted}()},
+\code{\link{get_modelterm}()},
+\code{\link{get_predictions}()},
+\code{\link{get_random}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model predictions}

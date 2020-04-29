@@ -4,8 +4,15 @@
 \alias{fadeRug}
 \title{Fade out the areas in a surface without data.}
 \usage{
-fadeRug(x, y, n.grid = 30, too.far = 0.03, col = "white", alpha = 1,
-  use.data.range = TRUE)
+fadeRug(
+  x,
+  y,
+  n.grid = 30,
+  too.far = 0.03,
+  col = "white",
+  alpha = 1,
+  use.data.range = TRUE
+)
 }
 \arguments{
 \item{x}{Observations on x-axis.}
@@ -24,7 +31,7 @@ with the view variables and then grid nodes more than too.far from the
 predictor variables are excluded. Based on 
 \code{\link[mgcv]{exclude.too.far}} of Simon N. Wood.}
 
-\item{col}{Color representing missing data. Defaults to "white".}
+\item{col}{Color representing missing data. Defaults to 'white'.}
 
 \item{alpha}{Transparency, number between 0 (completely 
 transparent) and 1 (non-transparent). Defaults to 1.}
@@ -58,30 +65,30 @@ newdat <- rbind(newdat,
 # Some simple GAM with tensor:
 m1 <- bam(Y ~ te(Time, Trial), data=newdat)
 # plot summed effects:
-fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
+fvisgam(m1, view=c('Time', 'Trial'), zlim=c(-15,15))
 fadeRug(newdat$Time, newdat$Trial)
 # check with data points:
 points(newdat$Time, newdat$Trial, pch=16, col=alpha(1))
 
 # compare with default rug:
-fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
+fvisgam(m1, view=c('Time', 'Trial'), zlim=c(-15,15))
 rug(newdat$Time)
 rug(newdat$Trial, side=2)
 fadeRug(newdat$Time, newdat$Trial)
 # and compare with too.far:
-fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+fvisgam(m1, view=c('Time', 'Trial'), zlim=c(-15,15),
     too.far=.03)
-vis.gam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
-    too.far=.03, plot.type="contour", color="topo")
+vis.gam(m1, view=c('Time', 'Trial'), zlim=c(-15,15),
+    too.far=.03, plot.type='contour', color='topo')
 
 # in case fade rug overlaps with color legend:
-fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15),
+fvisgam(m1, view=c('Time', 'Trial'), zlim=c(-15,15),
      add.color.legend=FALSE)
 fadeRug(newdat$Time, newdat$Trial, alpha=.75)
 gradientLegend(c(-15,15), pos=.875)
 
 # change x- and y-grid, and color:
-fvisgam(m1, view=c("Time", "Trial"), zlim=c(-15,15))
+fvisgam(m1, view=c('Time', 'Trial'), zlim=c(-15,15))
 points(newdat$Time, newdat$Trial)
 fadeRug(newdat$Time, newdat$Trial, n.grid=c(100,10), col='gray')
 }
@@ -89,9 +96,11 @@ fadeRug(newdat$Time, newdat$Trial, n.grid=c(100,10), col='gray')
 \code{\link[graphics]{rug}}, \code{\link[graphics]{contour}}, 
 \code{\link[graphics]{image}}
 
-Other Functions for plotting: \code{\link{rug_model}}
+Other Functions for plotting: 
+\code{\link{rug_model}()}
 }
 \author{
 Jacolien van Rij, based on Simon N. Wood's 
 \code{\link[mgcv]{exclude.too.far}}
 }
+\concept{Functions for plotting}

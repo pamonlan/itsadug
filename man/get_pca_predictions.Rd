@@ -4,10 +4,22 @@
 \alias{get_pca_predictions}
 \title{Return PCA predictions.}
 \usage{
-get_pca_predictions(x, pca.term = NULL, weights = NULL, view = NULL,
-  cond = list(), select = NULL, n.grid = 30, se = 1.96, xlim = NULL,
-  ylim = NULL, partial = TRUE, rm.ranef = NULL, as.data.frame = TRUE,
-  print.summary = getOption("itsadug_print"))
+get_pca_predictions(
+  x,
+  pca.term = NULL,
+  weights = NULL,
+  view = NULL,
+  cond = list(),
+  select = NULL,
+  n.grid = 30,
+  se = 1.96,
+  xlim = NULL,
+  ylim = NULL,
+  partial = TRUE,
+  rm.ranef = NULL,
+  as.data.frame = TRUE,
+  print.summary = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -69,7 +81,7 @@ data(simdat)
 # add hypothetical correlated term:
 simdat$predictor <-  (simdat$Trial+10)^.75 + rnorm(nrow(simdat))
 # principal components analysis:
-pca <- prcomp(simdat[, c("Trial", "predictor")])
+pca <- prcomp(simdat[, c('Trial', 'predictor')])
 # only first PC term contributes:
 summary(pca)
 # get rotation (weights of predictors in PC):
@@ -82,27 +94,29 @@ simdat$PC1 <- pca$x[,1]
 m1 <- bam(Y ~ Group + te(Time, PC1, by=Group) 
     + s(Time, Subject, bs='fs', m=1, k=5), data=simdat)
 # inspect surface:
-fvisgam(m1, view=c("Time", "PC1"), cond=list(Group="Children"),
+fvisgam(m1, view=c('Time', 'PC1'), cond=list(Group='Children'),
     rm.ranef=TRUE)
 # how does Trial contribute?
-p <- get_pca_predictions(m1, pca.term="PC1", weights=pcar[,"PC1"], 
-    view=c("Time", "Trial"), cond=list(Group="Children"),
+p <- get_pca_predictions(m1, pca.term='PC1', weights=pcar[,'PC1'], 
+    view=c('Time', 'Trial'), cond=list(Group='Children'),
     rm.ranef=TRUE, partial=FALSE)
 # Note that the range of Trial is estimated based on the values of PC1.
 # A better solution is to specify the range:
-p <- get_pca_predictions(m1, pca.term="PC1", weights=pcar[,"PC1"], 
+p <- get_pca_predictions(m1, pca.term='PC1', weights=pcar[,'PC1'], 
     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
-    cond=list(Group="Children"),rm.ranef=TRUE, partial=FALSE)
+    cond=list(Group='Children'),rm.ranef=TRUE, partial=FALSE)
 # plotting of the surface:
-plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
-    view=c("Time", "Trial"), cond=list(Group="Children"),rm.ranef=TRUE)
+plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
+    view=c('Time', 'Trial'), cond=list(Group='Children'),rm.ranef=TRUE)
 }
 }
 \seealso{
 \code{plot_pca_surface}, \code{\link[stats]{prcomp}}
 
-Other Functions for PCA interpretation: \code{\link{plot_pca_surface}}
+Other Functions for PCA interpretation: 
+\code{\link{plot_pca_surface}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Functions for PCA interpretation}

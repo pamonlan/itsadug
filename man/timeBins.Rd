@@ -35,11 +35,20 @@ simdat$Timebin2 <- timeBins(simdat$Time, 200, pos=0)
 head(simdat)
 }
 \seealso{
-Other Utility functions: \code{\link{convertNonAlphanumeric}},
-  \code{\link{diff_terms}}, \code{\link{find_difference}},
-  \code{\link{missing_est}}, \code{\link{print_summary}},
-  \code{\link{summary_data}}
+Other Utility functions: 
+\code{\link{convertNonAlphanumeric}()},
+\code{\link{corfit}()},
+\code{\link{diff_terms}()},
+\code{\link{find_difference}()},
+\code{\link{missing_est}()},
+\code{\link{modeledf}()},
+\code{\link{observations}()},
+\code{\link{print_summary}()},
+\code{\link{refLevels}()},
+\code{\link{res_df}()},
+\code{\link{summary_data}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Utility functions}

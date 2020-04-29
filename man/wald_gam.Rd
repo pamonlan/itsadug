@@ -4,9 +4,16 @@
 \alias{wald_gam}
 \title{Function for post-hoc comparison of the contrasts in a single GAMM model.}
 \usage{
-wald_gam(model, comp = NULL, select = NULL, t.test = FALSE,
-  null.hypothesis = 0, summ = NULL, signif.stars = TRUE,
-  print.output = getOption("itsadug_print"))
+wald_gam(
+  model,
+  comp = NULL,
+  select = NULL,
+  t.test = FALSE,
+  null.hypothesis = 0,
+  summ = NULL,
+  signif.stars = TRUE,
+  print.output = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{model}{Model, currently only implemented for models generated with 
@@ -64,15 +71,15 @@ data(simdat)
 # Convert Condition to factorial predictor for illustration purposes:
 simdat$Condition <- as.factor(simdat$Condition)
 
-infoMessages("on")
+infoMessages('on')
 
 \dontrun{
 # some arbitrary model:
 m1 <- bam(Y ~ Condition*Group  
-	+ s(Time, by=Condition) 
-	+ s(Time, by=Group)
-	+ s(Subject, bs='re'), 
-	data=simdat)
+\t+ s(Time, by=Condition) 
+\t+ s(Time, by=Group)
+\t+ s(Subject, bs='re'), 
+\tdata=simdat)
 
 # print summary to inspect parametric terms:
 summary(m1)
@@ -84,8 +91,8 @@ wald_gam(m1)
 # return only contrasts for Adults:
 wald_gam(m1, comp=list(Condition=levels(simdat$Condition)))
 # return specific contrasts:
-wald_gam(m1, comp=list(Condition=c("-1", "0", "1"), 
-    Group=c("Adults", "Children")))
+wald_gam(m1, comp=list(Condition=c('-1', '0', '1'), 
+    Group=c('Adults', 'Children')))
 
 # USE OF SELECT
 # Specify contrast matrix. 
@@ -105,24 +112,24 @@ wald_gam(m1, select=c(0,1,0,0,0,0,0,0,0,0,0,0))
 # USE OF T.TEST
 # This option is not implemented for use with select
 # Compare with second line of parametric summary:
-wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-    Group="Children"), t.test=TRUE)
+wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+    Group='Children'), t.test=TRUE)
 # Compare with Wald test:
-wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-    Group="Children"))
+wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+    Group='Children'))
 
 # exclude significance stars:
-wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-    Group="Children"), signif.stars=FALSE)
+wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+    Group='Children'), signif.stars=FALSE)
 
 # do not print output, but save table for later use:
-test <- wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-    Group="Children"), print.output=FALSE)
+test <- wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+    Group='Children'), print.output=FALSE)
 test
 # alternative way:
 infoMessages('off')
-test2 <- wald_gam(m1, comp=list(Condition=c("-1", "0"), 
-    Group="Children"))
+test2 <- wald_gam(m1, comp=list(Condition=c('-1', '0'), 
+    Group='Children'))
 infoMessages('on')
 
 }
@@ -131,10 +138,13 @@ infoMessages('on')
 \code{\link{plot_parametric}}, \code{\link{plot_diff}}, 
 \code{\link{plot_diff2}}
 
-Other Testing for significance: \code{\link{compareML}},
-  \code{\link{plot_diff2}}, \code{\link{plot_diff}},
-  \code{\link{report_stats}}
+Other Testing for significance: 
+\code{\link{compareML}()},
+\code{\link{plot_diff2}()},
+\code{\link{plot_diff}()},
+\code{\link{report_stats}()}
 }
 \author{
 Petar Milin and Jacolien van Rij.
 }
+\concept{Testing for significance}

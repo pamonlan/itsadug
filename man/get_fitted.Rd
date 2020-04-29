@@ -4,8 +4,13 @@
 \alias{get_fitted}
 \title{Get model all fitted values.}
 \usage{
-get_fitted(model, se = 1.96, rm.ranef = NULL, as.data.frame = FALSE,
-  print.summary = getOption("itsadug_print"))
+get_fitted(
+  model,
+  se = 1.96,
+  rm.ranef = NULL,
+  as.data.frame = FALSE,
+  print.summary = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -20,7 +25,7 @@ Default is FALSE. Alternatively a string (or vector of strings) with the
 name of the random effect(s) to remove.}
 
 \item{as.data.frame}{Logical: return values as data frame or as vector. 
-Default is FALSE (returning a vector).}
+Default is FALSE (as vector).}
 
 \item{print.summary}{Logical: whether or not to print a summary of the 
 values selected for each predictor. 
@@ -36,7 +41,8 @@ Get model all fitted values.
 \examples{
 data(simdat)
 \dontrun{
-m1 <- bam(Y ~ Group + s(Time, by=Group)+ s(Subject, bs='re'), data=simdat)
+m1 <- bam(Y ~ Group + s(Time, by=Group)+ s(Subject, bs='re'), 
+    data=simdat)
 
 # as.data.frame FALSE and rm.ranef=NULL results in fitted():
 all( get_fitted(m1) == fitted(m1) )
@@ -46,17 +52,20 @@ all( get_fitted(m1, rm.ranef=TRUE) == fitted(m1) )
 head(get_fitted(m1, rm.ranef=TRUE))
 
 # without summary:
-infoMessages("off")
+infoMessages('off')
 head(get_fitted(m1, rm.ranef=TRUE))
-infoMessages("on")
+infoMessages('on')
 }
 }
 \seealso{
-Other Model predictions: \code{\link{get_coefs}},
-  \code{\link{get_difference}},
-  \code{\link{get_modelterm}},
-  \code{\link{get_predictions}}, \code{\link{get_random}}
+Other Model predictions: 
+\code{\link{get_coefs}()},
+\code{\link{get_difference}()},
+\code{\link{get_modelterm}()},
+\code{\link{get_predictions}()},
+\code{\link{get_random}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model predictions}

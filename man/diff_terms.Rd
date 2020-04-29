@@ -27,11 +27,20 @@ diff_terms(gam1, gam2)
 
 }
 \seealso{
-Other Utility functions: \code{\link{convertNonAlphanumeric}},
-  \code{\link{find_difference}}, \code{\link{missing_est}},
-  \code{\link{print_summary}}, \code{\link{summary_data}},
-  \code{\link{timeBins}}
+Other Utility functions: 
+\code{\link{convertNonAlphanumeric}()},
+\code{\link{corfit}()},
+\code{\link{find_difference}()},
+\code{\link{missing_est}()},
+\code{\link{modeledf}()},
+\code{\link{observations}()},
+\code{\link{print_summary}()},
+\code{\link{refLevels}()},
+\code{\link{res_df}()},
+\code{\link{summary_data}()},
+\code{\link{timeBins}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Utility functions}

@@ -41,20 +41,19 @@
 #' 
 #' @author Jacolien van Rij
 #' @family Model predictions
-get_coefs <- function (model, se=TRUE) {
+get_coefs <- function(model, se = TRUE) {
     # number of parametric terms including intercept:
     n <- model$nsdf
     coefs <- coef(model)[1:n]
     p.table <- NULL
-    if(se==TRUE){
-        covmat <- as.matrix( model$Vp[1:n, 1:n] )
+    if (se == TRUE) {
+        covmat <- as.matrix(model$Vp[1:n, 1:n])
         name <- names(coefs)
         dimnames(covmat) <- list(name, name)
-        se <- diag(covmat)^.5
+        se <- diag(covmat)^0.5
         p.table <- cbind(coefs, se)
-        dimnames(p.table) <- list(names(coefs), 
-                c("Estimate", "Std. Error"))
-    }else{
+        dimnames(p.table) <- list(names(coefs), c("Estimate", "Std. Error"))
+    } else {
         p.table <- coefs[1:n]
     }
     return(p.table)
@@ -77,7 +76,7 @@ get_coefs <- function (model, se=TRUE) {
 #' value to the median for continuous variables, or the reference level for 
 #' factors. 
 #' @param rm.ranef Logical: whether or not to remove random effects. 
-#' Default is FALSE. Alternatively a vector of numbers with the 
+#' Default is TRUE. Alternatively a vector of numbers with the 
 #' mdoelterm number of the random effect(s) to remove. 
 #' (See notes.)
 #' @param se Logical: whether or not to return the confidence interval or 
@@ -126,190 +125,181 @@ get_coefs <- function (model, se=TRUE) {
 #' head(diff)
 #' @author Jacolien van Rij, Martijn Wieling
 #' @family Model predictions
-get_difference <- function(model, comp, cond=NULL,
-	rm.ranef=NULL,
-	se=TRUE, sim.ci=FALSE, f=1.96, 
-	return.n.posterior=0,
-	print.summary=getOption('itsadug_print')){
-	if(!"lm" %in% class(model)){
-		stop("This function does not work for class %s models.", class(model)[1])
-	}else{
-		newd <- NULL
-		su <- model$var.summary
-		dat <- model$model
-		# check comp
-		if(is.null(names(comp))){
-			stop("Predictor specified in 'comp' unknown. Please provide a named list for 'comp', in the form of 'comp=list(Predictor=c('level1', 'level2'))'.")
-		}
-		if(all(names(comp) %in% colnames(dat))){
-			for(i in 1:length(comp)){
-				if(length(comp[[i]]) < 2){
-					stop(sprintf('Provide two levels for %s to calculate difference.', names(comp)[i]))
-				}else if(length(comp[[i]]) > 2){
-					warning(sprintf('More than two levels provided for predictor %s. Only first two levels are being used.', names(comp)[i]))
-				}
-			}
-		}else{
-			errname <- paste(which(!names(comp)%in% colnames(dat)), collapse=", ")
-			stop(sprintf('Grouping predictor(s) not found in model: %s.', errname))
-		}
-		if(any(names(cond) %in% names(comp))){
-			for(i in names(cond)[names(cond) %in% names(comp)] ){
-				cond[[i]] <- NULL
-				warning(sprintf('Predictor %s specified in comp and cond. (The value in cond will be ignored.)', i))
-			}
-		}
-		new.cond1 <- list()
-		new.cond2 <- list()
-		for(i in names(su)){
-			if(i %in% names(comp)){
-				new.cond1[[i]] <- comp[[i]][1]
-				new.cond2[[i]] <- comp[[i]][2]
-			}else if(i %in% names(cond)){
-				new.cond1[[i]] <- new.cond2[[i]] <- cond[[i]]
-			}else{
-				if(class(su[[i]])=="factor"){
-					new.cond1[[i]] <- as.character(su[[i]][1])
-					new.cond2[[i]] <- as.character(su[[i]][1])
-				}else if(class(su[[i]])=="numeric"){
-					new.cond1[[i]] <- su[[i]][2]
-					new.cond2[[i]] <- su[[i]][2]
-				}
-			}
-		}
-		newd1 <- expand.grid(new.cond1)
-		newd2 <- expand.grid(new.cond2)
-		p1 <- mgcv::predict.gam(model, newd1, type='lpmatrix') 
-		p2 <- mgcv::predict.gam(model, newd2, type='lpmatrix')
-		newd <- as.data.frame(newd1)
-		newd.names <- colnames(newd)
-		for(nn in newd.names){
-			if(nn %in% names(comp)){
-				newd[,nn] <- NULL
-			}
-			
-		}
-		mysummary <- summary_data(newd, print=FALSE)	
-		# Check for random effects:
-		if(class(rm.ranef)=="logical"){
-			if(rm.ranef[1]==FALSE){
-				rm.ranef <- NULL			
-			}
-		}
-		if(!is.null(rm.ranef)){	
-			# get random effects columns:
-			smoothlabels.table <- as.data.frame( do.call('rbind', 
-				lapply(model$smooth, 
-					function(x){
-						data.frame(Label=x[['label']], 
-							Dim=x[['null.space.dim']], 
-							Class = attr(x, "class")[1],
-							stringsAsFactors=FALSE)
-					} ) ) )
-			# smoothlabels <- smoothlabels[smoothlabels$Dim==0,c("Label", "Class")]
-			smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in% c("random.effect","fs.interaction"), "Label"] )
-			if(class(rm.ranef)=="logical"){
-				if(rm.ranef[1]==TRUE){
-					rm.ranef <- smoothlabels			
-				}else{
-					rm.ranef <- ""
-				}
-			}else if (inherits(rm.ranef, c("numeric", "integer"))){
-				smoothlabels.table <- smoothlabels.table[rm.ranef,]
-				smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in% c("random.effect","fs.interaction"), "Label"] )
-			}
-			rm.col <- unlist(lapply(rm.ranef, 
-				function(x){
-					colnames(p1)[grepl(x, colnames(p1), fixed=TRUE)]
-				}))
-			rm.col <- unlist(lapply(smoothlabels,
-				function(x){
-					rm.col[grepl(x, rm.col, fixed=TRUE)]
-				}))
-			# cancel random effects
-			p1[,rm.col] <- 0
-			p2[,rm.col] <- 0
-			# find terms that only occur in random effects:
-			predictors <- do.call('rbind',
-				lapply(model$smooth, 
-					function(x){
-						data.frame(Label=x[['label']],
-							Terms=x[['term']])
-					} )) 	
-			test <- table(predictors$Terms) - table(predictors[predictors$Label %in% rm.ranef,]$Terms)
-			for(pred in names(test[test==0])){
-				if(pred %in% names(mysummary)){
-					mysummary[[pred]] <- paste(mysummary[[pred]], "(Might be canceled as random effect, check below.)")
-				}
-			}
-			if(length(rm.col)>0){
-				mysummary[['NOTE']] =  sprintf("The following random effects columns are canceled: %s\n", 
-				paste(smoothlabels, collapse=","))
-			}else{
-				warning("No random effects to cancel.\n")				
-			}
-		}
-		# calculate the difference:
-		p <- p1 - p2
-		newd$difference <- as.vector(p %*% coef(model))
-		if(se){
-			newd$CI <- f*sqrt(rowSums((p%*%vcov(model))*p))
-		}
-		# simultaneous CI 
-	    # See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
-		stackFits <- NULL
-		if (sim.ci==TRUE) { 
-	        Vb <- vcov(model, freq=FALSE, unconditional=TRUE)
-	        se.fit <- sqrt(rowSums((p%*%Vb)*p))
-	        sim <- mgcv::rmvn(10000, mu=rep(0,nrow(Vb)), V=Vb)
-	        # Cg <- predict(model, newd, type='lpmatrix')
-	        # Cg replaced by p
-	        simDev <- p %*% t(sim)
-	        # Evaluate the basis function at g and compute the deviations 
-	        # between the fitted and true parameters. Then we find the absolute values 
-	        # of the standardized deviations from the true model: 
-	        absDev <- abs(sweep(simDev, 1, se.fit, FUN="/"))
-	        # maximum of the absolute standardized deviations:
-	        masd <- apply(absDev, 2L, max)
-	        # set simultaneous X% CI on the basis of original se multiplication specified by f:
-	        crit <- quantile(masd, prob=1-round(2*(1-pnorm(f)), 2), type=8)
-	        newd$sim.CI <- crit*se.fit
-	    
-	    	if((return.n.posterior > 0) | (print.summary==TRUE)){
-		        # coverage pointwise and simultaneous CIs:
-	        	sims <- rmvn(max(1e4, return.n.posterior), mu = coef(model), V = Vb)
-				fits <- p %*% t(sims)
-		        inCI <- function(x, upr, lwr) {
-				    all(x >= lwr & x <= upr)
-				}
-				fitsInPCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$CI, lwr = newd$fit - newd$CI)
-				fitsInSCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$sim.CI, lwr = newd$fit - newd$sim.CI)
-		        mysummary[[  paste("Simultaneous ",100*(1-round(2*(1-pnorm(f)),2)),"%-CI used", sep="")  ]] = sprintf("\n\t\t%s\n\t\t%s\n\t\t%s\n",
-		        	paste("Critical value: ",round(crit,3),sep=''),
-		        	paste("Proportion posterior simulations in pointwise CI: ", round(sum(fitsInPCI) / length(fitsInPCI),2), " (10000 samples)", sep=''),
-		        	paste("Proportion posterior simulations in simultaneous CI: ", round(sum(fitsInSCI) / length(fitsInSCI),2), " (10000 samples)",sep=''))
-			
-				if(return.n.posterior > 0) {
-					rnd <- sample(max(1e4, return.n.posterior), return.n.posterior)
-					fits <- stack(as.data.frame(fits[, rnd]))[,1]
-					stackFits <- newd[rep(1:nrow(newd), length(rnd)),colnames(newd)[!colnames(newd) %in% c("fit", "CI", "sim.CI", "rm.ranef")]]
-					row.names(stackFits) <- NULL
-					stackFits$posterior.fit <- fits
-					stackFits$draw <- rep(rnd, each=nrow(newd))
-				}
-	        }
-	    }
-		# print summary of chosen values
-		if(print.summary==TRUE){
-			print_summary(mysummary)
-		}	
-		
-		if(return.n.posterior > 0){
-	    	return(list(newd=newd, posterior.fit=stackFits))
-	    }else{
-	    	return(newd)
-	    }
-	}
+get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.ci = FALSE, f = 1.96, 
+    return.n.posterior = 0, print.summary = getOption("itsadug_print")) {
+    if (!"lm" %in% class(model)) {
+        stop("This function does not work for class %s models.", class(model)[1])
+    } else {
+        newd <- NULL
+        su <- model$var.summary
+        dat <- model$model
+        # check comp
+        if (is.null(names(comp))) {
+            stop("Predictor specified in 'comp' unknown. Please provide a named list for 'comp', in the form of 'comp=list(Predictor=c('level1', 'level2'))'.")
+        }
+        if (all(names(comp) %in% colnames(dat))) {
+            for (i in 1:length(comp)) {
+                if (length(comp[[i]]) < 2) {
+                  stop(sprintf("Provide two levels for %s to calculate difference.", names(comp)[i]))
+                } else if (length(comp[[i]]) > 2) {
+                  warning(sprintf("More than two levels provided for predictor %s. Only first two levels are being used.", 
+                    names(comp)[i]))
+                }
+            }
+        } else {
+            errname <- paste(which(!names(comp) %in% colnames(dat)), collapse = ", ")
+            stop(sprintf("Grouping predictor(s) not found in model: %s.", errname))
+        }
+        if (any(names(cond) %in% names(comp))) {
+            for (i in names(cond)[names(cond) %in% names(comp)]) {
+                cond[[i]] <- NULL
+                warning(sprintf("Predictor %s specified in comp and cond. (The value in cond will be ignored.)", 
+                  i))
+            }
+        }
+        new.cond1 <- list()
+        new.cond2 <- list()
+        for (i in names(su)) {
+            if (i %in% names(comp)) {
+                new.cond1[[i]] <- comp[[i]][1]
+                new.cond2[[i]] <- comp[[i]][2]
+            } else if (i %in% names(cond)) {
+                new.cond1[[i]] <- new.cond2[[i]] <- cond[[i]]
+            } else {
+                if (class(su[[i]]) == "factor") {
+                  new.cond1[[i]] <- as.character(su[[i]][1])
+                  new.cond2[[i]] <- as.character(su[[i]][1])
+                } else if (class(su[[i]]) == "numeric") {
+                  new.cond1[[i]] <- su[[i]][2]
+                  new.cond2[[i]] <- su[[i]][2]
+                }
+            }
+        }
+        newd1 <- expand.grid(new.cond1)
+        newd2 <- expand.grid(new.cond2)
+        p1 <- mgcv::predict.gam(model, newd1, type = "lpmatrix")
+        p2 <- mgcv::predict.gam(model, newd2, type = "lpmatrix")
+        newd <- as.data.frame(newd1, stringsAsFactors = TRUE)
+        newd.names <- colnames(newd)
+        for (nn in newd.names) {
+            if (nn %in% names(comp)) {
+                newd[, nn] <- NULL
+            }
+            
+        }
+        mysummary <- summary_data(newd, print = FALSE)
+        # Check for random effects:
+        if (class(rm.ranef) == "logical") {
+            if (rm.ranef[1] == FALSE) {
+                rm.ranef <- NULL
+            }
+        }
+        if (!is.null(rm.ranef)) {
+            # get random effects columns:
+            smoothlabels.table <- as.data.frame(do.call("rbind", lapply(model$smooth, function(x) {
+                data.frame(Label = x[["label"]], Dim = x[["null.space.dim"]], Class = attr(x, "class")[1], 
+                  stringsAsFactors = FALSE)
+            })), stringsAsFactors = FALSE)
+            # smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in%
+            # c('random.effect','fs.interaction'), 'Label'] )
+            smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Dim == 0, "Label"])
+            if (class(rm.ranef) == "logical") {
+                if (rm.ranef[1] == TRUE) {
+                  rm.ranef <- smoothlabels
+                } else {
+                  rm.ranef <- ""
+                }
+            } else if (inherits(rm.ranef, c("numeric", "integer"))) {
+                smoothlabels.table <- smoothlabels.table[rm.ranef, ]
+                smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Class %in% c("random.effect", 
+                  "fs.interaction"), "Label"])
+            }
+            rm.col <- unlist(lapply(rm.ranef, function(x) {
+                colnames(p1)[grepl(x, colnames(p1), fixed = TRUE)]
+            }))
+            rm.col <- unlist(lapply(smoothlabels, function(x) {
+                rm.col[grepl(x, rm.col, fixed = TRUE)]
+            }))
+            # cancel random effects
+            p1[, rm.col] <- 0
+            p2[, rm.col] <- 0
+            # find terms that only occur in random effects:
+            predictors <- do.call("rbind", lapply(model$smooth, function(x) {
+                data.frame(Label = x[["label"]], Terms = x[["term"]], stringsAsFactors = TRUE)
+            }))
+            test <- table(predictors$Terms) - table(predictors[predictors$Label %in% rm.ranef, ]$Terms)
+            for (pred in names(test[test == 0])) {
+                if (pred %in% names(mysummary)) {
+                  mysummary[[pred]] <- paste(mysummary[[pred]], "(Might be canceled as random effect, check below.)")
+                }
+            }
+            if (length(rm.col) > 0) {
+                mysummary[["NOTE"]] = sprintf("The following random effects columns are canceled: %s\n", paste(smoothlabels, 
+                  collapse = ","))
+            } else {
+                mysummary[["NOTE"]] = "No random effects in the model to cancel.\n"
+                # warning('No random effects to cancel.\n')
+            }
+        }
+        # calculate the difference:
+        p <- p1 - p2
+        newd$difference <- as.vector(p %*% coef(model))
+        if (se) {
+            newd$CI <- f * sqrt(rowSums((p %*% vcov(model)) * p))
+        }
+        # simultaneous CI See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+        stackFits <- NULL
+        if (sim.ci == TRUE) {
+            Vb <- vcov(model, freq = FALSE, unconditional = TRUE)
+            se.fit <- sqrt(rowSums((p %*% Vb) * p))
+            sim <- mgcv::rmvn(10000, mu = rep(0, nrow(Vb)), V = Vb)
+            # Cg <- predict(model, newd, type='lpmatrix') Cg replaced by p
+            simDev <- p %*% t(sim)
+            # Evaluate the basis function at g and compute the deviations between the fitted and true parameters. Then
+            # we find the absolute values of the standardized deviations from the true model:
+            absDev <- abs(sweep(simDev, 1, se.fit, FUN = "/"))
+            # maximum of the absolute standardized deviations:
+            masd <- apply(absDev, 2L, max)
+            # set simultaneous X% CI on the basis of original se multiplication specified by f:
+            crit <- quantile(masd, prob = 1 - round(2 * (1 - pnorm(f)), 2), type = 8)
+            newd$sim.CI <- crit * se.fit
+            
+            if ((return.n.posterior > 0) | (print.summary == TRUE)) {
+                # coverage pointwise and simultaneous CIs:
+                sims <- rmvn(max(10000, return.n.posterior), mu = coef(model), V = Vb)
+                fits <- p %*% t(sims)
+                inCI <- function(x, upr, lwr) {
+                  all(x >= lwr & x <= upr)
+                }
+                fitsInPCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$CI, lwr = newd$fit - newd$CI)
+                fitsInSCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$sim.CI, lwr = newd$fit - newd$sim.CI)
+                mysummary[[paste("Simultaneous ", 100 * (1 - round(2 * (1 - pnorm(f)), 2)), "%-CI used", sep = "")]] = sprintf("\n\t\t%s\n\t\t%s\n\t\t%s\n", 
+                  paste("Critical value: ", round(crit, 3), sep = ""), paste("Proportion posterior simulations in pointwise CI: ", 
+                    round(sum(fitsInPCI)/length(fitsInPCI), 2), " (10000 samples)", sep = ""), paste("Proportion posterior simulations in simultaneous CI: ", 
+                    round(sum(fitsInSCI)/length(fitsInSCI), 2), " (10000 samples)", sep = ""))
+                
+                if (return.n.posterior > 0) {
+                  rnd <- sample(max(10000, return.n.posterior), return.n.posterior)
+                  fits <- stack(as.data.frame(fits[, rnd], stringsAsFactors = FALSE))[, 1]
+                  stackFits <- newd[rep(1:nrow(newd), length(rnd)), colnames(newd)[!colnames(newd) %in% c("fit", 
+                    "CI", "sim.CI", "rm.ranef")]]
+                  row.names(stackFits) <- NULL
+                  stackFits$posterior.fit <- fits
+                  stackFits$draw <- rep(rnd, each = nrow(newd))
+                }
+            }
+        }
+        # print summary of chosen values
+        if (print.summary == TRUE) {
+            print_summary(mysummary)
+        }
+        
+        if (return.n.posterior > 0) {
+            return(list(newd = newd, posterior.fit = stackFits))
+        } else {
+            return(newd)
+        }
+    }
 }
 
 
@@ -330,7 +320,7 @@ get_difference <- function(model, comp, cond=NULL,
 #' Default is FALSE. Alternatively a string (or vector of strings) with the 
 #' name of the random effect(s) to remove.
 #' @param as.data.frame Logical: return values as data frame or as vector. 
-#' Default is FALSE (returning a vector).
+#' Default is FALSE (as vector).
 #' @param print.summary Logical: whether or not to print a summary of the 
 #' values selected for each predictor. 
 #' Default set to the print info messages option 
@@ -339,7 +329,8 @@ get_difference <- function(model, comp, cond=NULL,
 #' @examples
 #' data(simdat)
 #' \dontrun{
-#' m1 <- bam(Y ~ Group + s(Time, by=Group)+ s(Subject, bs='re'), data=simdat)
+#' m1 <- bam(Y ~ Group + s(Time, by=Group)+ s(Subject, bs='re'), 
+#'     data=simdat)
 #' 
 #' # as.data.frame FALSE and rm.ranef=NULL results in fitted():
 #' all( get_fitted(m1) == fitted(m1) )
@@ -349,95 +340,86 @@ get_difference <- function(model, comp, cond=NULL,
 #' head(get_fitted(m1, rm.ranef=TRUE))
 #' 
 #' # without summary:
-#' infoMessages("off")
+#' infoMessages('off')
 #' head(get_fitted(m1, rm.ranef=TRUE))
-#' infoMessages("on")
+#' infoMessages('on')
 #' }
 #' @author Jacolien van Rij
 #' @family Model predictions
-get_fitted <- function(model, se=1.96, rm.ranef=NULL, 
-	as.data.frame=FALSE,
-	print.summary=getOption('itsadug_print')){
-	if(!"gam" %in% class(model)){
-		stop("This function does not work for class %s models.", class(model)[1])
-	}else{
-		if(!is.null(rm.ranef)){
-			if(class(rm.ranef)=="logical"){
-				if(rm.ranef[1]==FALSE){
-					rm.ranef <- NULL
-				}
-			}
-		}
-		newd <- model$model
-		su <- model$var.summary
-		mysummary <- summary_data(newd, print=FALSE)		
-		p <- mgcv::predict.gam(model, newd, type='lpmatrix')
-		if(!is.null(rm.ranef)){	
-			# get random effects columns:
-			smoothlabels.table <- as.data.frame( do.call('rbind', 
-				lapply(model$smooth, 
-					function(x){
-						data.frame(Label=x[['label']], 
-							Dim=x[['null.space.dim']], 
-							Class = attr(x, "class")[1],
-							stringsAsFactors=FALSE)
-					} ) ) )
-			# smoothlabels <- smoothlabels[smoothlabels$Dim==0,c("Label", "Class")]
-			smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in% c("random.effect","fs.interaction"), "Label"] )
-			if(class(rm.ranef)=="logical"){
-				if(rm.ranef[1]==TRUE){
-					rm.ranef <- smoothlabels			
-				}else if(rm.ranef[1]==FALSE){
-					rm.ranef <- ""
-				}
-			}else if (inherits(rm.ranef, c("numeric", "integer"))){
-				smoothlabels.table <- smoothlabels.table[rm.ranef,]
-				smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in% c("random.effect","fs.interaction"), "Label"] )
-			}
-			rm.col <- unlist(lapply(rm.ranef, 
-				function(x){
-					colnames(p)[grepl(x, colnames(p), fixed=TRUE)]
-				}))
-			rm.col <- unlist(lapply(smoothlabels,
-				function(x){
-					rm.col[grepl(x, rm.col, fixed=TRUE)]
-				}))
-			# cancel random effects
-			p[,rm.col] <- 0
-			# find terms that only occur in random effects:
-			predictors <- do.call('rbind',
-				lapply(model$smooth, 
-					function(x){
-						data.frame(Label=x[['label']],
-							Terms=x[['term']])
-					} )) 	
-			test <- table(predictors$Terms) - table(predictors[predictors$Label %in% rm.ranef,]$Terms)
-			for(pred in names(test[test==0])){
-				mysummary[[pred]] <- paste(mysummary[[pred]], "(Might be canceled as random effect, check below.)")
-			}
-			if(length(rm.col)>0){
-				mysummary[['NOTE']] =  sprintf("The following random effects columns are canceled: %s\n", 
-				paste(smoothlabels, collapse=","))
-			}else{
-				warning("No random effects to cancel.\n")				
-			}
-		}
-		if(print.summary){
-			print_summary(mysummary)
-		}
-		
-		newd$fit <- p %*% coef(model)
-		newd$CI <- se*sqrt(rowSums((p%*%vcov(model))*p))
-		if(!is.null(rm.ranef)){
-			newd$rm.ranef <- paste(smoothlabels, collapse=",")
-		}
-		if(as.data.frame==FALSE){
-			return(as.vector( newd$fit ))
-		}else{
-			return(newd)
-		}
-		
-	}
+get_fitted <- function(model, se = 1.96, rm.ranef = NULL, as.data.frame = FALSE, print.summary = getOption("itsadug_print")) {
+    if (!"gam" %in% class(model)) {
+        stop("This function does not work for class %s models.", class(model)[1])
+    } else {
+        if (!is.null(rm.ranef)) {
+            if (class(rm.ranef) == "logical") {
+                if (rm.ranef[1] == FALSE) {
+                  rm.ranef <- NULL
+                }
+            }
+        }
+        newd <- as.data.frame(unclass(model$model), stringsAsFactors = TRUE)
+        su <- model$var.summary
+        mysummary <- summary_data(newd, print = FALSE)
+        p <- mgcv::predict.gam(model, newd, type = "lpmatrix")
+        if (!is.null(rm.ranef)) {
+            # get random effects columns:
+            smoothlabels.table <- as.data.frame(do.call("rbind", lapply(model$smooth, function(x) {
+                data.frame(Label = x[["label"]], Dim = x[["null.space.dim"]], Class = attr(x, "class")[1], 
+                  stringsAsFactors = FALSE)
+            })), stringsAsFactors = FALSE)
+            # smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in%
+            # c('random.effect','fs.interaction'), 'Label'] )
+            smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Dim == 0, "Label"])
+            if (class(rm.ranef) == "logical") {
+                if (rm.ranef[1] == TRUE) {
+                  rm.ranef <- smoothlabels
+                } else if (rm.ranef[1] == FALSE) {
+                  rm.ranef <- ""
+                }
+            } else if (inherits(rm.ranef, c("numeric", "integer"))) {
+                smoothlabels.table <- smoothlabels.table[rm.ranef, ]
+                smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Class %in% c("random.effect", 
+                  "fs.interaction"), "Label"])
+            }
+            rm.col <- unlist(lapply(rm.ranef, function(x) {
+                colnames(p)[grepl(x, colnames(p), fixed = TRUE)]
+            }))
+            rm.col <- unlist(lapply(smoothlabels, function(x) {
+                rm.col[grepl(x, rm.col, fixed = TRUE)]
+            }))
+            # cancel random effects
+            p[, rm.col] <- 0
+            # find terms that only occur in random effects:
+            predictors <- do.call("rbind", lapply(model$smooth, function(x) {
+                data.frame(Label = x[["label"]], Terms = x[["term"]], stringsAsFactors = FALSE)
+            }))
+            test <- table(predictors$Terms) - table(predictors[predictors$Label %in% rm.ranef, ]$Terms)
+            for (pred in names(test[test == 0])) {
+                mysummary[[pred]] <- paste(mysummary[[pred]], "(Might be canceled as random effect, check below.)")
+            }
+            if (length(rm.col) > 0) {
+                mysummary[["NOTE"]] = sprintf("The following random effects columns are canceled: %s\n", paste(smoothlabels, 
+                  collapse = ","))
+            } else {
+                warning("No random effects to cancel.\n")
+            }
+        }
+        if (print.summary) {
+            print_summary(mysummary)
+        }
+        
+        newd$fit <- p %*% coef(model)
+        newd$CI <- se * sqrt(rowSums((p %*% vcov(model)) * p))
+        if (!is.null(rm.ranef)) {
+            newd$rm.ranef <- paste(smoothlabels, collapse = ",")
+        }
+        if (as.data.frame == FALSE) {
+            return(as.vector(newd$fit))
+        } else {
+            return(newd)
+        }
+        
+    }
 }
 
 
@@ -457,19 +439,19 @@ get_fitted <- function(model, se=1.96, rm.ranef=NULL,
 #' Only relevant for complex interactions, which involve more than two 
 #' dimensions.
 #' @param n.grid Number of data points estimated for each random smooth.
-#' @return A data frame with estimates for the selected smooth term.
 #' @param se Logical: whether or not to return the confidence interval or 
 #' standard error around the estimates.
 #' @param f A number to scale the standard error. Defaults to 1.96, resulting 
 #' in 95\% confidence intervals. For 99\% confidence intervals use a value of 
 #' 2.58.
 #' @param as.data.frame Logical: whether or not to return a data.frame. 
-#' Default is false, and a list will be returned.
+#' Default is TRUE, and a list will be returned.
 #' @param print.summary Logical: whether or not to print a summary of the 
 #' values selected for each predictor. 
 #' Default set to the print info messages option 
 #' (see \code{\link{infoMessages}}).
-#' @return A list with two or more elements:
+#' @return A data frame with estimates for the selected smooth term.
+#' Or a list with two or more elements:
 #' \itemize{
 #' \item \code{fit}: Numeric vector with the fitted values;
 #' \item \code{se.fit}: Optionally, only with \code{se=TRUE}.
@@ -496,7 +478,7 @@ get_fitted <- function(model, se=1.96, rm.ranef=NULL,
 #' +s(Time, Subject, bs='fs', m=1),
 #' data=simdat)
 #' 
-#' # Get list with predictions:
+#' # Get data frame with predictions:
 #' p <- get_modelterm(m1, select=1)
 #' emptyPlot(range(p$terms), range(p$fit), h=0)
 #' plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
@@ -505,120 +487,122 @@ get_fitted <- function(model, se=1.96, rm.ranef=NULL,
 #' pp <- get_modelterm(m1, select=4, as.data.frame=TRUE)
 #' require(lattice)
 #' lattice::xyplot(fit~Time|Subject, 
-#'     data=pp, type="l",
-#'     xlab="Time", ylab="Partial effect")
+#'     data=pp, type='l',
+#'     xlab='Time', ylab='Partial effect')
 #' 
 #' # Plot selection of subjects:
 #' pp <- get_modelterm(m1, select=4, 
 #'     cond=list(Subject=c('a01', 'a03', 'c16')),
 #'     as.data.frame=TRUE)
 #' lattice::xyplot(fit~Time|Subject, 
-#'     data=pp, type="l",
-#'     xlab="Time", ylab="Partial effect")
+#'     data=pp, type='l',
+#'     xlab='Time', ylab='Partial effect')
 #'
 #' # Or using the package ggplot2:
 #' require(ggplot2)
 #' pp <- get_modelterm(m1, select=4, as.data.frame=TRUE)
 #' pg <- ggplot2::qplot(Time, fit, data = pp, 
-#'     geom = c("point", "line"), colour = Subject)
+#'     geom = c('point', 'line'), colour = Subject)
 #' pg + ggplot2::guides(col = guide_legend(nrow = 18))
 #' }
 #' 
 #' @author Jacolien van Rij
 #' @family Model predictions
-get_modelterm <- function(model, select, cond=NULL, n.grid=30, 
-	se=TRUE, f=1.96, as.data.frame=FALSE, 
-	print.summary=getOption('itsadug_print')){
-	if(!"lm" %in% class(model)){
-		stop("This function does not work for class %s models.", class(model)[1])
-	}else{
-		# find terms:
-		smoothlabels <- model$smooth[[select[1]]][['label']]
-		smoothterms <-  model$smooth[[select[1]]][['term']]
-		# select right grouping predictor:
-		if(model$smooth[[select[1]]][['by']] !="NA"){
-			if( is.null(model$smooth[[select[1]]][['by.level']]) ){
-				if( !all( unique(model$model[,model$smooth[[2]]$by]) %in% c(0,1,NA) ) ){
-					stop(sprintf("Check if predictor %s is really binomial.", model$smooth[[2]]$by))
-				}
-				cond[[model$smooth[[select[1]]][['by']]]] <- 1
-			}else{
-				cond[[model$smooth[[select[1]]][['by']]]] <- model$smooth[[select[1]]][['by.level']]
-			}
-		}
-		su <- model$var.summary
-		newd <- NULL
-		new.cond <- list()
-		for(i in names(su)){
-			if((i %in% names(cond)) & any(grepl(i, smoothlabels)) ){
-				new.cond[[i]] <- cond[[i]]
-			}else{
-				if(any(grepl(i, smoothlabels))){
-					if(inherits(su[[i]],"factor")){
-						new.cond[[i]] <- levels(su[[i]])
-					}else if(inherits(su[[i]],"numeric")){
-						new.cond[[i]] <- seq(su[[i]][1], su[[i]][3], length=n.grid)
-					}
-				}else{
-					if(inherits(su[[i]],"factor")){
-						new.cond[[i]] <- as.character(su[[i]][1])
-					}else if(inherits(su[[i]],"numeric")){
-						new.cond[[i]] <- su[[i]][2]
-					}
-				}
-			}
-		}
-		newd <- expand.grid(new.cond)
-		mysummary = summary_data(newd, print=FALSE)
-		p <- mgcv::predict.gam(model, newd, type='terms', se.fit=se)
-		# print summary of chosen values
-		if(print.summary==TRUE){
-			new_summary <- list()
-			for(i in names(mysummary)){
-				if(i %in% smoothterms){
-					new_summary[[i]] <- mysummary[[i]]
-				}
-			}
-			print_summary(new_summary)	
-		}
-		if(as.data.frame){
-			fv <- c()
-			if(length(smoothterms) > 1){
-				fv <- newd[,smoothterms]
-			}else{
-				fv <- data.frame(st=newd[,smoothterms])
-				names(fv) <- smoothterms
-			}
-			if(se){
-				fv$fit <- p$fit[, smoothlabels]
-				fv$se.fit <- f*p$se.fit[,smoothlabels]
-			}else{
-				fv$fit <- p[, smoothlabels]
-			}
-			return(fv)
-		}else{
-			fv <- list()
-			
-			if(se){
-				fv[['fit']] <- p$fit[, smoothlabels]
-				fv[['se.fit']] <- f*p$se.fit[,smoothlabels]
-				fv[['f']] <- f
-			}else{
-				fv[['fit']] <- p[, smoothlabels]
-			}
-			fv[['terms']] <- newd[,smoothterms]
-			fv[['title']] <- model$smooth[[select]]['label']
-			if(length(smoothterms)==1){
-				fv[['xlab']] <- smoothterms[1]
-			}else if(length(smoothterms)==2){
-				fv[['xlab']] <- smoothterms[1]
-				fv[['ylab']] <- smoothterms[2]
-			}else{
-				fv[['labels']] <- smoothterms
-			}	
-			return(fv)
-		}
-	}
+get_modelterm <- function(model, select, cond = NULL, n.grid = 30, se = TRUE, f = 1.96, as.data.frame = TRUE, 
+    print.summary = getOption("itsadug_print")) {
+    if (!"lm" %in% class(model)) {
+        stop("This function does not work for class %s models.", class(model)[1])
+    } else {
+        # find terms:
+        smoothlabels <- model$smooth[[select[1]]][["label"]]
+        smoothterms <- model$smooth[[select[1]]][["term"]]
+        # select right grouping predictor:
+        if (model$smooth[[select[1]]][["by"]] != "NA") {
+            if (is.null(model$smooth[[select[1]]][["by.level"]])) {
+                if (!all(unique(model$model[, model$smooth[[2]]$by]) %in% c(0, 1, NA))) {
+                  stop(sprintf("Check if predictor %s is really binomial.", model$smooth[[2]]$by))
+                }
+                cond[[model$smooth[[select[1]]][["by"]]]] <- 1
+                smoothterms <- c(smoothterms, model$smooth[[select[1]]][["by"]])
+            } else {
+                cond[[model$smooth[[select[1]]][["by"]]]] <- model$smooth[[select[1]]][["by.level"]]
+                smoothterms <- c(smoothterms, model$smooth[[select[1]]][["by"]])
+            }
+        }
+        su <- model$var.summary
+        newd <- NULL
+        new.cond <- list()
+        for (i in names(su)) {
+            if ((i %in% names(cond)) & (i %in% smoothterms)) {
+                # & any(grepl(i, smoothlabels)) ){
+                new.cond[[i]] <- cond[[i]]
+            } else {
+                if (i %in% smoothterms) {
+                  if (inherits(su[[i]], "factor")) {
+                    new.cond[[i]] <- levels(su[[i]])
+                  } else if (inherits(su[[i]], "numeric")) {
+                    new.cond[[i]] <- seq(su[[i]][1], su[[i]][3], length = n.grid)
+                  }
+                } else {
+                  if (inherits(su[[i]], "factor")) {
+                    new.cond[[i]] <- as.character(su[[i]][1])
+                  } else if (inherits(su[[i]], "numeric")) {
+                    new.cond[[i]] <- su[[i]][2]
+                  }
+                }
+            }
+        }
+        newd <- expand.grid(new.cond, stringsAsFactors = TRUE)
+        mysummary = summary_data(newd, print = FALSE)
+        p <- mgcv::predict.gam(model, newd, type = "terms", se.fit = se)
+        # print summary of chosen values
+        if (print.summary == TRUE) {
+            new_summary <- list()
+            for (i in names(mysummary)) {
+                if (i %in% smoothterms) {
+                  new_summary[[i]] <- mysummary[[i]]
+                }
+            }
+            print_summary(new_summary)
+        }
+        if (as.data.frame) {
+            fv <- c()
+            if (length(smoothterms) > 1) {
+                fv <- newd[, smoothterms]
+            } else {
+                fv <- data.frame(st = newd[, smoothterms], stringsAsFactors = TRUE)
+                names(fv) <- smoothterms
+            }
+            if (se) {
+                fv$fit <- p$fit[, smoothlabels]
+                fv$se.fit <- f * p$se.fit[, smoothlabels]
+            } else {
+                fv$fit <- p[, smoothlabels]
+            }
+            return(fv)
+        } else {
+            fv <- list()
+            
+            if (se) {
+                fv[["fit"]] <- p$fit[, smoothlabels]
+                fv[["se.fit"]] <- f * p$se.fit[, smoothlabels]
+                fv[["f"]] <- f
+            } else {
+                fv[["fit"]] <- p[, smoothlabels]
+            }
+            fv[["terms"]] <- newd[, smoothterms]
+            fv[["title"]] <- model$smooth[[select]]["label"]
+            if (length(smoothterms) == 1) {
+                fv[["xlab"]] <- smoothterms[1]
+            } else if (length(smoothterms) == 2) {
+                fv[["xlab"]] <- smoothterms[1]
+                fv[["ylab"]] <- smoothterms[2]
+            } else {
+                fv[["labels"]] <- smoothterms
+            }
+            return(fv)
+        }
+    }
 }
 
 
@@ -636,7 +620,7 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #' Variables omitted from this list will have the closest observed value to 
 #' the median for continuous variables, or the reference level for factors. 
 #' @param rm.ranef Logical: whether or not to remove random effects. 
-#' Default is FALSE. Alternatively a vector with numbers (modelterms) 
+#' Default is TRUE. Alternatively a vector with numbers (modelterms) 
 #' of the random effect(s) to remove.
 #' @param se Logical: whether or not to return the confidence interval or 
 #' standard error around the estimates.
@@ -671,12 +655,12 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #' m1 <- bam(Y ~ Group + s(Time, by=Group), data=simdat)
 #' 
 #' # Time value is automatically set:
-#' pp <- get_predictions(m1, cond=list(Group="Adults"))
+#' pp <- get_predictions(m1, cond=list(Group='Adults'))
 #' head(pp)
 #' 
 #' # Range of time values:
 #' pp <- get_predictions(m1, 
-#'     cond=list(Group="Adults", Time=seq(0,500,length=100)))
+#'     cond=list(Group='Adults', Time=seq(0,500,length=100)))
 #' # plot:
 #' emptyPlot(500, range(pp$fit), h=0)
 #' plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE)
@@ -684,7 +668,7 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #' # Warning: also unrealistical values are possible
 #' range(simdat$Time)
 #' pp <- get_predictions(m1, 
-#'     cond=list(Group="Adults", Time=seq(-500,0,length=100)))
+#'     cond=list(Group='Adults', Time=seq(-500,0,length=100)))
 #' # plot of predictions that are not supported by data:
 #' emptyPlot(c(-500,0), range(pp$fit), h=0)
 #' plot_error(pp$Time, pp$fit, pp$CI, shade=TRUE, xpd=TRUE) 
@@ -695,7 +679,7 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #' # Simultaneous CI vs pointwise CI
 #' # NOTE: USE AT LEST 200 DATAPOINTS FOR SIMULTANEOUS CI
 #' pp <- get_predictions(m2, 
-#'     cond=list(Group="Adults", Time=seq(0,2000,length=200)), 
+#'     cond=list(Group='Adults', Time=seq(0,2000,length=200)), 
 #'     rm.ranef=TRUE, sim.ci=TRUE)
 #' head(pp)
 #' # plot:
@@ -708,159 +692,149 @@ get_modelterm <- function(model, select, cond=NULL, n.grid=30,
 #'
 #' @author Jacolien van Rij
 #' @family Model predictions
-get_predictions <- function(model, cond=NULL, 
-	rm.ranef=NULL, 
-	se=TRUE, sim.ci=FALSE, f=1.96, 
-	return.n.posterior = 0,
-	print.summary=getOption('itsadug_print')){
-	if(is.null(cond)){
-		stop("Please specify values for at least one predictor in the parameter 'cond'.")
-	}
-	if(!"gam" %in% class(model)){
-		stop("This function does not work for class %s models.", class(model)[1])
-	}else{
-		if(!is.null(rm.ranef)){
-			if(class(rm.ranef)=="logical"){
-				if(rm.ranef[1]==FALSE){
-					rm.ranef <- NULL
-				}
-			}
-		}
-		newd <- NULL
-		su <- model$var.summary
-		new.cond <- list()
-		for(i in names(su)){
-			if(i %in% names(cond)){
-				new.cond[[i]] <- cond[[i]]
-			}else{
-				if(class(su[[i]])=="factor"){
-					new.cond[[i]] <- as.character(su[[i]][1])
-				}else if(class(su[[i]])=="numeric"){
-					new.cond[[i]] <- su[[i]][2]
-				}
-			}
-		}
-		newd <- expand.grid(new.cond)
-		mysummary <- summary_data(newd, print=FALSE)		
-		p <- mgcv::predict.gam(model, newd, type='lpmatrix')
-		if(!is.null(rm.ranef)){	
-			# get random effects columns:
-			smoothlabels.table <- as.data.frame( do.call('rbind', 
-				lapply(model$smooth, 
-					function(x){
-						data.frame(Label=x[['label']], 
-							Dim=x[['null.space.dim']], 
-							Class = attr(x, "class")[1],
-							stringsAsFactors=FALSE)
-					} ) ) )
-			# smoothlabels <- smoothlabels[smoothlabels$Dim==0,c("Label", "Class")]
-			smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in% c("random.effect","fs.interaction"), "Label"] )
-			if(class(rm.ranef)=="logical"){
-				if(rm.ranef[1]==TRUE){
-					rm.ranef <- smoothlabels			
-				}else if(rm.ranef[1]==FALSE){
-					rm.ranef <- ""
-				}
-			}else if (inherits(rm.ranef, c("numeric", "integer"))){
-				smoothlabels.table <- smoothlabels.table[rm.ranef,]
-				smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in% c("random.effect","fs.interaction"), "Label"] )
-			}
-			rm.col <- unlist(lapply(rm.ranef, 
-				function(x){
-					colnames(p)[grepl(x, colnames(p), fixed=TRUE)]
-				}))
-			rm.col <- unlist(lapply(smoothlabels,
-				function(x){
-					rm.col[grepl(x, rm.col, fixed=TRUE)]
-				}))
-			# cancel random effects
-			p[,rm.col] <- 0
-			# find terms that only occur in random effects:
-			predictors <- do.call('rbind',
-				lapply(model$smooth, 
-					function(x){
-						data.frame(Label=x[['label']],
-							Terms=x[['term']])
-					} )) 	
-			test <- table(predictors$Terms) - table(predictors[predictors$Label %in% rm.ranef,]$Terms)
-			for(pred in names(test[test==0])){
-				mysummary[[pred]] <- paste(mysummary[[pred]], "(Might be canceled as random effect, check below.)")
-			}
-			if(length(rm.col)>0){
-				mysummary[['NOTE']] =  sprintf("The following random effects columns are canceled: %s\n", 
-				paste(smoothlabels, collapse=","))
-			}else{
-				warning("No random effects to cancel.\n")				
-			}
-		}
-		
-		for(i in names(newd)){
-			if(i %in% c("fit", "CI", "sim.CI", "rm.ranef")){
-				warning(sprintf("Predictor %s is renamed to %s_predictor. To avoid problems with plotting, please rename the predictor before running the model. Use a different name, or capitalization.", i))
-				names(newd)[names(newd)==i] <- sprintf("%s_predictor",i)
-			}
-		}
-		newd$fit <- (p %*% coef(model))[,1]
-		if(se){
-			newd$CI <- f*sqrt(rowSums((p%*%vcov(model))*p))
-		}
-		if(!is.null(rm.ranef)){
-			newd$rm.ranef <- paste(smoothlabels, collapse=",")
-		}
-		
-	    # simultaneous CI 
-	    # See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
-		stackFits <- NULL
-		if (sim.ci==TRUE) { 
-	        Vb <- vcov(model, freq=FALSE, unconditional=TRUE)
-	        se.fit <- sqrt(rowSums((p%*%Vb)*p))
-	        sim <- mgcv::rmvn(10000, mu=rep(0,nrow(Vb)), V=Vb)
-	        # Cg <- predict(model, newd, type='lpmatrix')
-	        # Cg replaced by p
-	        simDev <- p %*% t(sim)
-	        # Evaluate the basis function at g and compute the deviations 
-	        # between the fitted and true parameters. Then we find the absolute values 
-	        # of the standardized deviations from the true model: 
-	        absDev <- abs(sweep(simDev, 1, se.fit, FUN="/"))
-	        # maximum of the absolute standardized deviations:
-	        masd <- apply(absDev, 2L, max)
-	        # set simultaneous X% CI on the basis of original se multiplication specified by f:
-	        crit <- quantile(masd, prob=1-round(2*(1-pnorm(f)), 2), type=8)
-	        newd$sim.CI <- crit*se.fit
-	    
-	    	if((return.n.posterior > 0) | (print.summary==TRUE)){
-		        # coverage pointwise and simultaneous CIs:
-	        	sims <- rmvn(max(1e4, return.n.posterior), mu = coef(model), V = Vb)
-				fits <- p %*% t(sims)
-		        inCI <- function(x, upr, lwr) {
-				    all(x >= lwr & x <= upr)
-				}
-				fitsInPCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$CI, lwr = newd$fit - newd$CI)
-				fitsInSCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$sim.CI, lwr = newd$fit - newd$sim.CI)
-		        mysummary[[  paste("Simultaneous ",100*(1-round(2*(1-pnorm(f)),2)),"%-CI used", sep="")  ]] = sprintf("\n\t\t%s\n\t\t%s\n\t\t%s\n",
-		        	paste("Critical value: ",round(crit,3),sep=''),
-		        	paste("Proportion posterior simulations in pointwise CI: ", round(sum(fitsInPCI) / length(fitsInPCI),2), " (10000 samples)", sep=''),
-		        	paste("Proportion posterior simulations in simultaneous CI: ", round(sum(fitsInSCI) / length(fitsInSCI),2), " (10000 samples)", sep=''))
-			
-				if(return.n.posterior > 0) {
-					rnd <- sample(max(1e4, return.n.posterior), return.n.posterior)
-					fits <- stack(as.data.frame(fits[, rnd]))[,1]
-					stackFits <- newd[rep(1:nrow(newd), length(rnd)),colnames(newd)[!colnames(newd) %in% c("fit", "CI", "sim.CI", "rm.ranef")]]
-					row.names(stackFits) <- NULL
-					stackFits$posterior.fit <- fits
-					stackFits$draw <- rep(rnd, each=nrow(newd))
-				}
-	        }
-	    }
-	   	if(print.summary){
-			print_summary(mysummary)
-		}
-	    if(return.n.posterior > 0){
-	    	return(list(newd=newd, posterior.fit=stackFits))
-	    }else{
-	    	return(newd)
-	    }
-	}
+get_predictions <- function(model, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.ci = FALSE, f = 1.96, return.n.posterior = 0, 
+    print.summary = getOption("itsadug_print")) {
+    if (is.null(cond)) {
+        stop("Please specify values for at least one predictor in the parameter 'cond'.")
+    }
+    if (!"gam" %in% class(model)) {
+        stop("This function does not work for class %s models.", class(model)[1])
+    } else {
+        if (!is.null(rm.ranef)) {
+            if (class(rm.ranef) == "logical") {
+                if (rm.ranef[1] == FALSE) {
+                  rm.ranef <- NULL
+                }
+            }
+        }
+        newd <- NULL
+        su <- model$var.summary
+        new.cond <- list()
+        for (i in names(su)) {
+            if (i %in% names(cond)) {
+                new.cond[[i]] <- cond[[i]]
+            } else {
+                if (class(su[[i]]) == "factor") {
+                  new.cond[[i]] <- as.character(su[[i]][1])
+                } else if (class(su[[i]]) == "numeric") {
+                  new.cond[[i]] <- su[[i]][2]
+                }
+            }
+        }
+        newd <- expand.grid(new.cond, stringsAsFactors = TRUE)
+        mysummary <- summary_data(newd, print = FALSE)
+        p <- mgcv::predict.gam(model, newd, type = "lpmatrix")
+        if (!is.null(rm.ranef)) {
+            # get random effects columns:
+            smoothlabels.table <- as.data.frame(do.call("rbind", lapply(model$smooth, function(x) {
+                data.frame(Label = x[["label"]], Dim = x[["null.space.dim"]], Class = attr(x, "class")[1], 
+                  stringsAsFactors = TRUE)
+            })))
+            # smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in%
+            # c('random.effect','fs.interaction'), 'Label'] )
+            smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Dim == 0, "Label"])
+            if (class(rm.ranef) == "logical") {
+                if (rm.ranef[1] == TRUE) {
+                  rm.ranef <- smoothlabels
+                } else if (rm.ranef[1] == FALSE) {
+                  rm.ranef <- ""
+                }
+            } else if (inherits(rm.ranef, c("numeric", "integer"))) {
+                smoothlabels.table <- smoothlabels.table[rm.ranef, ]
+                smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Class %in% c("random.effect", 
+                  "fs.interaction"), "Label"])
+            }
+            rm.col <- unlist(lapply(rm.ranef, function(x) {
+                colnames(p)[grepl(x, colnames(p), fixed = TRUE)]
+            }))
+            rm.col <- unlist(lapply(smoothlabels, function(x) {
+                rm.col[grepl(x, rm.col, fixed = TRUE)]
+            }))
+            # cancel random effects
+            p[, rm.col] <- 0
+            # find terms that only occur in random effects:
+            predictors <- do.call("rbind", lapply(model$smooth, function(x) {
+                data.frame(Label = x[["label"]], Terms = x[["term"]], stringsAsFactors = TRUE)
+            }))
+            test <- table(predictors$Terms) - table(predictors[predictors$Label %in% rm.ranef, ]$Terms)
+            for (pred in names(test[test == 0])) {
+                mysummary[[pred]] <- paste(mysummary[[pred]], "(Might be canceled as random effect, check below.)")
+            }
+            if (length(rm.col) > 0) {
+                mysummary[["NOTE"]] = sprintf("The following random effects columns are canceled: %s\n", paste(smoothlabels, 
+                  collapse = ","))
+            } else {
+                mysummary[["NOTE"]] = "No random effects in the model to cancel.\n"
+                # warning('No random effects to cancel.\n')
+            }
+        }
+        
+        for (i in names(newd)) {
+            if (i %in% c("fit", "CI", "sim.CI", "rm.ranef")) {
+                warning(sprintf("Predictor %s is renamed to %s_predictor. To avoid problems with plotting, please rename the predictor before running the model. Use a different name, or capitalization.", 
+                  i))
+                names(newd)[names(newd) == i] <- sprintf("%s_predictor", i)
+            }
+        }
+        newd$fit <- (p %*% coef(model))[, 1]
+        if (se) {
+            newd$CI <- f * sqrt(rowSums((p %*% vcov(model)) * p))
+        }
+        if (!is.null(rm.ranef) & length(rm.ranef) > 0) {
+            newd$rm.ranef <- paste(smoothlabels, collapse = ",")
+        }
+        
+        # simultaneous CI See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+        stackFits <- NULL
+        if (sim.ci == TRUE) {
+            Vb <- vcov(model, freq = FALSE, unconditional = TRUE)
+            se.fit <- sqrt(rowSums((p %*% Vb) * p))
+            sim <- mgcv::rmvn(10000, mu = rep(0, nrow(Vb)), V = Vb)
+            # Cg <- predict(model, newd, type='lpmatrix') Cg replaced by p
+            simDev <- p %*% t(sim)
+            # Evaluate the basis function at g and compute the deviations between the fitted and true parameters. Then
+            # we find the absolute values of the standardized deviations from the true model:
+            absDev <- abs(sweep(simDev, 1, se.fit, FUN = "/"))
+            # maximum of the absolute standardized deviations:
+            masd <- apply(absDev, 2L, max)
+            # set simultaneous X% CI on the basis of original se multiplication specified by f:
+            crit <- quantile(masd, prob = 1 - round(2 * (1 - pnorm(f)), 2), type = 8)
+            newd$sim.CI <- crit * se.fit
+            
+            if ((return.n.posterior > 0) | (print.summary == TRUE)) {
+                # coverage pointwise and simultaneous CIs:
+                sims <- rmvn(max(10000, return.n.posterior), mu = coef(model), V = Vb)
+                fits <- p %*% t(sims)
+                inCI <- function(x, upr, lwr) {
+                  all(x >= lwr & x <= upr)
+                }
+                fitsInPCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$CI, lwr = newd$fit - newd$CI)
+                fitsInSCI <- apply(fits, 2L, inCI, upr = newd$fit + newd$sim.CI, lwr = newd$fit - newd$sim.CI)
+                mysummary[[paste("Simultaneous ", 100 * (1 - round(2 * (1 - pnorm(f)), 2)), "%-CI used", sep = "")]] = sprintf("\n\t\t%s\n\t\t%s\n\t\t%s\n", 
+                  paste("Critical value: ", round(crit, 3), sep = ""), paste("Proportion posterior simulations in pointwise CI: ", 
+                    round(sum(fitsInPCI)/length(fitsInPCI), 2), " (10000 samples)", sep = ""), paste("Proportion posterior simulations in simultaneous CI: ", 
+                    round(sum(fitsInSCI)/length(fitsInSCI), 2), " (10000 samples)", sep = ""))
+                
+                if (return.n.posterior > 0) {
+                  rnd <- sample(max(10000, return.n.posterior), return.n.posterior)
+                  fits <- stack(as.data.frame(fits[, rnd]))[, 1]
+                  stackFits <- newd[rep(1:nrow(newd), length(rnd)), colnames(newd)[!colnames(newd) %in% c("fit", 
+                    "CI", "sim.CI", "rm.ranef")]]
+                  row.names(stackFits) <- NULL
+                  stackFits$posterior.fit <- fits
+                  stackFits$draw <- rep(rnd, each = nrow(newd))
+                }
+            }
+        }
+        if (print.summary) {
+            print_summary(mysummary)
+        }
+        if (return.n.posterior > 0) {
+            return(list(newd = newd, posterior.fit = stackFits))
+        } else {
+            return(newd)
+        }
+    }
 }
 
 
@@ -914,58 +888,55 @@ get_predictions <- function(model, cond=NULL,
 #'
 #' @author Jacolien van Rij
 #' @family Model predictions
-get_random <- function(model, cond=NULL,
-	print.summary=getOption('itsadug_print')){
-	if(!"lm" %in% class(model)){
-		stop("This function does not work for class %s models.", class(model)[1])
-	}else{
-		# find random effects:
-		smoothlabels <- as.data.frame( do.call('rbind', 
-			lapply(model$smooth, 
-				function(x){
-					data.frame(Label=x[['label']], 
-						Dim=x[['null.space.dim']], 
-						Class = attr(x, "class")[1],
-						stringsAsFactors=FALSE)
-				} ) ) )
-		randomeffects <- which(smoothlabels$Class %in% c("random.effect"))
-		if(length(randomeffects) == 0){
-			warning("No random effects specified in the model.")
-			return(NULL)
-		}
-		coefs <- list()
-		
-		coeflabels <- as.vector( smoothlabels[smoothlabels$Class %in% c("random.effect"), "Label"] )
-		for(i in coeflabels){
-			coefs[[i]] = coef(model)[grepl(convertNonAlphanumeric(i), names(coef(model)))]
-			components = model$smooth[[which(smoothlabels$Label == i)]]$term
-			components = components[sapply(components, function(x){ class(model$model[,x])})=="factor"]
-			if(length(components)==1){
-				names(coefs[[i]]) <- levels(model$model[,components])
-				if(!is.null(cond)){
-					for(j in names(cond)){
-						if(j %in% components){
-							coefs[[i]] = coefs[[i]][cond[[j]]]
-						}
-					}
-				}
-			}else if(length(components)>1){
-				model$model[,paste(components, collapse='.')] <- interaction(model$model[,components])
-				names(coefs[[i]]) = levels( model$model[,paste(components, collapse='.')] )
-				if(!is.null(cond)){
-					for(j in names(cond)){
-						if(j %in% components){
-							incl.levels <- sort(unique(model$model[model$model[,j]==cond[[j]],paste(components, collapse='.')]))
-							incl.levels[incl.levels %in% names(coefs[[i]])]
-							coefs[[i]] = coefs[[i]][incl.levels]
-						}
-					}
-				}
-			}
-		}
-		return(coefs)
-		
-	}
+get_random <- function(model, cond = NULL, print.summary = getOption("itsadug_print")) {
+    if (!"lm" %in% class(model)) {
+        stop("This function does not work for class %s models.", class(model)[1])
+    } else {
+        # find random effects:
+        smoothlabels <- as.data.frame(do.call("rbind", lapply(model$smooth, function(x) {
+            data.frame(Label = x[["label"]], Dim = x[["null.space.dim"]], Class = attr(x, "class")[1], stringsAsFactors = FALSE)
+        })))
+        randomeffects <- which(smoothlabels$Class %in% c("random.effect"))
+        if (length(randomeffects) == 0) {
+            warning("No random effects specified in the model.")
+            return(NULL)
+        }
+        coefs <- list()
+        
+        coeflabels <- as.vector(smoothlabels[smoothlabels$Class %in% c("random.effect"), "Label"])
+        for (i in coeflabels) {
+            coefs[[i]] = coef(model)[grepl(convertNonAlphanumeric(i), names(coef(model)))]
+            components = model$smooth[[which(smoothlabels$Label == i)]]$term
+            components = components[sapply(components, function(x) {
+                class(model$model[, x])
+            }) == "factor"]
+            if (length(components) == 1) {
+                names(coefs[[i]]) <- levels(model$model[, components])
+                if (!is.null(cond)) {
+                  for (j in names(cond)) {
+                    if (j %in% components) {
+                      coefs[[i]] = coefs[[i]][cond[[j]]]
+                    }
+                  }
+                }
+            } else if (length(components) > 1) {
+                model$model[, paste(components, collapse = ".")] <- interaction(model$model[, components])
+                names(coefs[[i]]) = levels(model$model[, paste(components, collapse = ".")])
+                if (!is.null(cond)) {
+                  for (j in names(cond)) {
+                    if (j %in% components) {
+                      incl.levels <- sort(unique(model$model[model$model[, j] == cond[[j]], paste(components, 
+                        collapse = ".")]))
+                      incl.levels[incl.levels %in% names(coefs[[i]])]
+                      coefs[[i]] = coefs[[i]][incl.levels]
+                    }
+                  }
+                }
+            }
+        }
+        return(coefs)
+        
+    }
 }
 
 

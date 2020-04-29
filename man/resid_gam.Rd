@@ -33,7 +33,7 @@ data(simdat)
 
 \dontrun{
 # Add start event column:
-simdat <- start_event(simdat, event=c("Subject", "Trial"))
+simdat <- start_event(simdat, event=c('Subject', 'Trial'))
 head(simdat)
 # bam model with AR1 model (toy example, not serious model):
 m1 <- bam(Y ~ Group + te(Time, Trial, by=Group), 
@@ -97,11 +97,15 @@ simdat[-missing_est(m2),]$res <- resid_gam(m2, incl_na=TRUE)
 \seealso{
 \code{\link[stats]{resid}}, \code{\link{missing_est}}
 
-Other functions for model criticism: \code{\link{acf_n_plots}},
-  \code{\link{acf_plot}}, \code{\link{acf_resid}},
-  \code{\link{derive_timeseries}},
-  \code{\link{start_event}}, \code{\link{start_value_rho}}
+Other functions for model criticism: 
+\code{\link{acf_n_plots}()},
+\code{\link{acf_plot}()},
+\code{\link{acf_resid}()},
+\code{\link{derive_timeseries}()},
+\code{\link{start_event}()},
+\code{\link{start_value_rho}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{functions for model criticism}

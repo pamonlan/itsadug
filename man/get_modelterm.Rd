@@ -4,9 +4,16 @@
 \alias{get_modelterm}
 \title{Get estimated for selected model terms.}
 \usage{
-get_modelterm(model, select, cond = NULL, n.grid = 30, se = TRUE,
-  f = 1.96, as.data.frame = FALSE,
-  print.summary = getOption("itsadug_print"))
+get_modelterm(
+  model,
+  select,
+  cond = NULL,
+  n.grid = 30,
+  se = TRUE,
+  f = 1.96,
+  as.data.frame = TRUE,
+  print.summary = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -29,7 +36,7 @@ in 95\% confidence intervals. For 99\% confidence intervals use a value of
 2.58.}
 
 \item{as.data.frame}{Logical: whether or not to return a data.frame. 
-Default is false, and a list will be returned.}
+Default is TRUE, and a list will be returned.}
 
 \item{print.summary}{Logical: whether or not to print a summary of the 
 values selected for each predictor. 
@@ -38,8 +45,7 @@ Default set to the print info messages option
 }
 \value{
 A data frame with estimates for the selected smooth term.
-
-A list with two or more elements:
+Or a list with two or more elements:
 \itemize{
 \item \code{fit}: Numeric vector with the fitted values;
 \item \code{se.fit}: Optionally, only with \code{se=TRUE}.
@@ -70,7 +76,7 @@ m1 <- bam(Y ~ s(Time) + s(Trial)
 +s(Time, Subject, bs='fs', m=1),
 data=simdat)
 
-# Get list with predictions:
+# Get data frame with predictions:
 p <- get_modelterm(m1, select=1)
 emptyPlot(range(p$terms), range(p$fit), h=0)
 plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
@@ -79,31 +85,35 @@ plot_error(p$terms, p$fit, p$se.fit, shade=TRUE, xpd=TRUE)
 pp <- get_modelterm(m1, select=4, as.data.frame=TRUE)
 require(lattice)
 lattice::xyplot(fit~Time|Subject, 
-    data=pp, type="l",
-    xlab="Time", ylab="Partial effect")
+    data=pp, type='l',
+    xlab='Time', ylab='Partial effect')
 
 # Plot selection of subjects:
 pp <- get_modelterm(m1, select=4, 
     cond=list(Subject=c('a01', 'a03', 'c16')),
     as.data.frame=TRUE)
 lattice::xyplot(fit~Time|Subject, 
-    data=pp, type="l",
-    xlab="Time", ylab="Partial effect")
+    data=pp, type='l',
+    xlab='Time', ylab='Partial effect')
 
 # Or using the package ggplot2:
 require(ggplot2)
 pp <- get_modelterm(m1, select=4, as.data.frame=TRUE)
 pg <- ggplot2::qplot(Time, fit, data = pp, 
-    geom = c("point", "line"), colour = Subject)
+    geom = c('point', 'line'), colour = Subject)
 pg + ggplot2::guides(col = guide_legend(nrow = 18))
 }
 
 }
 \seealso{
-Other Model predictions: \code{\link{get_coefs}},
-  \code{\link{get_difference}}, \code{\link{get_fitted}},
-  \code{\link{get_predictions}}, \code{\link{get_random}}
+Other Model predictions: 
+\code{\link{get_coefs}()},
+\code{\link{get_difference}()},
+\code{\link{get_fitted}()},
+\code{\link{get_predictions}()},
+\code{\link{get_random}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model predictions}

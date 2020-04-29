@@ -4,10 +4,19 @@
 \alias{plot_parametric}
 \title{Visualization of group estimates.}
 \usage{
-plot_parametric(x, pred, cond = list(), parametricOnly = FALSE,
-  rm.ranef = NULL, col = "black", se = 1.96,
-  print.summary = getOption("itsadug_print"), main = NULL, xlab = NULL,
-  ...)
+plot_parametric(
+  x,
+  pred,
+  cond = list(),
+  parametricOnly = FALSE,
+  rm.ranef = TRUE,
+  col = "black",
+  se = 1.96,
+  print.summary = getOption("itsadug_print"),
+  main = NULL,
+  xlab = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -82,16 +91,22 @@ print(out)
 }
 
 # see the vignette for examples:
-vignette("overview", package="itsadug")
+vignette('overview', package='itsadug')
 }
 \seealso{
 \code{\link[mgcv]{plot.gam}}
 
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{gamtabs}}, \code{\link{inspect_random}},
-  \code{\link{plot_data}}, \code{\link{plot_smooth}},
-  \code{\link{plot_topo}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{gamtabs}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_data}()},
+\code{\link{plot_smooth}()},
+\code{\link{plot_topo}()},
+\code{\link{pvisgam}()}
 }
 \author{
 Jacolien van Rij, based on a function of Fabian Tomaschek
 }
+\concept{Functions for model inspection}

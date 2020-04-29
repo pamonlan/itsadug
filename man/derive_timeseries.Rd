@@ -23,7 +23,7 @@ data(simdat)
 
 # add missing values to simdat:
 simdat[sample(nrow(simdat), 15),]$Y <- NA
-simdat <- start_event(simdat, event=c("Subject", "Trial"))
+simdat <- start_event(simdat, event=c('Subject', 'Trial'))
 
 \dontrun{
 # Run GAMM model:
@@ -38,15 +38,19 @@ simdat$Event <- derive_timeseries(simdat$start.event)
 acf_resid(m1, split_pred=list(Event=simdat$Event))
 
 # Note that acf_resid automatically makes use of derive_timeseries:
-acf_resid(m1, split_pred="AR.start")
+acf_resid(m1, split_pred='AR.start')
 }
 }
 \seealso{
-Other functions for model criticism: \code{\link{acf_n_plots}},
-  \code{\link{acf_plot}}, \code{\link{acf_resid}},
-  \code{\link{resid_gam}}, \code{\link{start_event}},
-  \code{\link{start_value_rho}}
+Other functions for model criticism: 
+\code{\link{acf_n_plots}()},
+\code{\link{acf_plot}()},
+\code{\link{acf_resid}()},
+\code{\link{resid_gam}()},
+\code{\link{start_event}()},
+\code{\link{start_value_rho}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{functions for model criticism}

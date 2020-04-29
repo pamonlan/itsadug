@@ -4,8 +4,13 @@
 \alias{compareML}
 \title{Function for comparing two GAMM models.}
 \usage{
-compareML(model1, model2, signif.stars = TRUE, suggest.report = FALSE,
-  print.output = TRUE)
+compareML(
+  model1,
+  model2,
+  signif.stars = TRUE,
+  suggest.report = FALSE,
+  print.output = TRUE
+)
 }
 \arguments{
 \item{model1}{First model.}
@@ -43,7 +48,7 @@ and 3) the sum of the penalty null space dimensions of each smooth object.
 
 This method is preferred over other functions such as \code{\link{AIC}} for 
 models that include an AR1 model or random effects (especially nonlinear 
-random smooths using \code{bs="fs"}). CompareML also reports the AIC 
+random smooths using \code{bs='fs'}). CompareML also reports the AIC 
 difference, but that value should be treated with care.
 
 Note that the Chi-Square test will result in a very low p-value
@@ -58,7 +63,7 @@ Model comparison is only implemented for the methods GCV, fREML, REML, and ML.
 \section{Notes}{
 
 For suppressing the output and all warnings, set infoMessages to FALSE 
-(\code{infoMessages("off")} ), set the argument \code{print.output} to FALSE,
+(\code{infoMessages('off')} ), set the argument \code{print.output} to FALSE,
 and use the function 
 \code{\link{suppressWarnings}} to suppress warning messages.
 }
@@ -67,17 +72,17 @@ and use the function
 data(simdat)
 
 \dontrun{
-infoMessages("on")
+infoMessages('on')
 # some arbitrary models:
-m1 <- bam(Y~Group + s(Time, by=Group), method="fREML", data=simdat)
-m2 <- bam(Y~Group + s(Time), method="fREML", data=simdat)
+m1 <- bam(Y~Group + s(Time, by=Group), method='fREML', data=simdat)
+m2 <- bam(Y~Group + s(Time), method='fREML', data=simdat)
 
 compareML(m1, m2)
 
 # exclude significance stars:
 compareML(m1, m2, signif.stars=FALSE)
 
-m3 <- bam(Y~Group + s(Time, by=Group, k=25), method="fREML", 
+m3 <- bam(Y~Group + s(Time, by=Group, k=25), method='fREML', 
     data=simdat)
 compareML(m1, m3)
 
@@ -93,10 +98,13 @@ suppressWarnings(cml <- compareML(m1, m2, print.output=FALSE)$table)
 \seealso{
 For models without AR1 model or random effects \code{\link{AIC}} can be used.
 
-Other Testing for significance: \code{\link{plot_diff2}},
-  \code{\link{plot_diff}}, \code{\link{report_stats}},
-  \code{\link{wald_gam}}
+Other Testing for significance: 
+\code{\link{plot_diff2}()},
+\code{\link{plot_diff}()},
+\code{\link{report_stats}()},
+\code{\link{wald_gam}()}
 }
 \author{
 Jacolien van Rij. With many thanks to Simon N. Wood for his feedback.
 }
+\concept{Testing for significance}

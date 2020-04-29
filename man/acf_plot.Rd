@@ -4,8 +4,16 @@
 \alias{acf_plot}
 \title{Generate an ACF plot of an aggregated time series.}
 \usage{
-acf_plot(x, split_by = NULL, max_lag = NULL, plot = TRUE, fun = mean,
-  cond = NULL, return_all = FALSE, ...)
+acf_plot(
+  x,
+  split_by = NULL,
+  max_lag = NULL,
+  plot = TRUE,
+  fun = mean,
+  cond = NULL,
+  return_all = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{A vector with time series data, typically residuals of a 
@@ -79,18 +87,22 @@ simdat[!is.na(simdat$Y),]$res <- resid(m1)
 acf_plot(simdat$res, split_by=list(simdat$Subject, simdat$Trial))
 
 # see the vignette for examples:
-vignette("acf", package="itsadug")
+vignette('acf', package='itsadug')
 
 }
 \seealso{
 Use \code{\link[stats]{acf}} for the original ACF function, 
 and \code{\link{acf_n_plots}} for inspection of individual time series.
 
-Other functions for model criticism: \code{\link{acf_n_plots}},
-  \code{\link{acf_resid}}, \code{\link{derive_timeseries}},
-  \code{\link{resid_gam}}, \code{\link{start_event}},
-  \code{\link{start_value_rho}}
+Other functions for model criticism: 
+\code{\link{acf_n_plots}()},
+\code{\link{acf_resid}()},
+\code{\link{derive_timeseries}()},
+\code{\link{resid_gam}()},
+\code{\link{start_event}()},
+\code{\link{start_value_rho}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{functions for model criticism}

@@ -4,9 +4,17 @@
 \alias{get_difference}
 \title{Get model predictions for differences between conditions.}
 \usage{
-get_difference(model, comp, cond = NULL, rm.ranef = NULL, se = TRUE,
-  sim.ci = FALSE, f = 1.96, return.n.posterior = 0,
-  print.summary = getOption("itsadug_print"))
+get_difference(
+  model,
+  comp,
+  cond = NULL,
+  rm.ranef = TRUE,
+  se = TRUE,
+  sim.ci = FALSE,
+  f = 1.96,
+  return.n.posterior = 0,
+  print.summary = getOption("itsadug_print")
+)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -20,7 +28,7 @@ value to the median for continuous variables, or the reference level for
 factors.}
 
 \item{rm.ranef}{Logical: whether or not to remove random effects. 
-Default is FALSE. Alternatively a vector of numbers with the 
+Default is TRUE. Alternatively a vector of numbers with the 
 mdoelterm number of the random effect(s) to remove. 
 (See notes.)}
 
@@ -83,10 +91,14 @@ diff <- get_difference(m1, comp=list(Group=c('Adults', 'Children')),
 head(diff)
 }
 \seealso{
-Other Model predictions: \code{\link{get_coefs}},
-  \code{\link{get_fitted}}, \code{\link{get_modelterm}},
-  \code{\link{get_predictions}}, \code{\link{get_random}}
+Other Model predictions: 
+\code{\link{get_coefs}()},
+\code{\link{get_fitted}()},
+\code{\link{get_modelterm}()},
+\code{\link{get_predictions}()},
+\code{\link{get_random}()}
 }
 \author{
 Jacolien van Rij, Martijn Wieling
 }
+\concept{Model predictions}

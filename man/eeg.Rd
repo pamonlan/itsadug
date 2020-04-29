@@ -4,7 +4,8 @@
 \name{eeg}
 \alias{eeg}
 \title{Raw EEG data, single trial, 50Hz.}
-\format{A data frame with 1504 rows and 5 variables:
+\format{
+A data frame with 1504 rows and 5 variables:
 \describe{
   \item{\code{Electrode}}{Electrode that recorded the EEG.}
   \item{\code{Time}}{Time, time measure from onset of the stimulus.}
@@ -13,7 +14,8 @@
 Left is negative.}
   \item{\code{Y}}{Approximation of electrode position, relative to Cz. 
 Back is negative.}
-}}
+}
+}
 \usage{
 eeg
 }

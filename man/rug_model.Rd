@@ -4,8 +4,15 @@
 \alias{rug_model}
 \title{Add rug to plot, based on model.}
 \usage{
-rug_model(model, view, cond = NULL, data.rows = NULL, rm.ranef = NULL,
-  print.summary = getOption("itsadug_print"), ...)
+rug_model(
+  model,
+  view,
+  cond = NULL,
+  data.rows = NULL,
+  rm.ranef = NULL,
+  print.summary = getOption("itsadug_print"),
+  ...
+)
 }
 \arguments{
 \item{model}{gam or bam object.}
@@ -39,22 +46,24 @@ Add rug based on model data.
 plot(cars$speed, cars$dist, pch=16, col=alpha(1))
 lm1 <- lm(dist ~ speed, dat=cars)
 abline(lm1, col='red', lwd=2)
-rug_model(lm1, view="speed")
-rug_model(lm1, view="dist", side=2)
+rug_model(lm1, view='speed')
+rug_model(lm1, view='dist', side=2)
 
 \dontrun{
 library(itsadug)
 data(simdat)
 m1 <- bam(Y ~ Group + te(Time, Trial, by=Group), data=simdat)
 # plot:
-fvisgam(m1, view=c("Time", "Trial"), cond=list(Group="Adults"))
-rug_model(m1, view="Time", cond=list(Group="Adults"))
-rug_model(m1, view="Trial", cond=list(Group="Adults"), side=2)
+fvisgam(m1, view=c('Time', 'Trial'), cond=list(Group='Adults'))
+rug_model(m1, view='Time', cond=list(Group='Adults'))
+rug_model(m1, view='Trial', cond=list(Group='Adults'), side=2)
 }
 }
 \seealso{
-Other Functions for plotting: \code{\link{fadeRug}}
+Other Functions for plotting: 
+\code{\link{fadeRug}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Functions for plotting}

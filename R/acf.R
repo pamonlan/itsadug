@@ -83,23 +83,20 @@
 #' }
 #' 
 #' # see the vignette for examples:
-#' vignette("acf", package="itsadug")
+#' vignette('acf', package='itsadug')
 #' @family functions for model criticism
-acf_n_plots <- function(x, n = 5, split_by = NULL, 
-    cond = NULL, max_lag = NULL, fun = mean, plot=TRUE,
-    random = F, mfrow = NULL, add=FALSE, 
-    print.summary=getOption('itsadug_print'),...) {
+acf_n_plots <- function(x, n = 5, split_by = NULL, cond = NULL, max_lag = NULL, fun = mean, plot = TRUE, random = F, 
+    mfrow = NULL, add = FALSE, print.summary = getOption("itsadug_print"), ...) {
     
     # get acf data:
-    suppressWarnings( acfdat <- acf_plot(x, split_by = split_by, 
-        cond=cond, max_lag = max_lag, fun = fun, 
-        plot = FALSE, return_all = TRUE) )
+    suppressWarnings(acfdat <- acf_plot(x, split_by = split_by, cond = cond, max_lag = max_lag, fun = fun, 
+        plot = FALSE, return_all = TRUE))
     if (!nrow(acfdat$acftable) >= n) {
         warning(sprintf("Number of time series in the data (%d) is smaller than n (%d). N is reduced to %d.\n", 
             nrow(acfdat$acftable), n, nrow(acfdat$acftable)))
         n <- nrow(acfdat$acftable)
     }
-    # get lag 1A vector: 
+    # get lag 1A vector:
     lag1.all <- acfdat$acftable$"1"
     rn <- rownames(acfdat$acftable)
     lag1 <- lag1.all[!is.na(lag1.all)]
@@ -125,22 +122,20 @@ acf_n_plots <- function(x, n = 5, split_by = NULL,
         findNum <- c()
         for (i in 1:n) {
             findNum <- c(findNum, findClosestElement(q[i], lag1))
-            if(i > 1){
-                out[[i-1]] <- list(quantile=c(q[i-1], q[i]),
-                    elements = 
-                        data.frame(event=rn[which(lag1.all >= q[i-1] &lag1.all < q[i])],
-                            lag1 = lag1.all[which(lag1.all >= q[i-1] &lag1.all < q[i])],
-                            stringsAsFactors=FALSE) )
+            if (i > 1) {
+                out[[i - 1]] <- list(quantile = c(q[i - 1], q[i]), elements = data.frame(event = rn[which(lag1.all >= 
+                  q[i - 1] & lag1.all < q[i])], lag1 = lag1.all[which(lag1.all >= q[i - 1] & lag1.all < q[i])], 
+                  stringsAsFactors = FALSE))
             }
-         }
-        out[['quantiles']] <- q
-        if(print.summary){
+        }
+        out[["quantiles"]] <- q
+        if (print.summary) {
             cat("Quantiles to be plotted:\n")
             print(q)
         }
     }
     
-    if(plot){    
+    if (plot) {
         cols <- ceiling(sqrt(n))
         rows <- ceiling(n/cols)
         
@@ -149,58 +144,58 @@ acf_n_plots <- function(x, n = 5, split_by = NULL,
             rows = mfrow[1]
         }
         
-        if(add==FALSE){
+        if (add == FALSE) {
             # dev.new(width = cols * 3, height = rows * 3)
             par(mfrow = c(rows, cols))
             oldmar <- par(mar = rep(3, 4))
         }
         parlist = list(...)
-        if('type' %in% names(parlist)){
-            parlist[['type']] <- NULL
+        if ("type" %in% names(parlist)) {
+            parlist[["type"]] <- NULL
         }
         xlab <- "Lag"
         ylab <- "ACF"
         ylim <- range(acfdat$acftable[findNum, ], na.rm = T)
         main.new <- NULL
-        if('xlab' %in% names(parlist)){
-            xlab <- parlist[['xlab']]
-            parlist[['xlab']] <- NULL
+        if ("xlab" %in% names(parlist)) {
+            xlab <- parlist[["xlab"]]
+            parlist[["xlab"]] <- NULL
         }
-        if('ylab' %in% names(parlist)){
-            ylab <- parlist[['ylab']]
-            parlist[['ylab']] <- NULL
+        if ("ylab" %in% names(parlist)) {
+            ylab <- parlist[["ylab"]]
+            parlist[["ylab"]] <- NULL
         }
-        if('ylim' %in% names(parlist)){
-            ylim <- parlist[['ylim']]
-            parlist[['ylim']] <- NULL
+        if ("ylim" %in% names(parlist)) {
+            ylim <- parlist[["ylim"]]
+            parlist[["ylim"]] <- NULL
         }
-        if('main' %in% names(parlist)){
-            main.new <- parlist[['main']]
-            parlist[['main']] <- NULL
+        if ("main" %in% names(parlist)) {
+            main.new <- parlist[["main"]]
+            parlist[["main"]] <- NULL
         }
-        other <- paste(sprintf('%s=%s', names(parlist), parlist), collapse=',')
+        other <- paste(sprintf("%s=%s", names(parlist), parlist), collapse = ",")
         
-        for (j in 1:min(n, nrow(acfdat$acftable)) ) {
+        for (j in 1:min(n, nrow(acfdat$acftable))) {
             main <- NULL
-            if(is.null(main.new)){
+            if (is.null(main.new)) {
                 main <- paste("ACF of", row.names(acfdat$acftable[findNum[j], ]))
-            }else{
-                if(length(main.new) >= j){
-                    main <- main.new[j]
-                }else{
-                    main <- main.new[1]
+            } else {
+                if (length(main.new) >= j) {
+                  main <- main.new[j]
+                } else {
+                  main <- main.new[1]
                 }
             }
-            eval(parse(text=sprintf(
-                "plot(as.numeric(colnames(acfdat$acftable)), acfdat$acftable[findNum[j], ], type = 'h', 
-                main=main, xlab=xlab, ylab=ylab, ylim = ylim, %s)", other)))
-            ci <- -(1/nevents[findNum[j],'n'])+2/sqrt(nevents[findNum[j],'n'])
-            abline(h=c(-1,1)*ci, lty=2, col='blue')
+            eval(parse(text = sprintf("plot(as.numeric(colnames(acfdat$acftable)), acfdat$acftable[findNum[j], ], type = 'h', 
+                main=main, xlab=xlab, ylab=ylab, ylim = ylim, %s)", 
+                other)))
+            ci <- -(1/nevents[findNum[j], "n"]) + 2/sqrt(nevents[findNum[j], "n"])
+            abline(h = c(-1, 1) * ci, lty = 2, col = "blue")
             abline(h = 0)
         }
     }
-    invisible(out)    
-} 
+    invisible(out)
+}
 
 
 
@@ -273,12 +268,11 @@ acf_n_plots <- function(x, n = 5, split_by = NULL,
 #' acf_plot(simdat$res, split_by=list(simdat$Subject, simdat$Trial))
 #'
 #' # see the vignette for examples:
-#' vignette("acf", package="itsadug")
+#' vignette('acf', package='itsadug')
 #'
 #' @family functions for model criticism
-acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE, 
-    fun = mean, cond=NULL, 
-    return_all = FALSE, ...) {
+acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE, fun = mean, cond = NULL, return_all = FALSE, 
+    ...) {
     
     # check x:
     if (!is.vector(x)) {
@@ -302,49 +296,47 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
         if (!is.null(split_by)) {
             for (i in 1:length(split_by)) {
                 if (length(split_by[[i]]) != length(x)) {
-                  name_split_i <- ifelse(!is.null(names(split_by)[i]), names(split_by)[i], sprintf("split_by[[%d]]", i))
+                  name_split_i <- ifelse(!is.null(names(split_by)[i]), names(split_by)[i], sprintf("split_by[[%d]]", 
+                    i))
                   errormessage <- sprintf("Split factor %s is not of same length as %s: %s has %d elements, %s has %d elements.\n
                     See help(acf_plot) for examples how to avoid this error.", 
-                    name_split_i, 
-                    deparse(substitute(x)), 
-                    deparse(substitute(x)), 
-                    length(x), 
-                    name_split_i, 
+                    name_split_i, deparse(substitute(x)), deparse(substitute(x)), length(x), name_split_i, 
                     length(split_by[[i]]))
                   stop(errormessage)
                 }
             }
         } else {
-            # warning(sprintf("No argument for split provided. %s is treated as a single time series.\n", deparse(substitute(x))))
+            # warning(sprintf('No argument for split provided. %s is treated as a single time series.\n',
+            # deparse(substitute(x))))
             split_by <- as.factor(rep("Factor", length(x)))
             plotci <- TRUE
         }
         # check condition:
-        if(!is.null(cond)){
-            if(!is.null(split_by)){
+        if (!is.null(cond)) {
+            if (!is.null(split_by)) {
                 el <- 1:length(split_by[[1]])
-                for(i in names(cond)){
-                    if(i %in% names(split_by)){
-                        el <- intersect(el, which(split_by[[i]] %in% cond[[i]]))
-                    }else{
-                        warning(sprintf('Predictor %s not specified in split_by. cond will be ignored.', i))
-                    }
+                for (i in names(cond)) {
+                  if (i %in% names(split_by)) {
+                    el <- intersect(el, which(split_by[[i]] %in% cond[[i]]))
+                  } else {
+                    warning(sprintf("Predictor %s not specified in split_by. cond will be ignored.", i))
+                  }
                 }
-                if(length(el) > 0){
-                    x <- x[el]
-                    for(i in names(split_by)){
-                        if(is.factor(split_by[[i]])){
-                            split_by[[i]] <- droplevels( split_by[[i]][el] )
-                        }else{
-                            split_by[[i]] <- split_by[[i]][el] 
-                        }
+                if (length(el) > 0) {
+                  x <- x[el]
+                  for (i in names(split_by)) {
+                    if (is.factor(split_by[[i]])) {
+                      split_by[[i]] <- droplevels(split_by[[i]][el])
+                    } else {
+                      split_by[[i]] <- split_by[[i]][el]
                     }
-                }else{
-                    warning("Specified conditions not found in values of split_by. cond will be ignored.")
+                  }
+                } else {
+                  warning("Specified conditions not found in values of split_by. cond will be ignored.")
                 }
                 
-            }else{
-                warning('Split_by is empty, therefore cond will be ignored. Specify time series in cond for selecting specific time series.')
+            } else {
+                warning("Split_by is empty, therefore cond will be ignored. Specify time series in cond for selecting specific time series.")
             }
         }
         
@@ -352,11 +344,11 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
         splitdat <- split(x, f = split_by, drop = T)
         acfn <- lapply(splitdat, FUN = function(x) {
             x.rmna <- x[!is.na(x)]
-            return( length(x.rmna) )
+            return(length(x.rmna))
         })
         splitacf <- lapply(splitdat, FUN = function(x) {
             x.rmna <- x[!is.na(x)]
-            return( acf(x.rmna, plot = F)$acf )
+            return(acf(x.rmna, plot = F)$acf)
         })
         len <- max_lag
         if (is.null(len)) {
@@ -370,17 +362,17 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
             } else {
                 return(x)
             }
-        })       
+        })
         # create wide format dfr:
-        allacf <- as.data.frame(do.call("rbind", splitacf))
+        allacf <- as.data.frame(do.call("rbind", splitacf), stringsAsFactors = FALSE)
         names(allacf) <- (1:ncol(allacf)) - 1
         avgacf <- apply(allacf, 2, FUN = fun)  #apply(allacf, 2, FUN=fun, na.rm=T)
         
         if (plot) {
             # set plot arguments
-            plot_default <- list(main = sprintf("ACF of %s", xname) , 
-                xlab = "Lag", ylab = ifelse(plotci==TRUE, "ACF function (per time series)", "ACF"),
-                ylim = c(min(min(avgacf, na.rm=TRUE), 0), max(max(avgacf, na.rm=TRUE), 1)), col = "black", type = "h")
+            plot_default <- list(main = sprintf("ACF of %s", xname), xlab = "Lag", ylab = ifelse(plotci == 
+                TRUE, "ACF function (per time series)", "ACF"), ylim = c(min(min(avgacf, na.rm = TRUE), 0), 
+                max(max(avgacf, na.rm = TRUE), 1)), col = "black", type = "h")
             
             plot_args <- list(...)
             
@@ -392,25 +384,23 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
                   value <- sprintf("c(%s)", paste(value, collapse = ","))
                   plot_args_def <- c(plot_args_def, paste(pa, value, sep = "="))
                 } else {
-                  plot_args_def <- c(plot_args_def, paste(pa, ifelse(is.character(value), sprintf("'%s'", value), value), 
-                    sep = "="))
+                  plot_args_def <- c(plot_args_def, paste(pa, ifelse(is.character(value), sprintf("'%s'", 
+                    value), value), sep = "="))
                 }
             }
             
             if (length(plot_args_def) > 0) {
-                eval(parse(text = paste("plot(0:(len-1), avgacf, ", paste(plot_args_def, collapse = ","), ", ...)")))
+                eval(parse(text = paste("plot(0:(len-1), avgacf, ", paste(plot_args_def, collapse = ","), 
+                  ", ...)")))
             } else {
                 plot(0:(len - 1), avgacf, ...)
             }
-            if(plotci){
-                ci <- -(1/acfn[[1]])+2/sqrt(acfn[[1]])
-                abline(h=c(-1,1)*ci, lty=2, col='blue')   
+            if (plotci) {
+                ci <- -(1/acfn[[1]]) + 2/sqrt(acfn[[1]])
+                abline(h = c(-1, 1) * ci, lty = 2, col = "blue")
             }
-            # }else{
-            #     tmpn <- length(allacf[!is.na(allacf)])
-            #     ci <- -(1/tmpn)+2/sqrt(tmpn)
-            #     abline(h=c(-1,1)*ci, lty=2, col='blue')
-            # }
+            # }else{ tmpn <- length(allacf[!is.na(allacf)]) ci <- -(1/tmpn)+2/sqrt(tmpn) abline(h=c(-1,1)*ci, lty=2,
+            # col='blue') }
             abline(h = 0)
         }
         
@@ -418,32 +408,31 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
         acf_out <- avgacf
         if (return_all) {
             # create long format dfr:
-            dfracf <- do.call('rbind',
-                mapply(function(x, y, z){
-                    data.frame(acf=x, 
-                        lag=0:(length(x)-1),
-                        n = rep(y, length(x)),
-                        event = rep(z, length(x))) 
-                    }, splitacf, acfn, names(splitacf), SIMPLIFY=FALSE, USE.NAMES=FALSE) )
+            dfracf <- do.call("rbind", mapply(function(x, y, z) {
+                data.frame(acf = x, lag = 0:(length(x) - 1), n = rep(y, length(x)), event = rep(z, length(x)), 
+                  stringsAsFactors = FALSE)
+            }, splitacf, acfn, names(splitacf), SIMPLIFY = FALSE, USE.NAMES = FALSE))
             dfracf$ci <- -(1/dfracf$n) + 2/sqrt(dfracf$n)
             # add event info:
-            events <- as.data.frame(split_by)
-            events$event <- apply(events, 1, function(x){gsub(" ", "", paste(x, collapse="."), fixed=TRUE)})
-            events <- events[!duplicated(events),]
-            dfracf <- merge(dfracf, events, by='event', all.x=TRUE, all.y=FALSE)
-            acfn <- do.call('rbind', lapply(names(acfn), 
-                function(x){data.frame(n=acfn[[x]], event=x)}))
-           
-            acf_out <- list(acf = avgacf, acftable = allacf, 
-                dataframe=dfracf, n=acfn, series = deparse(substitute(x)), FUN = fun)
+            events <- as.data.frame(split_by, stringsAsFactors = FALSE)
+            events$event <- apply(events, 1, function(x) {
+                gsub(" ", "", paste(x, collapse = "."), fixed = TRUE)
+            })
+            events <- events[!duplicated(events), ]
+            dfracf <- merge(dfracf, events, by = "event", all.x = TRUE, all.y = FALSE)
+            acfn <- do.call("rbind", lapply(names(acfn), function(x) {
+                data.frame(n = acfn[[x]], event = x, stringsAsFactors = FALSE)
+            }))
+            
+            acf_out <- list(acf = avgacf, acftable = allacf, dataframe = dfracf, n = acfn, series = deparse(substitute(x)), 
+                FUN = fun)
             
         }
-        invisible(acf_out)        
+        invisible(acf_out)
     } else {
         stop(sprintf("Not sufficient data to plot ACF: %s has %d elements.\n", deparse(substitute(x)), length(x)))
     }
 }
- 
 
 
 
@@ -464,7 +453,7 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
 #' the time series in the data, or should be used to split the ACF plot by.
 #' Alternatively, \code{split_pred} can be a named list as being used by 
 #' \code{\link{acf_plot}} and \code{\link{acf_n_plots}}.
-#' Yet another option is to provide the text string "AR.start", for a model 
+#' Yet another option is to provide the text string 'AR.start', for a model 
 #' that includes an AR1 model. The events are derived from the AR.start column 
 #' if that is provided.
 #' @param n The number of plots to generate. If \code{n}=1 (default) then 
@@ -494,129 +483,134 @@ acf_plot <- function(x, split_by = NULL, max_lag = NULL, plot = TRUE,
 #' # Using a list to split the data:
 #' acf_resid(m1, split_pred=list(simdat$Subject, simdat$Trial))
 #' # ...or using model predictors:
-#' acf_resid(m1, split_pred=c("Subject", "Trial"))
+#' acf_resid(m1, split_pred=c('Subject', 'Trial'))
 #' 
 #' # Calling acf_n_plots:
-#' acf_resid(m1, split_pred=c("Subject", "Trial"), n=4)
+#' acf_resid(m1, split_pred=c('Subject', 'Trial'), n=4)
 #' # add some arguments:
-#' acf_resid(m1, split_pred=c("Subject", "Trial"), n=4, max_lag=10)
+#' acf_resid(m1, split_pred=c('Subject', 'Trial'), n=4, max_lag=10)
 #' 
 #' # This does not work...
 #' m2 <- lm(Y ~ Time, data=simdat)
-#' acf_resid(m2, split_pred=c("Subject", "Trial"))
+#' acf_resid(m2, split_pred=c('Subject', 'Trial'))
 #' # ... but this is ok:
 #' acf_resid(m2, split_pred=list(simdat$Subject, simdat$Trial))
 #' 
 #' # Using AR.start column:
-#' simdat <- start_event(simdat, event=c("Subject", "Trial"))
+#' simdat <- start_event(simdat, event=c('Subject', 'Trial'))
 #' r1 <- start_value_rho(m1)
 #' m3 <- bam(Y ~ te(Time, Trial)+s(Subject, bs='re'), data=simdat, 
 #'     rho=r1, AR.start=simdat$start.event)
-#' acf_resid(m3, split_pred="AR.start")
+#' acf_resid(m3, split_pred='AR.start')
 #' # this is the same:
-#' acf_resid(m3, split_pred=c("Subject", "Trial"))
+#' acf_resid(m3, split_pred=c('Subject', 'Trial'))
 #' # Note: use model comparison to find better value for rho
 #' }
 #' # see the vignette for examples:
-#' vignette("acf", package="itsadug")
+#' vignette('acf', package='itsadug')
 #' @family functions for model criticism
-acf_resid <- function(model, split_pred=NULL, n=1, plot=TRUE, check.rho=NULL, main=NULL, ...){
-	split_by=NULL
-	res <- NULL
-	if(!is.null(check.rho)){
-		if( "AR1.rho" %in% names(model)) {
-			mess <- "AR.start is not specified."
-			if("(AR.start)" %in% names(model$model)){
-				mess <- ""
-			}
-			if(model$AR1.rho != check.rho){
-				message(sprintf("The model's value of rho %f does not match the expected value %f. %s", model$AR1.rho, check.rho, mess))
-			}else{
-				message(sprintf("The model's value of rho matches the expected value %f. %s", check.rho, mess))
-			}
-		}else{
-			if(!inherits(model, "bam")){
-				message("No value for rho specified in model. Use function bam() to specify rho.")
-			}else if ("(AR.start)" %in% names(model$model)){
-				message("AR.start is specified, but no value set for rho.")
-			}else{
-				message("Argument rho and AR.start not set in this model.")
-			}
-		}
-	}
-	if(!is.null(split_pred)){
-		
-		split_by=list()
-		if(!is.list(split_pred)){
-			# extract time series data from model:
-			dat <- NULL
-			if("lm" %in% class(model)){
-				dat <- model$model
-			}else if( "lmerMod" %in% class(model)){
-				dat <- model@frame
-			}
-			if(length(split_pred)==1 & split_pred[1] %in% c("AR.start", "start.event")){
-				if(split_pred %in% colnames(dat)){
-					if(is.logical(dat[,split_pred])){
-						split_by[[split_pred]] = derive_timeseries(dat[,split_pred])
-					}else{
-						split_by[[split_pred]] = dat[,split_pred]
-					}
-				}else{
-					split_by[[split_pred]] = derive_timeseries(model)
-				}
-			}else if(!all(split_pred %in% colnames(dat))){
-				notindata <- paste(split_pred[!split_pred %in% colnames(dat)], collapse=", ")
-				stop(sprintf("split-pred value(s) %s is / are not included as predictor in the model.", 
-					notindata))
-			}else{
-				for(i in split_pred){
-					split_by[[i]] <- as.vector(dat[,i])
-				}
-			}
-		}else{
-			split_by <- split_pred
-			# check for missing data
-			me <- missing_est(model)
-			if(!is.null(me)){
-				split_by <- lapply(split_pred, function(x){
-					return(x[-me])
-				})
-			}
-		}
-	}
-	if(n > 1){
-		if(!all(is.na(resid_gam(model, incl_na=TRUE)))){
-			if(is.null(split_pred)){
-				out <- acf_n_plots(resid_gam(model), split_by=split_by, n=n, plot=plot, ...)
-				invisible(out)
-			# }else if( !is.list(split_pred)){
-			}else if( ("(AR.start)" %in% colnames(model$model)) || (( "AR1.rho" %in% names(model)) && model$AR1.rho > 0) ){
-				out <- acf_n_plots(resid_gam(model, incl_na=TRUE), split_by=split_by, n=n, plot=plot, ...)
-				invisible(out)
-			}else{
-				out <- acf_n_plots(resid_gam(model), split_by=split_by, n=n, plot=plot, ...)
-				invisible(out)
-			}
-		}
-	}else{
-		if(!all(is.na(resid_gam(model, incl_na=TRUE)))){
-			if(is.null(main)){
-				main = ifelse(is.null(split_pred), sprintf("ACF resid_gam(%s)", deparse(substitute(model))), "ACF Average")
-			}
-			if(is.null(split_pred)){
-				out <- acf_plot(resid_gam(model), split_by=split_by, plot=plot, main=main, ...)
-				invisible(out)
-			#}else if( !is.list(split_pred)){
-			}else if( ("(AR.start)" %in% colnames(model$model)) || (( "AR1.rho" %in% names(model)) && model$AR1.rho > 0) ){
-				out <- acf_plot(resid_gam(model, incl_na=TRUE), split_by=split_by, plot=plot, main=main, ...)
-				invisible(out)
-			}else{
-				out <- acf_plot(resid_gam(model), split_by=split_by, plot=plot, main=main, ...)
-				invisible(out)
-			}
-		}
-	}
+acf_resid <- function(model, split_pred = NULL, n = 1, plot = TRUE, check.rho = NULL, main = NULL, ...) {
+    split_by = NULL
+    res <- NULL
+    if (!is.null(check.rho)) {
+        if ("AR1.rho" %in% names(model)) {
+            mess <- "AR.start is not specified."
+            if ("(AR.start)" %in% names(model$model)) {
+                mess <- ""
+            }
+            if (model$AR1.rho != check.rho) {
+                message(sprintf("The model's value of rho %f does not match the expected value %f. %s", model$AR1.rho, 
+                  check.rho, mess))
+            } else {
+                message(sprintf("The model's value of rho matches the expected value %f. %s", check.rho, mess))
+            }
+        } else {
+            if (!inherits(model, "bam")) {
+                message("No value for rho specified in model. Use function bam() to specify rho.")
+            } else if ("(AR.start)" %in% names(model$model)) {
+                message("AR.start is specified, but no value set for rho.")
+            } else {
+                message("Argument rho and AR.start not set in this model.")
+            }
+        }
+    }
+    if (!is.null(split_pred)) {
+        
+        split_by = list()
+        if (!is.list(split_pred)) {
+            # extract time series data from model:
+            dat <- NULL
+            if ("lm" %in% class(model)) {
+                dat <- model$model
+            } else if ("lmerMod" %in% class(model)) {
+                dat <- model@frame
+            }
+            if (length(split_pred) == 1 & split_pred[1] %in% c("AR.start", "start.event")) {
+                if (split_pred %in% colnames(dat)) {
+                  if (is.logical(dat[, split_pred])) {
+                    split_by[[split_pred]] = derive_timeseries(dat[, split_pred])
+                  } else {
+                    split_by[[split_pred]] = dat[, split_pred]
+                  }
+                } else {
+                  split_by[[split_pred]] = derive_timeseries(model)
+                }
+            } else if (!all(split_pred %in% colnames(dat))) {
+                notindata <- paste(split_pred[!split_pred %in% colnames(dat)], collapse = ", ")
+                stop(sprintf("split-pred value(s) %s is / are not included as predictor in the model.", notindata))
+            } else {
+                for (i in split_pred) {
+                  split_by[[i]] <- as.vector(dat[, i])
+                }
+            }
+        } else {
+            split_by <- split_pred
+            # check for missing data
+            me <- missing_est(model)
+            if (!is.null(me)) {
+                split_by <- lapply(split_pred, function(x) {
+                  return(x[-me])
+                })
+            }
+        }
+    }
+    if (n > 1) {
+        if (!all(is.na(resid_gam(model, incl_na = TRUE)))) {
+            if (is.null(split_pred)) {
+                out <- acf_n_plots(resid_gam(model), split_by = split_by, n = n, plot = plot, ...)
+                invisible(out)
+                # }else if( !is.list(split_pred)){
+            } else if (("(AR.start)" %in% colnames(model$model)) || (("AR1.rho" %in% names(model)) && model$AR1.rho > 
+                0)) {
+                out <- acf_n_plots(resid_gam(model, incl_na = TRUE), split_by = split_by, n = n, plot = plot, 
+                  ...)
+                invisible(out)
+            } else {
+                out <- acf_n_plots(resid_gam(model), split_by = split_by, n = n, plot = plot, ...)
+                invisible(out)
+            }
+        }
+    } else {
+        if (!all(is.na(resid_gam(model, incl_na = TRUE)))) {
+            if (is.null(main)) {
+                main = ifelse(is.null(split_pred), sprintf("ACF resid_gam(%s)", deparse(substitute(model))), 
+                  "ACF Average")
+            }
+            if (is.null(split_pred)) {
+                out <- acf_plot(resid_gam(model), split_by = split_by, plot = plot, main = main, ...)
+                invisible(out)
+                # }else if( !is.list(split_pred)){
+            } else if (("(AR.start)" %in% colnames(model$model)) || (("AR1.rho" %in% names(model)) && model$AR1.rho > 
+                0)) {
+                out <- acf_plot(resid_gam(model, incl_na = TRUE), split_by = split_by, plot = plot, main = main, 
+                  ...)
+                invisible(out)
+            } else {
+                out <- acf_plot(resid_gam(model), split_by = split_by, plot = plot, main = main, ...)
+                invisible(out)
+            }
+        }
+    }
 }
 
 
@@ -639,7 +633,7 @@ acf_resid <- function(model, split_pred=NULL, n=1, plot=TRUE, check.rho=NULL, ma
 #' 
 #' # add missing values to simdat:
 #' simdat[sample(nrow(simdat), 15),]$Y <- NA
-#' simdat <- start_event(simdat, event=c("Subject", "Trial"))
+#' simdat <- start_event(simdat, event=c('Subject', 'Trial'))
 #' 
 #' \dontrun{
 #' # Run GAMM model:
@@ -654,45 +648,45 @@ acf_resid <- function(model, split_pred=NULL, n=1, plot=TRUE, check.rho=NULL, ma
 #' acf_resid(m1, split_pred=list(Event=simdat$Event))
 #' 
 #' # Note that acf_resid automatically makes use of derive_timeseries:
-#' acf_resid(m1, split_pred="AR.start")
+#' acf_resid(m1, split_pred='AR.start')
 #' }
 #' @family functions for model criticism
-derive_timeseries <- function(model, AR.start=NULL){
-	tmpdat <- c()
-	na.el <- c()
-	if(inherits(model, "lm")){
-		tmpdat <- model$model
-		na.el <- missing_est(model)
-	}else if(inherits(model, "lmerMod")){
-		tmpdat <- model@frame
-		na.el <- missing_est(model)
-	}else if(inherits(model, "logical")){
-		tmpdat <- data.frame(val=model)
-		names(tmpdat) <- "(AR.start)"
-		na.el <- which(is.na(model))
-	}
-	if(! "(AR.start)" %in% names(tmpdat)){
-		if(is.null(AR.start)){
-			stop("Model does not contain an AR1 model. Please specify AR.start information.")
-		}else{
-			if(length(AR.start)==nrow(tmpdat)){
-				tmpdat[,"(AR.start)"] <- AR.start
-			}else if (length(AR.start) == (nrow(tmpdat)+length(na.el))){
-				tmpdat[,"(AR.start)"] <- AR.start[-na.el]
-			}else{
-				stop(sprintf("AR.start has more values (%f) than observations used in the model (%f).", 
-					length(AR.start), nrow(tmpdat)))
-			}
-		}
-	}else{
-		if(!is.null(AR.start)){
-			warning(sprintf("Model %s includes AR1 model, AR.start will be ignored.", deparse(substitute(model))))
-		}
-	}
-	starts <- which(tmpdat[,"(AR.start)"]==TRUE)
-	ends <- move_n_point(starts - 1, n=-1)
-	ends[length(ends)] <- nrow(tmpdat)
-	return( as.factor(rep(1:length(starts), ends-starts+1)) )
+derive_timeseries <- function(model, AR.start = NULL) {
+    tmpdat <- c()
+    na.el <- c()
+    if (inherits(model, "lm")) {
+        tmpdat <- model$model
+        na.el <- missing_est(model)
+    } else if (inherits(model, "lmerMod")) {
+        tmpdat <- model@frame
+        na.el <- missing_est(model)
+    } else if (inherits(model, "logical")) {
+        tmpdat <- data.frame(val = model, stringsAsFactors = FALSE)
+        names(tmpdat) <- "(AR.start)"
+        na.el <- which(is.na(model))
+    }
+    if (!"(AR.start)" %in% names(tmpdat)) {
+        if (is.null(AR.start)) {
+            stop("Model does not contain an AR1 model. Please specify AR.start information.")
+        } else {
+            if (length(AR.start) == nrow(tmpdat)) {
+                tmpdat[, "(AR.start)"] <- AR.start
+            } else if (length(AR.start) == (nrow(tmpdat) + length(na.el))) {
+                tmpdat[, "(AR.start)"] <- AR.start[-na.el]
+            } else {
+                stop(sprintf("AR.start has more values (%f) than observations used in the model (%f).", length(AR.start), 
+                  nrow(tmpdat)))
+            }
+        }
+    } else {
+        if (!is.null(AR.start)) {
+            warning(sprintf("Model %s includes AR1 model, AR.start will be ignored.", deparse(substitute(model))))
+        }
+    }
+    starts <- which(tmpdat[, "(AR.start)"] == TRUE)
+    ends <- move_n_point(starts - 1, n = -1)
+    ends[length(ends)] <- nrow(tmpdat)
+    return(as.factor(rep(1:length(starts), ends - starts + 1)))
 }
 
 
@@ -722,7 +716,7 @@ derive_timeseries <- function(model, AR.start=NULL){
 #' 
 #' \dontrun{
 #' # Add start event column:
-#' simdat <- start_event(simdat, event=c("Subject", "Trial"))
+#' simdat <- start_event(simdat, event=c('Subject', 'Trial'))
 #' head(simdat)
 #' # bam model with AR1 model (toy example, not serious model):
 #' m1 <- bam(Y ~ Group + te(Time, Trial, by=Group), 
@@ -799,7 +793,7 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
     tmpdat <- NULL
     n <- 1
     rho <- 0
-    if("lm" %in% class(model)){
+    if ("lm" %in% class(model)) {
         tmpdat <- model$model
         # check AR_start:
         if (is.null(tmpdat$"(AR.start)")) {
@@ -807,14 +801,14 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
             tmpdat[1, ]$"(AR.start)" <- TRUE
             
             if (!is.null(model$AR1.rho)) {
-                if(model$AR1.rho > 0){
-                    if (is.null(AR_start)) {
-                        warning("No values for AR_start found in model specification. Please provide values for AR_start as argument to this function if you have run the model with an older version of mgcv (< 1.7.28).")
-                    } else {
-                        warning(sprintf("Values for argument AR_start may not be specified, although an AR1 model rho was included in model %s (rho = %f).", 
-                          deparse(substitute(model)), model$AR1.rho))
-                        tmpdat$"(AR.start)" <- AR_start
-                    }
+                if (model$AR1.rho > 0) {
+                  if (is.null(AR_start)) {
+                    warning("No values for AR_start found in model specification. Please provide values for AR_start as argument to this function if you have run the model with an older version of mgcv (< 1.7.28).")
+                  } else {
+                    warning(sprintf("Values for argument AR_start may not be specified, although an AR1 model rho was included in model %s (rho = %f).", 
+                      deparse(substitute(model)), model$AR1.rho))
+                    tmpdat$"(AR.start)" <- AR_start
+                  }
                 }
             }
         }
@@ -826,41 +820,41 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
         
         n <- which(tmpdat$"(AR.start)")
         if (is.null(model$AR1.rho)) {
-            # warning("No rho specified in model. Assumed rho to equal 0.")
+            # warning('No rho specified in model. Assumed rho to equal 0.')
             model[["AR1.rho"]] <- 0
             rho <- 0
-        }else{
+        } else {
             rho <- model$AR1.rho
         }
-    }else if( "lmerMod" %in% class(model)){
+    } else if ("lmerMod" %in% class(model)) {
         tmpdat <- model@frame
         rho <- 0
-    }else{
-        stop(sprintf('Function does not work for models of class %s.', class(model)[1]))
+    } else {
+        stop(sprintf("Function does not work for models of class %s.", class(model)[1]))
     }
- 
+    
     
     if (nrow(tmpdat) == length(resid(model))) {
         tmpdat$RES <- resid(model)
     } else {
         tmpdat$RES <- NA
-        if(nrow(tmpdat)==length(resid(model))){
+        if (nrow(tmpdat) == length(resid(model))) {
             tmpdat$RES <- resid(model)
-        }else{
+        } else {
             tmpdat[!(1:nrow(tmpdat)) %in% model$na.action, ]$RES <- resid(model)
-        } 
+        }
     }
     
     tmpdat$RES_next <- next_point(tmpdat$RES)
-    if(length(n[(n - 1) > 0]) > 0){
+    if (length(n[(n - 1) > 0]) > 0) {
         tmpdat[n[(n - 1) > 0], ]$RES_next <- rep(NA, length(n[(n - 1) > 0]))
     }
     
     res <- tmpdat$RES_next - rho * tmpdat$RES
     if (return_all) {
         return(list(res = tmpdat$RES, norm_res = res, AR1_rho = rho))
-    }else{
-        if(rho==0){
+    } else {
+        if (rho == 0) {
             res <- tmpdat$RES
         }
         if (incl_na) {
@@ -868,9 +862,8 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
         } else {
             return(res[!is.na(res)])
         }
-    }     
+    }
 }
- 
 
 
 
@@ -883,11 +876,11 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
 #' @import stats
 #' @param data A data frame.
 #' @param column Test string, name of the column that describes the order 
-#' withing the time series. Default is "Time".
+#' withing the time series. Default is 'Time'.
 #' @param event A text string or vector indicating the columns that define the 
-#' unique time series. Default is "Event".
+#' unique time series. Default is 'Event'.
 #' @param label The name of the new column with the start point of each time 
-#' series. Default is "start.event".
+#' series. Default is 'start.event'.
 #' @param label.event In case \code{event} is not a single column, providing a 
 #' text string will add a column with this name that defines unique time 
 #' series. Default is NULL (no new column for time series is created).
@@ -899,69 +892,80 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
 #' \code{start_event} will check if \code{data.table} is available and will 
 #' use it's much faster function \code{rbindlist}. This speeds up the function 
 #' \code{start_event}. Run the command 
-#' \code{install.packages("data.table", repos="http://cran.us.r-project.org")} 
+#' \code{install.packages('data.table', repos='http://cran.us.r-project.org')} 
 #' in the command window for installing the package \code{data.table}.
 #' @return Data frame.
 #' @author Jacolien van Rij
 #' @examples 
 #' data(simdat)
 #' head(simdat)
-#' test <- start_event(simdat, event=c("Subject", "Trial"), label.event="Event") 
+#' simdat$Condition <- relevel(factor(simdat$Condition), ref="0")
+#' contrasts(simdat$Condition) <- "contr.poly"
+#' test <- start_event(simdat, event=c('Subject', 'Trial'), label.event='Event') 
+#' contrasts(simdat$Condition)
 #' head(test)
 #' @family functions for model criticism
-start_event <- function(data, column="Time", event="Event", label="start.event", label.event=NULL, order=TRUE){
-	if(is.null(label)){
-		stop("No output column specified in argument 'label'.")
-	}
-	if(!column %in% names(data)){
-		stop(sprintf("No column '%s' in data frame %s.", column, deparse(substitute(data))))
-	}
-	if(!all(event %in% names(data))){
-		el <- paste( which(event[!event %in% names(data)]), collapse=',' )
-		stop(sprintf("Column name(s) '%s' not found in data frame %s.", el, deparse(substitute(data))))
-	}
-	if(length(column) > 1){
-		warning(sprintf("Argument column has %d elements. Only first element is used.", length(column)))
-		column <- column[1]
-	}
-	if(label %in% names(data)){
-		warning(sprintf("Column %s already exists, will be overwritten.", label))
-	}
-	if(!is.null(label.event)){
-		if(label.event %in% names(data)){
-			warning(sprintf("Column %s already exists, will be overwritten.", label.event))
-		}
-	}
-	tmp <- NULL
-	if(!is.null(label.event) & length(event) > 1){
-		data[, label.event] <- interaction(data[,event])
-		tmp <- split(data, f=list(data[,label.event]), drop=TRUE)
-	} else if (length(event) > 1){
-		tmp <- split(data, f=as.list(data[,event]), drop=TRUE)
-	} else {
-		tmp <- split(data, f=list(data[,event]), drop=TRUE)
-	}
-	if(order){
-		tmp <- lapply(tmp, function(x){
-			min.x <- min(x[,column])
-			x[,label] <- x[,column]==min.x
-			x <- x[order(x[,column]),]
-			return(x)
-		})
-	}else{
-		tmp <- lapply(tmp, function(x){
-			min.x <- min(x[,column])
-			x[,label] <- x[,column]==min.x
-			return(x)
-		})
-	}
-	if (requireNamespace("data.table", quietly = TRUE)) {
-		tmp <- as.data.frame(data.table::rbindlist(tmp))
-	}else{
-		tmp <- do.call('rbind', tmp)
-	}
-	row.names(tmp) <- NULL
-	return(tmp)
+start_event <- function(data, column = "Time", event = "Event", label = "start.event", label.event = NULL, 
+    order = TRUE) {
+    if (is.null(label)) {
+        stop("No output column specified in argument 'label'.")
+    }
+    if (!column %in% names(data)) {
+        stop(sprintf("No column '%s' in data frame %s.", column, deparse(substitute(data))))
+    }
+    if (!all(event %in% names(data))) {
+        el <- paste(which(event[!event %in% names(data)]), collapse = ",")
+        stop(sprintf("Column name(s) '%s' not found in data frame %s.", el, deparse(substitute(data))))
+    }
+    if (length(column) > 1) {
+        warning(sprintf("Argument column has %d elements. Only first element is used.", length(column)))
+        column <- column[1]
+    }
+    if (label %in% names(data)) {
+        warning(sprintf("Column %s already exists, will be overwritten.", label))
+    }
+    if (!is.null(label.event)) {
+        if (label.event %in% names(data)) {
+            warning(sprintf("Column %s already exists, will be overwritten.", label.event))
+        }
+    }
+    # store reference levels:
+    ref <- refLevels(data)
+    tmp <- NULL
+    if (!is.null(label.event) & length(event) > 1) {
+        data[, label.event] <- interaction(data[, event])
+        tmp <- split(data, f = list(data[, label.event]), drop = TRUE)
+    } else if (length(event) > 1) {
+        tmp <- split(data, f = as.list(data[, event]), drop = TRUE)
+    } else {
+        tmp <- split(data, f = list(data[, event]), drop = TRUE)
+    }
+    if (order) {
+        tmp <- lapply(tmp, function(x) {
+            min.x <- min(x[, column])
+            x[, label] <- x[, column] == min.x
+            x <- x[order(x[, column]), ]
+            return(x)
+        })
+    } else {
+        tmp <- lapply(tmp, function(x) {
+            min.x <- min(x[, column])
+            x[, label] <- x[, column] == min.x
+            return(x)
+        })
+    }
+    if (requireNamespace("data.table", quietly = TRUE)) {
+        tmp <- as.data.frame(data.table::rbindlist(tmp), stringsAsFactors = FALSE)
+    } else {
+        tmp <- do.call("rbind", tmp)
+    }
+    row.names(tmp) <- NULL
+    # put same reference levels back:
+    for(i in names(ref)){
+        tmp[,i] <- relevel(as.factor(tmp[,i]), ref=ref[[i]][['ref']])
+        contrasts(tmp[,i]) <- ref[[i]][['contr']]
+    }
+    return(tmp)
 }
 
 
@@ -1006,21 +1010,22 @@ start_event <- function(data, column="Time", event="Event", label="start.event",
 #' 
 #' }
 #' # see the vignette for examples:
-#' vignette("acf", package="itsadug")
+#' vignette('acf', package='itsadug')
 #' @family functions for model criticism
 #' 
-start_value_rho <- function(model, plot=FALSE, lag=2, main=NULL,...){
-	rval <- acf(resid(model), plot=plot, main=ifelse(is.null(main), sprintf("Series resid(%s)", deparse(substitute(model))), main), ...)$acf[lag]
-	if(plot){
-		par <- list(...)
-		f <- par()$lwd
-		if("lwd" %in% names(par)){
-			f <- par[['lwd']]
-		}
-		points(lag-1, rval, col='red', type='h', lwd=1.5*f)
-		abline(h=rval, col='red', lty=3)
-	}
-	return(rval)
+start_value_rho <- function(model, plot = FALSE, lag = 2, main = NULL, ...) {
+    rval <- acf(resid(model), plot = plot, main = ifelse(is.null(main), sprintf("Series resid(%s)", deparse(substitute(model))), 
+        main), ...)$acf[lag]
+    if (plot) {
+        par <- list(...)
+        f <- par()$lwd
+        if ("lwd" %in% names(par)) {
+            f <- par[["lwd"]]
+        }
+        points(lag - 1, rval, col = "red", type = "h", lwd = 1.5 * f)
+        abline(h = rval, col = "red", lty = 3)
+    }
+    return(rval)
 }
 
 

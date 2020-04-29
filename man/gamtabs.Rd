@@ -4,8 +4,16 @@
 \alias{gamtabs}
 \title{Convert model summary into Latex/HTML table for knitr/R Markdown reports.}
 \usage{
-gamtabs(model, caption = " ", label = "tab.gam", pnames = NA,
-  snames = NA, ptab = NA, stab = NA, ...)
+gamtabs(
+  model,
+  caption = " ",
+  label = "tab.gam",
+  pnames = NA,
+  snames = NA,
+  ptab = NA,
+  stab = NA,
+  ...
+)
 }
 \arguments{
 \item{model}{A GAM(M) model build in the package \code{\link[mgcv]{mgcv}} 
@@ -55,17 +63,23 @@ summary(m1)
 gamtabs(m1, caption='Summary of m1')
 }
 # See for more examples:
-vignette("inspect", package="itsadug")
+vignette('inspect', package='itsadug')
 }
 \seealso{
 \code{\link[mgcv]{summary.gam}}, \code{\link[mgcv]{gam}}, 
 \code{\link[mgcv]{bam}}.
 
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{inspect_random}}, \code{\link{plot_data}},
-  \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
-  \code{\link{plot_topo}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_data}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_smooth}()},
+\code{\link{plot_topo}()},
+\code{\link{pvisgam}()}
 }
 \author{
 R. Harald Baayen
 }
+\concept{Functions for model inspection}

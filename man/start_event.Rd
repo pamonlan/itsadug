@@ -4,20 +4,26 @@
 \alias{start_event}
 \title{Determine the starting point for each time series.}
 \usage{
-start_event(data, column = "Time", event = "Event", label = "start.event",
-  label.event = NULL, order = TRUE)
+start_event(
+  data,
+  column = "Time",
+  event = "Event",
+  label = "start.event",
+  label.event = NULL,
+  order = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame.}
 
 \item{column}{Test string, name of the column that describes the order 
-withing the time series. Default is "Time".}
+withing the time series. Default is 'Time'.}
 
 \item{event}{A text string or vector indicating the columns that define the 
-unique time series. Default is "Event".}
+unique time series. Default is 'Event'.}
 
 \item{label}{The name of the new column with the start point of each time 
-series. Default is "start.event".}
+series. Default is 'start.event'.}
 
 \item{label.event}{In case \code{event} is not a single column, providing a 
 text string will add a column with this name that defines unique time 
@@ -39,22 +45,29 @@ When working with large data frames, it may be worth installing the package
 \code{start_event} will check if \code{data.table} is available and will 
 use it's much faster function \code{rbindlist}. This speeds up the function 
 \code{start_event}. Run the command 
-\code{install.packages("data.table", repos="http://cran.us.r-project.org")} 
+\code{install.packages('data.table', repos='http://cran.us.r-project.org')} 
 in the command window for installing the package \code{data.table}.
 }
 
 \examples{
 data(simdat)
 head(simdat)
-test <- start_event(simdat, event=c("Subject", "Trial"), label.event="Event") 
+simdat$Condition <- relevel(factor(simdat$Condition), ref="0")
+contrasts(simdat$Condition) <- "contr.poly"
+test <- start_event(simdat, event=c('Subject', 'Trial'), label.event='Event') 
+contrasts(simdat$Condition)
 head(test)
 }
 \seealso{
-Other functions for model criticism: \code{\link{acf_n_plots}},
-  \code{\link{acf_plot}}, \code{\link{acf_resid}},
-  \code{\link{derive_timeseries}}, \code{\link{resid_gam}},
-  \code{\link{start_value_rho}}
+Other functions for model criticism: 
+\code{\link{acf_n_plots}()},
+\code{\link{acf_plot}()},
+\code{\link{acf_resid}()},
+\code{\link{derive_timeseries}()},
+\code{\link{resid_gam}()},
+\code{\link{start_value_rho}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{functions for model criticism}

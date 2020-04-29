@@ -5,12 +5,31 @@
 \alias{plotDiff}
 \title{Plot difference curve based on model predictions.}
 \usage{
-plot_diff(model, view, comp, cond = NULL, se = 1.96, sim.ci = FALSE,
-  n.grid = 100, add = FALSE, rm.ranef = NULL, mark.diff = TRUE,
-  col.diff = "red", col = "black", eegAxis = FALSE,
-  transform.view = NULL, print.summary = getOption("itsadug_print"),
-  plot = TRUE, main = NULL, ylab = NULL, xlab = NULL, xlim = NULL,
-  ylim = NULL, hide.label = FALSE, ...)
+plot_diff(
+  model,
+  view,
+  comp,
+  cond = NULL,
+  se = 1.96,
+  sim.ci = FALSE,
+  n.grid = 100,
+  add = FALSE,
+  rm.ranef = TRUE,
+  mark.diff = TRUE,
+  col.diff = "red",
+  col = "black",
+  eegAxis = FALSE,
+  transform.view = NULL,
+  print.summary = getOption("itsadug_print"),
+  plot = TRUE,
+  main = NULL,
+  ylab = NULL,
+  xlab = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  hide.label = FALSE,
+  ...
+)
 }
 \arguments{
 \item{model}{A GAMM model, resulting from the functions
@@ -52,7 +71,7 @@ When no plot window is available and \code{add=TRUE},
 the function will generate an error.}
 
 \item{rm.ranef}{Logical: whether or not to remove random effects. 
-Default is FALSE. Alternatively a string (or vector of strings) with the 
+Default is TRUE. Alternatively a string (or vector of strings) with the 
 name of the random effect(s) to remove.}
 
 \item{mark.diff}{Logical: whether or not marking where the difference 
@@ -91,7 +110,7 @@ generates an appropriate x-axis.}
 generates an appropriate y-axis.}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "difference"). Default is FALSE.}
+(i.e., 'difference'). Default is FALSE.}
 
 \item{...}{Optional arguments for \code{\link[plotfunctions]{emptyPlot}}, 
 or \code{\link[plotfunctions]{plot_error}}.}
@@ -110,20 +129,20 @@ data(simdat)
 m1 <- bam(Y ~ Group + te(Time, Trial, by=Group)
     + s(Time, Subject, bs='fs', m=1),
     data=simdat, discrete=TRUE)
-plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")))
+plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')))
 # in this model, excluding random effects does not change the difference:
-plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
     rm.ranef=TRUE)
 # simultaneous CI:
-plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
     rm.ranef=TRUE, sim.ci=TRUE)
 # Reversed y-axis (for EEG data) and no shading:
-plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
     eegAxis=TRUE, shade=FALSE)
-plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")),
+plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')),
 density=15, angle=90, ci.lwd=3)
 # Retrieving plot values...
-out <- plot_diff(m1, view='Time', comp=list(Group=c("Children", "Adults")), 
+out <- plot_diff(m1, view='Time', comp=list(Group=c('Children', 'Adults')), 
    plot=FALSE)
 #... which might be used for indicating differences:
 x <- find_difference(out$est, out$se, f=1.96, xVals=out$xVals)
@@ -133,10 +152,13 @@ arrows(x0=x$start, x1=x$end, y0=0, y1=0,code=3, length=.1, col='red')
 
 }
 \seealso{
-Other Testing for significance: \code{\link{compareML}},
-  \code{\link{plot_diff2}}, \code{\link{report_stats}},
-  \code{\link{wald_gam}}
+Other Testing for significance: 
+\code{\link{compareML}()},
+\code{\link{plot_diff2}()},
+\code{\link{report_stats}()},
+\code{\link{wald_gam}()}
 }
 \author{
 Martijn Wieling, Jacolien van Rij
 }
+\concept{Testing for significance}

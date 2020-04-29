@@ -1,3 +1,47 @@
+#' Calculate the dispersion of the residuals
+#' 
+#' @export
+#' @import mgcv
+#' @param model A fitted regression model (using gam, or bam).
+#' @return Numeric value: dispersion of the residuals.
+#' @examples
+#' trial <- function(f=.95){
+#'     x <- rep(1-f,101)
+#'     x[round(runif(1,1,50)):length(x)] <- f
+#'     return(rbinom(101,1,x))
+#' }
+#' set.seed(123)
+#' dat <- data.frame(Time=rep( seq(0,1,length=101),100),
+#'     y = unlist(replicate(100, trial(f=1), simplify=FALSE)),
+#'     stringsAsFactors=FALSE)
+#' # under dispersion:
+#' gam1 <- gam(y ~ s(Time), data=dat, family=binomial)
+#' summary(gam1)
+#' dispersion(gam1)
+#' # but not here:
+#' gam2 <- gam(y ~ 1, data=dat, family=binomial)
+#' summary(gam2)
+#' dispersion(gam2)
+#' # and not here:
+#' dat <- data.frame(Time=rep( seq(0,1,length=101),100),
+#'     y = unlist(replicate(100, trial(f=.75), simplify=FALSE)),
+#'     stringsAsFactors=FALSE)
+#' gam3 <- gam(y ~ s(Time), data=dat, family=binomial)
+#' summary(gam3)
+#' dispersion(gam3)
+#' 
+#' @family Functions for model inspection
+dispersion = function(model) {
+    if ((!"gam" %in% class(model))) {
+        stop("Model is not a gam object. Currently this function only works for models build with bam(), or gam().")
+    }
+    return(sum(resid(model, type = "pearson")^2)/res_df(model))
+}
+
+
+
+
+
 #' Visualization of nonlinear interactions, summed effects.
 #'
 #' @export
@@ -28,8 +72,8 @@
 #' with the view variables and then grid nodes more than too.far from the 
 #' predictor variables are excluded.
 #' @param col The colors for the facets of the plot.
-#' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+#' @param color The color scheme to use for plots. One of 'topo', 'heat', 
+#' 'cm', 'terrain', 'gray' or 'bw'. Alternatively a vector with some colors 
 #' can be provided for a custom color palette (see examples).
 #' @param contour.col sets the color of contours when using plot.
 #' @param add.color.legend Logical: whether or not to add a color legend. 
@@ -49,7 +93,7 @@
 #' covariance matrix of the parameters is uncertainty corrected 
 #' (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
 #' smoothness parameters.
-#' @param plot.type one of "contour" or "persp" (default is "contour").
+#' @param plot.type one of 'contour' or 'persp' (default is 'contour').
 #' @param zlim A two item array giving the lower and upper limits for the z-
 #' axis scale. NULL to choose automatically.
 #' @param xlim A two item array giving the lower and upper limits for the x-
@@ -69,7 +113,7 @@
 #' need to be transformed, set the other to NULL (no transformation).
 #' See examples below.
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "fitted values"). Default is FALSE.
+#' (i.e., 'fitted values'). Default is FALSE.
 #' @param dec Numeric: number of decimals for rounding the color legend. 
 #' When NULL, no rounding (default). If -1, automatically determined.  
 #' Note: if value = -1, rounding will be applied also when 
@@ -80,8 +124,11 @@
 #' Defaults to FALSE.
 #' @param col.diff Color to shade the nonsignificant areas.
 #' @param alpha.diff Level of transparency to mark the nonsignificant areas.
+#' @param f Scaling factor to determine the CI from the se, for marking the 
+#' difference with 0. Only applies when \code{se} is smaller or equal to zero 
+#' and \code{show.diff} is set to TRUE. 
 #' @param ... other options to pass on to persp, image or contour. In 
-#' particular ticktype="detailed" will add proper axes labeling to the plots.
+#' particular ticktype='detailed' will add proper axes labeling to the plots.
 #' @section Warning:
 #' When the argument \code{show.diff} is set to TRUE a shading area indicates 
 #' where the confidence intervals include zero. Or, in other words, the areas 
@@ -102,64 +149,70 @@
 #'     data=simdat, discrete=TRUE)
 #'
 #' # Plot summed effects:
-#' vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
+#' vis.gam(m1, view=c('Time', 'Trial'), plot.type='contour', color='topo')
 #' # Same plot:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=FALSE)
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=FALSE)
 #' # Without random effects included:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE)
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE)
 #'
 #' # Notes on the color legend:
 #' # Labels can easily fall off the plot, therefore the numbers can be
 #' # automatically rounded.
 #' # To do the rounding, set dec=-1:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
 #'      dec=-1)
 #' # For custom rounding, set dec to a value:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
 #'      dec=0)
 #' # To increase the left marging of the plot (so that the numbers fit):
 #' oldmar <- par()$mar
 #' par(mar=oldmar + c(0,0,0,1) ) # add one line to the right
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
 #'      dec=3)
 #' par(mar=oldmar) # restore to default settings
 #' 
 #' # changing the color palette:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
-#'     color="terrain")
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
-#'     color=c("blue", "white", "red"), col=1)
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
+#'     color='terrain')
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
+#'     color=c('blue', 'white', 'red'), col=1)
 #'
 #' # Using transform
 #' # Plot log-transformed dependent predictor on measurement scale:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE, transform=exp)
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE, transform=exp)
 #'
 #' # Notes on transform.view: 
 #' # This will generate an error, because x-values <= 0 will result in NaN:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
 #'    transform.view=list(log, NULL))
 #' # adjusting the x-axis helps:
-#' fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
 #'    xlim=c(1,2000), transform.view=list(log, NULL))
+#' 
+#' # too.far: 
+#' n <- which(simdat$Time > 1500 & simdat$Trial > 5)
+#' simdat[n,]$Y <- NA
+#' simdat[simdat$Trial == -3,]$Y <- NA
+#' m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
+#'     data=simdat, discrete=TRUE)
+#' fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE, too.far=.03)
 #'
 #' }
 #' # see the vignette for examples:
-#' vignette("inspect", package="itsadug")
+#' vignette('inspect', package='itsadug')
 #' @author Jacolien van Rij and Martijn Wieling. 
 #' Modification of \code{\link[mgcv]{vis.gam}} from 
 #' package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
 #' @seealso \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 #'
 #' @family Functions for model inspection
-fvisgam <- function(x, view = NULL, cond = list(), 
-    n.grid = 30, too.far = 0, col = NA, color = "topo", contour.col = NULL, 
-    add.color.legend=TRUE, se = -1, sim.ci=FALSE, plot.type = "contour", 
-    xlim=NULL, ylim=NULL, zlim = NULL, nCol = 50, 
-    rm.ranef=NULL, print.summary=getOption('itsadug_print'), 
-    transform=NULL, transform.view=NULL, hide.label=FALSE, 
-    dec=NULL, show.diff=FALSE, col.diff=1, alpha.diff=.5, ...) {
+fvisgam <- function(x, view = NULL, cond = list(), n.grid = 30, too.far = 0, col = NA, color = "terrain", 
+    contour.col = NULL, add.color.legend = TRUE, se = -1, sim.ci = FALSE, plot.type = "contour", xlim = NULL, 
+    ylim = NULL, zlim = NULL, nCol = 50, rm.ranef = TRUE, print.summary = getOption("itsadug_print"), transform = NULL, 
+    transform.view = NULL, hide.label = FALSE, dec = NULL, show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, f=1.96, 
+    ...) {
     # check info me
-       
+    
     fac.seq <- function(fac, n.grid) {
         fn <- length(levels(fac))
         gn <- n.grid
@@ -172,14 +225,14 @@ fvisgam <- function(x, view = NULL, cond = list(),
         }
         mf
     }
-    # For simultaneous CI, n.grid needs to be at least 100, 
-    # otherwise the simulations for the simultaneous CI is not adequate
-    if (sim.ci==TRUE) { 
-        n.grid = max(n.grid,100) 
+    # For simultaneous CI, n.grid needs to be at least 100, otherwise the simulations for the simultaneous CI
+    # is not adequate
+    if (sim.ci == TRUE) {
+        n.grid = max(n.grid, 100)
     }
     dnm <- names(list(...))
     v.names <- names(x$var.summary)
-    zlab <- as.character(formula(x$terms)[2])  
+    zlab <- as.character(formula(x$terms)[2])
     if (is.null(view)) {
         stop("Specify two view predictors for the x- and y-axis.")
     } else {
@@ -189,253 +242,214 @@ fvisgam <- function(x, view = NULL, cond = list(),
         for (i in 1:2) if (!inherits(x$var.summary[[view[i]]], c("numeric"))) 
             stop("Don't know what to do with parametric terms that are not simple numeric variables.")
     }
-    if(!is.null(cond)){
+    if (!is.null(cond)) {
         cn <- names(cond)
-        test <- sapply(cn, function(x){
-            if(length(unique(cond[[x]]))>1){
+        test <- sapply(cn, function(x) {
+            if (length(unique(cond[[x]])) > 1) {
                 stop("Do not specify more than 1 value for conditions listed in the argument cond.")
-            }else{
+            } else {
                 TRUE
             }
         })
     }
     
-    m1 <- seq(min(x$var.summary[[view[1]]], na.rm=TRUE), 
-        max(x$var.summary[[view[1]]], na.rm=TRUE), length=n.grid)
-    m2 <- seq(min(x$var.summary[[view[2]]], na.rm=TRUE), 
-        max(x$var.summary[[view[2]]], na.rm=TRUE), length=n.grid)
-    if(!is.null(xlim)){
-        if(length(xlim) != 2){
+    m1 <- seq(min(x$var.summary[[view[1]]], na.rm = TRUE), max(x$var.summary[[view[1]]], na.rm = TRUE), length = n.grid)
+    m2 <- seq(min(x$var.summary[[view[2]]], na.rm = TRUE), max(x$var.summary[[view[2]]], na.rm = TRUE), length = n.grid)
+    if (!is.null(xlim)) {
+        if (length(xlim) != 2) {
             warning("Invalid xlim values specified. Argument xlim is being ignored.")
-        }else{ 
-            m1 <- seq(xlim[1], xlim[2], length=n.grid)
+        } else {
+            m1 <- seq(xlim[1], xlim[2], length = n.grid)
         }
     }
-    if(!is.null(ylim)){
-        if(length(ylim) != 2){
+    if (!is.null(ylim)) {
+        if (length(ylim) != 2) {
             warning("Invalid ylim values specified. Argument ylim is being ignored.")
-        }else{ 
-            m2 <- seq(ylim[1], ylim[2], length=n.grid)
+        } else {
+            m2 <- seq(ylim[1], ylim[2], length = n.grid)
         }
     }
     cond[[view[1]]] <- m1
     cond[[view[2]]] <- m2
-    newd <- get_predictions(x, cond=cond, se=TRUE, 
-        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, rm.ranef=rm.ranef,
-        print.summary=print.summary)
-    newd <- newd[order(newd[,view[1]], newd[, view[2]]),]
+    newd <- get_predictions(x, cond = cond, se = TRUE, f = ifelse(se > 0, se, f), sim.ci = sim.ci, rm.ranef = rm.ranef, 
+        print.summary = print.summary)
+    newd <- newd[order(newd[, view[1]], newd[, view[2]]), ]
     # transform values x- and y-axes:
-    errormessage <- function(name){
-        return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", name))
-    
+    errormessage <- function(name) {
+        return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", 
+            name))
+        
     }
-    if(!is.null(transform.view)){
-        if(length(transform.view)==1){
+    if (!is.null(transform.view)) {
+        if (length(transform.view) == 1) {
             
             m1 <- sapply(m1, transform.view)
             m2 <- sapply(m2, transform.view)
-            if(any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))){
+            if (any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))) {
                 stop(errormessage("x"))
             }
-            if(any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))){
+            if (any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))) {
                 stop(errormessage("y"))
             }
-            if(print.summary){
+            if (print.summary) {
                 cat("\t* Note: The same transformation is applied to values of x-axis and y-axis.\n")
             }
-        }else if(length(transform.view) >= 2){
-            if(!is.null(transform.view[[1]])){
+        } else if (length(transform.view) >= 2) {
+            if (!is.null(transform.view[[1]])) {
                 m1 <- sapply(m1, transform.view[[1]])
-                if(any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))){
-                    stop(errormessage("x"))
+                if (any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))) {
+                  stop(errormessage("x"))
                 }
             }
-            if(!is.null(transform.view[[2]])){
+            if (!is.null(transform.view[[2]])) {
                 m2 <- sapply(m2, transform.view[[2]])
-                if(any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))){
-                    stop(errormessage("y"))
+                if (any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))) {
+                  stop(errormessage("y"))
                 }
             }
-            if(print.summary){
+            if (print.summary) {
                 cat("\t* Note: Transformation function(s) applied to values of x-axis and / or y-axis.\n")
             }
-        }          
+        }
     }
-    too.far.raster <- rep(alpha('white', f=0), nrow(newd))
+    too.far.raster <- rep(alpha("white", f = 0), nrow(newd))
     newd.toofar <- newd
     ex.tf = NULL
     if (too.far > 0) {
-        ex.tf <- mgcv::exclude.too.far(newd[,view[1]], newd[,view[2]], x$model[, view[1]], x$model[, view[2]], dist = too.far)
+        ex.tf <- mgcv::exclude.too.far(newd[, view[1]], newd[, view[2]], x$model[, view[1]], x$model[, view[2]], 
+            dist = too.far)
         newd.toofar$se.fit[ex.tf] <- newd.toofar$fit[ex.tf] <- NA
-        too.far.raster[ex.tf] <- 'white'
+        too.far.raster[ex.tf] <- "white"
     }
     # raster images are row-first, in contrast to images...
-    too.far.raster <- matrix(too.far.raster, byrow=FALSE, n.grid, n.grid)
-    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1,])
-    z <- matrix(newd$fit, byrow=TRUE, n.grid, n.grid)
-    z.toofar <- matrix(newd.toofar$fit, byrow=TRUE, n.grid, n.grid)
+    too.far.raster <- matrix(too.far.raster, byrow = FALSE, n.grid, n.grid)
+    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1, ])
+    z <- matrix(newd$fit, byrow = TRUE, n.grid, n.grid)
+    z.toofar <- matrix(newd.toofar$fit, byrow = TRUE, n.grid, n.grid)
     zlab <- colnames(x$model)[!colnames(x$model) %in% names(cond)][1]
-   
+    
     if (se <= 0) {
         z.fit <- newd$fit
         z.fit.toofar <- newd.toofar$fit
-        if(!is.null(transform)){
+        if (!is.null(transform)) {
             z.fit <- sapply(z.fit, transform)
-            z <- matrix(z.fit, byrow=TRUE, n.grid, n.grid)
+            z <- matrix(z.fit, byrow = TRUE, n.grid, n.grid)
             z.fit.toofar <- sapply(z.fit.toofar, transform)
         }
         old.warn <- options(warn = -1)
-        av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), byrow=TRUE, n.grid, n.grid - 1)
+        av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), byrow = TRUE, n.grid, n.grid - 1)
         options(old.warn)
         max.z <- max(z, na.rm = TRUE)
         z[is.na(z)] <- max.z * 10000
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z, byrow = TRUE, n.grid, n.grid)
         surf.col <- t(av) %*% z %*% av
         surf.col[surf.col > max.z * 2] <- NA
         if (!is.null(zlim)) {
             if (length(zlim) != 2 || zlim[1] >= zlim[2]) 
                 stop("Something wrong with zlim")
-            if(!is.null(dec)){
-                if(dec == -1){
-                    dec <- getDec(min(zlim, na.rm=TRUE))
+            if (!is.null(dec)) {
+                if (dec == -1) {
+                  dec <- getDec(min(zlim, na.rm = TRUE))
                 }
-                zlim <- getRange(zlim, step=(.1^dec), n.seg=2)
+                zlim <- getRange(zlim, step = (0.1^dec), n.seg = 2)
             }
             min.z <- zlim[1]
             max.z <- zlim[2]
         } else {
-            if(!is.null(dec)){
-                if(dec == -1){
-                    dec <- getDec(min(z.fit.toofar, na.rm = TRUE))
+            if (!is.null(dec)) {
+                if (dec == -1) {
+                  dec <- getDec(min(z.fit.toofar, na.rm = TRUE))
                 }
-                tmp <- getRange(range(z.fit.toofar, na.rm = TRUE), n.seg=2, step=(.1^dec))
-            }else{
+                tmp <- getRange(range(z.fit.toofar, na.rm = TRUE), n.seg = 2, step = (0.1^dec))
+            } else {
                 tmp <- range(z.fit.toofar, na.rm = TRUE)
             }
-            # min.z <- min(z.fit, na.rm = TRUE)
-            # max.z <- max(z.fit, na.rm = TRUE)
+            # min.z <- min(z.fit, na.rm = TRUE) max.z <- max(z.fit, na.rm = TRUE)
             min.z <- tmp[1]
             max.z <- tmp[2]
         }
         surf.col <- surf.col - min.z
         surf.col <- surf.col/(max.z - min.z)
         surf.col <- round(surf.col * nCol)
-        con.col <- 1
-        if (color[1] == "heat") {
-            pal <- heat.colors(nCol)
-            con.col <- 3
-        } else if (color[1] == "topo") {
-            pal <- topo.colors(nCol)
-            con.col <- 2
-        } else if (color[1] == "cm") {
-            pal <- cm.colors(nCol)
-            con.col <- 1
-        } else if (color[1] == "terrain") {
-            pal <- terrain.colors(nCol)
-            con.col <- 2
-        } else if (color[1] == "bpy") {
-            if (requireNamespace("sp", quietly = TRUE)) {
-                pal <- sp::bpy.colors(nCol)
-                con.col <- 1
-            } else {
-                warning("Package 'sp' needed for bpy color palette. Using topo.colors instead (default).")
-                color <- 'topo'
-                pal <- topo.colors(nCol)
-                con.col <- 2
-            }
-        } else if (color[1] == "gray" || color[1] == "bw") {
-            pal <- gray(seq(0.1, 0.9, length = nCol))
-            con.col <- 1
-        }else {
-            if( all(plotfunctions::isColor(color)) ){
-                pal <- colorRampPalette(color)(nCol)
-                con.col <- 1
-            }else{
-                stop("color scheme not recognised")
-            }  
-        } 
+        # recognize color scheme:
+        getcol <- get_palette(color, nCol = nCol, col = col)
+        pal <- getcol[["color"]]
+        con.col <- getcol[["col"]]
         if (is.null(contour.col)) 
             contour.col <- con.col
         surf.col[surf.col < 1] <- 1
         surf.col[surf.col > nCol] <- nCol
         if (is.na(col)) 
             col <- pal[as.array(surf.col)]
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z, byrow = TRUE, n.grid, n.grid)
         if (plot.type == "contour") {
-            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
             if (color[1] != "bw") {
                 txt <- paste("image(m1,m2,z,col=pal,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
-                txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z)", ifelse("add" %in% dnm, "", ",add=TRUE"), 
-                  ",...)", sep = "")
+                txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z)", ifelse("add" %in% dnm, 
+                  "", ",add=TRUE"), ",...)", sep = "")
                 eval(parse(text = txt))
             } else {
                 txt <- paste("contour(m1,m2,z,col=1,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
             }
-            gfc <- getFigCoords('p')
-            rasterImage(too.far.raster, xleft=gfc[1], xright=gfc[2], ybottom=gfc[3], ytop=gfc[4])
-            if(add.color.legend){
-                gradientLegend(c(min.z, max.z), n.seg=3, pos=.875, 
-                    color=pal, dec=dec)
+            gfc <- getFigCoords("p")
+            rasterImage(too.far.raster, xleft = gfc[1], xright = gfc[2], ybottom = gfc[3], ytop = gfc[4])
+            if (add.color.legend) {
+                gradientLegend(c(min.z, max.z), n.seg = 3, pos = 0.875, color = pal, dec = dec)
             }
-	        if(hide.label==FALSE){
-	        	addlabel = "fitted values"
-	        	if(!is.null(rm.ranef)){
-	        		if(rm.ranef !=FALSE){
-	        			addlabel = paste(addlabel, "excl. random", sep=", ")
-	        		}
-	        	}
-                if(sim.ci==TRUE){
-                    addlabel = paste(addlabel, "simult.CI", sep=", ")
+            if (hide.label == FALSE) {
+                addlabel = "fitted values"
+                if (!is.null(rm.ranef)) {
+                  if (rm.ranef != FALSE) {
+                    addlabel = paste(addlabel, "excl. random", sep = ", ")
+                  }
                 }
-	        	mtext(addlabel, side=4, line=0, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	if(!is.null(transform)){
-	        		mtext("transformed", side=4, line=.75, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	}
-	        }
-	            
-        }else{
-             stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
+                if (sim.ci == TRUE) {
+                  addlabel = paste(addlabel, "simult.CI", sep = ", ")
+                }
+                mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                if (!is.null(transform)) {
+                  mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                }
+            }
+            
+        } else {
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
             if (color[1] == "bw") {
                 op <- par(bg = "white")
                 txt <- paste("persp(m1,m2,z,col=\"white\",zlim=c(min.z,max.z) ", stub, sep = "")
                 eval(parse(text = txt))
                 par(op)
-            }
-            else {
-                txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", 
-                  stub, sep = "")
+            } else {
+                txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
-            } 
-	        if(hide.label==FALSE){
-	        	addlabel = "fitted values"
-	        	if(!is.null(rm.ranef)){
-	        		if(rm.ranef !=FALSE){
-	        			addlabel = paste(addlabel, "excl. random", sep=", ")
-	        		}
-	        	}
-	        	mtext(addlabel, side=4, line=0, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	if(!is.null(transform)){
-	        		mtext("transformed", side=4, line=.75, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	}
-	        }
+            }
+            if (hide.label == FALSE) {
+                addlabel = "fitted values"
+                if (!is.null(rm.ranef)) {
+                  if (rm.ranef != FALSE) {
+                    addlabel = paste(addlabel, "excl. random", sep = ", ")
+                  }
+                }
+                mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                if (!is.null(transform)) {
+                  mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                }
+            }
         }
     } else {
         z.fit <- newd$fit
         z.cil <- newd$fit - newd$CI
         z.ciu <- newd$fit + newd$CI
-        if(sim.ci==TRUE){
+        if (sim.ci == TRUE) {
             z.cil <- newd$fit - newd$sim.CI
             z.ciu <- newd$fit + newd$sim.CI
         }
-        if(!is.null(transform)){
+        if (!is.null(transform)) {
             z.fit <- sapply(z.fit, transform)
             z.cil <- sapply(z.cil, transform)
             z.ciu <- sapply(z.ciu, transform)
@@ -459,49 +473,50 @@ fvisgam <- function(x, view = NULL, cond = list(),
             z.min <- min(z.cil, na.rm = TRUE)
         }
         zlim <- c(z.min, z.max)
-        z <- matrix(z.cil, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z.cil, byrow = TRUE, n.grid, n.grid)
         if (plot.type == "contour") 
             warning("sorry no option for contouring with errors: try plot.gam")
-        stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("zlab" %in% 
-            dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, sep = "")
+        stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+            ifelse("zlab" %in% dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
+        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, 
+            sep = "")
         eval(parse(text = txt))
         par(new = TRUE)
-        z <- matrix(z.fit, byrow=TRUE, n.grid, n.grid)
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), stub, sep = "")
+        z <- matrix(z.fit, byrow = TRUE, n.grid, n.grid)
+        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), 
+            stub, sep = "")
         eval(parse(text = txt))
         par(new = TRUE)
-        z <- matrix(z.ciu, byrow=TRUE, n.grid, n.grid)
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, sep = "")
+        z <- matrix(z.ciu, byrow = TRUE, n.grid, n.grid)
+        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, 
+            sep = "")
         eval(parse(text = txt))
-        if(hide.label==FALSE){
-        	addlabel = "fitted values"
-        	if(!is.null(rm.ranef)){
-        		if(rm.ranef !=FALSE){
-        			addlabel = paste(addlabel, "excl. random", sep=", ")
-        		}
-        	}
-        	mtext(addlabel, side=4, line=0, adj=0, 
-        		cex=.75, col='gray35', xpd=TRUE)
-        	if(!is.null(transform)){
-        		mtext("transformed", side=4, line=.75, adj=0, 
-        		cex=.75, col='gray35', xpd=TRUE)
-        	}
+        if (hide.label == FALSE) {
+            addlabel = "fitted values"
+            if (!is.null(rm.ranef)) {
+                if (rm.ranef != FALSE) {
+                  addlabel = paste(addlabel, "excl. random", sep = ", ")
+                }
+            }
+            mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            if (!is.null(transform)) {
+                mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            }
         }
     }
-    if(plot.type=="contour" & show.diff==TRUE){
-        plot_signifArea(newd, view=view, predictor="fit", valCI="CI", col=col.diff, alpha=alpha.diff)
-        if(print.summary & se <= 0){
-            cat("\t* Note: Shaded areas indicate areas that include 0 within the 95%CI.\n")
-        }else if (print.summary & se > 0){
-        	cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI.\n", 
-        		round(2*pnorm(se)-1, 2)*100))
+    if (plot.type == "contour" & show.diff == TRUE) {
+        plot_signifArea(newd, view = view, predictor = "fit", valCI = "CI", col = col.diff, alpha = alpha.diff)
+        if (print.summary & se <= 0) {
+            cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI (f parameter).\n", round(2 * 
+                pnorm(f) - 1, 2) * 100))
+        } else if (print.summary & se > 0) {
+            cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI (se parameter).\n", round(2 * 
+                pnorm(se) - 1, 2) * 100))
         }
     }
-    invisible(list(fv = newd, m1 = m1, m2 = m2, zlim=c(min.z, max.z), too.far = ex.tf,
-        note=ifelse(is.null(transform), "type=lpmatrix, not on response scale", transform)) )   
+    invisible(list(fv = newd, m1 = m1, m2 = m2, zlim = c(min.z, max.z), too.far = ex.tf, note = ifelse(is.null(transform), 
+        "type=lpmatrix, not on response scale", transform)))
 }
- 
 
 
 
@@ -544,30 +559,29 @@ fvisgam <- function(x, view = NULL, cond = list(),
 #' gamtabs(m1, caption='Summary of m1')
 #' }
 #' # See for more examples:
-#' vignette("inspect", package="itsadug")
+#' vignette('inspect', package='itsadug')
 #' @seealso \code{\link[mgcv]{summary.gam}}, \code{\link[mgcv]{gam}}, 
 #' \code{\link[mgcv]{bam}}.
 #' @family Functions for model inspection
-gamtabs <- function (model, caption = " ", label = "tab.gam", 
-    pnames = NA, snames = NA, ptab = NA, stab = NA, ...){
+gamtabs <- function(model, caption = " ", label = "tab.gam", pnames = NA, snames = NA, ptab = NA, stab = NA, 
+    ...) {
     if (!requireNamespace("xtable", quietly = TRUE)) {
-        stop("Package 'xtable' needed for this function to work. Please install it.",
-            call. = FALSE)
+        stop("Package 'xtable' needed for this function to work. Please install it.", call. = FALSE)
     }
     sum.gam <- model
-    if(!inherits(model, "summary.gam")){
+    if (!inherits(model, "summary.gam")) {
         sum.gam <- summary(model)
     }
-    if (is.na(ptab[1])){
-        ptab = as.data.frame(sum.gam$p.table)
+    if (is.na(ptab[1])) {
+        ptab = as.data.frame(sum.gam$p.table, stringsAsFactors = FALSE)
     }
-    if (is.na(stab[1])){
-        stab = as.data.frame(sum.gam$s.table)
+    if (is.na(stab[1])) {
+        stab = as.data.frame(sum.gam$s.table, stringsAsFactors = FALSE)
     }
-    if (!is.na(pnames[1])){
+    if (!is.na(pnames[1])) {
         rownames(ptab) = pnames
     }
-    if (!is.na(snames[1])){
+    if (!is.na(snames[1])) {
         rownames(stab) = snames
     }
     colnames(ptab)[4] = "p-value"
@@ -576,19 +590,18 @@ gamtabs <- function (model, caption = " ", label = "tab.gam",
     stab.cnames = colnames(stab)
     stab.cnames[3] = "F-value"
     colnames(ptab) = c("A", "B", "C", "D")
-  if (ncol(stab) != 0){
-    colnames(stab) = colnames(ptab)
+    if (ncol(stab) != 0) {
+        colnames(stab) = colnames(ptab)
     }
     tab = rbind(ptab, stab)
     colnames(tab) = ptab.cnames
     tab = round(tab, 4)
-    m = data.frame(matrix(0, nrow(tab), ncol(tab)))
+    m = data.frame(matrix(0, nrow(tab), ncol(tab)), stringsAsFactors = FALSE)
     for (i in 1:nrow(tab)) {
         for (j in 1:4) {
-            if ((j == 4) & (tab[i, j] < 1e-04)){
+            if ((j == 4) & (tab[i, j] < 1e-04)) {
                 m[i, j] = "< 0.0001"
-            }
-            else {
+            } else {
                 m[i, j] = sprintf("%3.4f", tab[i, j])
             }
         }
@@ -597,22 +610,21 @@ gamtabs <- function (model, caption = " ", label = "tab.gam",
     rownames(m) = rownames(tab)
     tab = m
     tab2 = rbind(c(ptab.cnames), tab[1:nrow(ptab), ])
-  if (nrow(stab) > 0){
-    tab2 = rbind(tab2, c(stab.cnames), tab[(nrow(ptab) + 1):nrow(tab), ])
+    if (nrow(stab) > 0) {
+        tab2 = rbind(tab2, c(stab.cnames), tab[(nrow(ptab) + 1):nrow(tab), ])
     }
-  if (nrow(stab)){
-    rownames(tab2)[(nrow(ptab) + 2)] = "B. smooth terms"
+    if (nrow(stab)) {
+        rownames(tab2)[(nrow(ptab) + 2)] = "B. smooth terms"
     }
     rownames(tab2)[1] = "A. parametric coefficients"
     for (i in 1:nrow(tab2)) {
-        if (tab2[i, 4] == "0")
+        if (tab2[i, 4] == "0") 
             tab2[i, 4] = "< 0.0001"
-        if (length(grep("\\.", tab2[i, 2])) == 0)
+        if (length(grep("\\.", tab2[i, 2])) == 0) 
             tab2[i, 2] = paste(tab2[i, 2], ".0000", sep = "")
     }
-    print(xtable::xtable(tab2, caption = caption, label = label,
-        align = "lrrrr"), include.colnames = FALSE, hline.after = c(0,
-        (nrow(ptab) + 1), nrow(tab2)), ...)
+    print(xtable::xtable(tab2, caption = caption, label = label, align = "lrrrr"), include.colnames = FALSE, 
+        hline.after = c(0, (nrow(ptab) + 1), nrow(tab2)), ...)
 }
 
 
@@ -654,7 +666,6 @@ gamtabs <- function (model, caption = " ", label = "tab.gam",
 #' for reference. By default 0.
 #' @param v0 A vector indicating where to add dotted vertical lines 
 #' for reference. By default no values provided.
-#' @param col Specifying the colors of the lines.
 #' @param eegAxis Whether or not to reverse the y-axis 
 #' (plotting negative upwards).
 #' @param ... other options to pass on to \code{\link[graphics]{lines}}, 
@@ -692,8 +703,8 @@ gamtabs <- function (model, caption = " ", label = "tab.gam",
 #' # Make lattice plot:
 #' require(lattice)
 #' lattice::xyplot(fit~Time | Subject,
-#'     data=newd, type="l",
-#'     xlab="Time", ylab="Partial effect")
+#'     data=newd, type='l',
+#'     xlab='Time', ylab='Partial effect')
 #'
 #' # Using argument 'fun':
 #' inspect_random(m2, select=5, fun=mean, 
@@ -704,131 +715,383 @@ gamtabs <- function (model, caption = " ", label = "tab.gam",
 #' }
 #'
 #' # see the vignette for examples:
-#' vignette("overview", package="itsadug")
+#' vignette('overview', package='itsadug')
 #' @author Jacolien van Rij
 #' @family Functions for model inspection
-inspect_random <- function(model, select=1, fun=NULL, 
-	cond=NULL, n.grid=30, print.summary=getOption('itsadug_print'),
-	plot=TRUE, add=FALSE,
-	main=NULL, xlab=NULL, ylab=NULL, ylim=NULL, h0=0, v0=NULL, 
-	col=NULL, eegAxis=FALSE, ...
-	){
-	if(!"lm" %in% class(model)){
-		stop("This function does not work for class %s models.", class(model)[1])
-	}else{
-		# find random effects:
-		smoothlabels <- as.data.frame( do.call('rbind', 
-			lapply(model$smooth, 
-				function(x){
-					data.frame(Label=x[['label']], 
-						Dim=x[['null.space.dim']], 
-						Class = attr(x, "class")[1],
-						stringsAsFactors=FALSE)
-				} ) ) )
-		# smoothlabels <- smoothlabels[smoothlabels$Dim==0,c("Label", "Class")]
-		fslabels <- as.vector( smoothlabels[smoothlabels$Class %in% c("fs.interaction"), "Label"] )
-		if(length(fslabels) == 0){
-			warning("No random smooths / factor smooths found in the model.")
-			return(NULL)
-		}else if( !model$smooth[[select]]$label %in% fslabels){
-			select.new <- which(smoothlabels$Label==fslabels[1])
-			warning(sprintf("Selected modelterm %d ( '%s' ) is not a factor smooth. Modelterm %d selected instead ( '%s' ).",
-				select, model$smooth[[select]]$label,
-				select.new,  model$smooth[[select.new]]$label))
-			select = select.new
-		}
-		if(length(model$smooth[[select]]$term) > 2){
-			stop("This function is implemented for factor smooths with at most two terms, e.g. s(A,B, bs='fs').")
-		}
-	
-		numterm   <- c()
-		groupterm <- c()
-	
-		if(!is.null(fun)){
-			fv <- get_modelterm(model, select=select, cond=cond, se=FALSE,
-				print.summary=print.summary, as.data.frame=TRUE)
-						
-			fun.cond <- list()
-			fun.val = list()
-			
-			for(j in model$smooth[[select]][['term']]){
-				if(!inherits(model$model[,j],"factor")){
-					fun.cond[[j]] <- fv[,j]
-					numterm <- c(numterm, j)
-				}else{
-					groupterm <- c(groupterm, j)
-				}
-			}		
-		    if(is.null(main)){ main <- model$smooth[[select]]$label }
-		    if(is.null(xlab)){ xlab <- numterm[1] }
-		    if(is.null(ylab)){ ylab <- sprintf("est. %s", names(model$model)[1])}	
-			if(length(fun.cond) > 0){
-				fun.val[['values']] <- aggregate(list(x=fv$fit), by=fun.cond, fun)
-				if(plot==TRUE){
-					if(add==FALSE){
-						if(is.null(ylim)){ 
-	           				ylim <- range(fv$fit)
-	    				}
-				    if(is.null(col)){
-				    	col=1
-				    }
-			        emptyPlot(range(fun.val[['values']][,numterm[1]]), ylim,
-			            main=main, xlab=xlab, ylab=ylab,
-			            h0=h0, v0=v0, eegAxis=eegAxis)				    
-					}
-					lines(fun.val$values[,numterm[1]], fun.val$values[,'x'], col=col, ...)
-				}
-			} else {
-				fun.val[['values']] <- unlist(lapply(list(fv$fit), fun))
-				if(plot==TRUE){
-					warning('Plotting for 1 dimensional factor smooth not implemented yet.')
-				}
-			}
-			for(nc in names(cond)){
-				fun.val[[nc]] <- cond[[nc]]
-			}
-			
-			fun.val[['function']] <- fun
-			invisible(fun.val)
-		}else{
-			fv <- get_modelterm(model, select=select, cond=cond,
-				print.summary=print.summary, as.data.frame=TRUE)
-			for(j in model$smooth[[select]][['term']]){
-				if(!inherits(model$model[,j],"factor")){
-					numterm <- c(numterm, j)
-				}else{
-					groupterm <- c(groupterm, j)
-				}
-			}	
-			if(plot==TRUE){
-				if(add==FALSE){
-					if(is.null(ylim)){ 
-           				ylim <- range(fv$fit)
-    				}
-			    
-		        	emptyPlot( range(fv[,numterm[1]]), ylim,
-			            main=main, xlab=xlab, ylab=ylab,
-			            h0=h0, v0=v0, eegAxis=eegAxis, ...)				    
-				}
-				if(is.null(col)){
-					count <- 1
-					for(su in unique(fv[,groupterm[1]])){
-						tmp <- fv[fv[,groupterm[1]]==su,]
-						lines(tmp[,numterm[1]], tmp[,'fit'], col=count, lty=count, ...)
-						count <- count+1
-					}
-				}else{
-					count <- 1
-					for(su in levels(fv[,groupterm[1]])){
-						tmp <- fv[fv[,groupterm[1]]==su,]
-						lines(tmp[,numterm[1]], tmp[,'fit'], col=col, lty=count, ...)
-						count <- count+1
-					}
-				}
-			}
-			invisible(fv)
-		}
-	}
+inspect_random <- function(model, select = 1, fun = NULL, cond = NULL, n.grid = 30, print.summary = getOption("itsadug_print"), 
+    plot = TRUE, add = FALSE, main = NULL, xlab = NULL, ylab = NULL, ylim = NULL, h0 = 0, v0 = NULL, eegAxis = FALSE, 
+    ...) {
+    if (!"lm" %in% class(model)) {
+        stop("This function does not work for class %s models.", class(model)[1])
+    } else {
+        par = list(...)
+        smoothterms <- c()
+        if (length(select) > 1) {
+            # get smoothterms:
+            smoothterms <- sapply(select, function(x) {
+                return(model$smooth[[x]][["term"]])
+            }, simplify = FALSE)
+            # check how many terms:
+            for (i in 1:length(smoothterms)) {
+                if (length(smoothterms[[i]]) > 2) {
+                  stop("This function is implemented for factor smooths with at most two terms, such as s(A,B, bs='fs') or s(A,B,by=C,bs='fs').")
+                }
+            }
+            # check whether they are the same:
+            for (i in 2:length(smoothterms)) {
+                if (!all(sort(smoothterms[[i - 1]]) == sort(smoothterms[[i]]))) {
+                  warning(sprintf("Selected smooths are incompatible, smoothterms do not match: term %d = %s, term %d = %s.", 
+                    i - 1, paste(smoothterms[[i - 1]], collapse = ", "), i, paste(smoothterms[[i]], collapse = ", ")))
+                  select = select[1]
+                }
+            }
+            if (length(select) == 1) {
+                warning(sprintf("Only term %d will be selected for inspection.", select))
+            }
+        } else {
+            # check how many terms:
+            smoothterms <- model$smooth[[select]][["term"]]
+            if (length(smoothterms) > 2) {
+                stop("This function is implemented for factor smooths with at most two terms, such as s(A,B, bs='fs') or s(A,B,by=C,bs='fs').")
+            }
+        }
+        
+        # find random effects:
+        smoothlabels <- as.data.frame(do.call("rbind", lapply(model$smooth, function(x) {
+            data.frame(Label = x[["label"]], Dim = x[["null.space.dim"]], Class = attr(x, "class")[1], stringsAsFactors = FALSE)
+        })))
+        # fslabels <- as.vector( smoothlabels[smoothlabels$Class %in% c('fs.interaction'), 'Label'] )
+        fslabels <- as.vector(smoothlabels[smoothlabels$Dim == 0, "Label"])
+        if (length(fslabels) == 0) {
+            warning("No random smooths / factor smooths found in the model.")
+            return(NULL)
+        } else if (!all(check <- sapply(select, function(x) {
+            return(model$smooth[[x]]$label %in% fslabels)
+        }))) {
+            select.new <- which(smoothlabels$Label == fslabels[1])
+            warning(sprintf("Selected modelterm %d ( '%s' ) is not a factor smooth. Modelterm %d selected instead ( '%s' ).", 
+                select[!check][1], model$smooth[[select[!check][1]]]$label, select.new, model$smooth[[select.new]]$label))
+            select = select.new
+        }
+        
+        numterm <- c()
+        groupterm <- c()
+        
+        # if fun:
+        if (!is.null(fun)) {
+            fun.cond <- list()
+            fun.val = list()
+            # apply and print function for each smooth:
+            for (i in 1:length(select)) {
+                fv <- get_modelterm(model, select = select[i], cond = cond, se = FALSE, print.summary = print.summary, 
+                  as.data.frame = TRUE)
+                
+                for (j in model$smooth[[select[i]]][["term"]]) {
+                  if (!inherits(model$model[, j], "factor")) {
+                    fun.cond[[j]] <- fv[, j]
+                    numterm <- c(numterm, j)
+                  } else {
+                    groupterm <- c(groupterm, j)
+                  }
+                }
+                if (length(fun.cond) > 0) {
+                  fun.val[[i]] <- aggregate(list(x = fv$fit), by = fun.cond, fun)
+                }
+            }
+            if (is.null(main)) {
+                main <- model$smooth[[select[1]]]$label
+            }
+            if (is.null(xlab)) {
+                xlab <- numterm[1]
+            }
+            if (is.null(ylab)) {
+                ylab <- sprintf("est. %s", names(model$model)[1])
+            }
+            if (plot == TRUE) {
+                if (add == FALSE) {
+                  if (is.null(ylim)) {
+                    ylim <- range(unlist(lapply(fun.val, function(x) {
+                      return(x$x)
+                    })), na.rm = TRUE)
+                  }
+                  plotargs <- list2str(names(par)[!names(par) %in% c("col", "lty", "lwd", "type", "pch", "bg")], 
+                    par)
+                  if (plotargs != "") {
+                    plotargs <- sprintf(",%s", plotargs)
+                  }
+                  
+                  eval(parse(text = sprintf("emptyPlot(range(fun.val[[1]][,numterm[1]]), ylim,
+\t\t\t            main=main, xlab=xlab, ylab=ylab,
+\t\t\t            h0=h0, v0=v0, eegAxis=eegAxis %s)", 
+                    plotargs)))
+                }
+                par = list(...)
+                # default settings:
+                cols <- 1:length(select)
+                if ("col" %in% names(par)) {
+                  cols <- par[["col"]]
+                  if (length(cols) < length(select)) {
+                    cols <- rep(cols, ceiling(length(select)/length(cols)))
+                  }
+                  par[["col"]] <- NULL
+                }
+                lwds <- rep(1, length(select))
+                if ("lwd" %in% names(par)) {
+                  lwds <- par[["lwd"]]
+                  if (length(lwds) < length(select)) {
+                    lwds <- rep(lwds, ceiling(length(select)/length(lwds)))
+                  }
+                  par[["lwd"]] <- NULL
+                }
+                ltys <- 1:length(select)
+                if ("lty" %in% names(par)) {
+                  ltys <- par[["lty"]]
+                  if (length(ltys) < length(select)) {
+                    ltys <- rep(ltys, ceiling(length(select)/length(ltys)))
+                  }
+                  par[["lty"]] <- NULL
+                }
+                parspec <- list2str(names(par), par)
+                if (parspec != "") {
+                  parspec <- sprintf(",%s", parspec)
+                }
+                for (i in 1:length(select)) {
+                  eval(parse(text = sprintf("lines(fun.val[[i]][,numterm[1]], fun.val[[i]][,'x'], col=cols[i],lty=ltys[i],lwd=lwds[i] %s)", 
+                    parspec)))
+                }
+                
+            }
+            for (nc in names(cond)) {
+                fun.val[[nc]] <- cond[[nc]]
+            }
+            
+            fun.val[["function"]] <- fun
+            invisible(fun.val)
+            
+            # if not fun:
+        } else {
+            fv = list()
+            # apply and print function for each smooth:
+            for (i in 1:length(select)) {
+                fv[[i]] <- get_modelterm(model, select = select[i], cond = cond, print.summary = print.summary, 
+                  as.data.frame = TRUE)
+            }
+            for (j in model$smooth[[select[1]]][["term"]]) {
+                if (!inherits(model$model[, j], "factor")) {
+                  numterm <- c(numterm, j)
+                } else {
+                  groupterm <- c(groupterm, j)
+                }
+            }
+            if (is.null(main)) {
+                main <- model$smooth[[select[1]]]$label
+            }
+            if (is.null(xlab)) {
+                xlab <- numterm[1]
+            }
+            if (is.null(ylab)) {
+                ylab <- sprintf("est. %s", names(model$model)[1])
+            }
+            if (plot == TRUE) 
+                {
+                  if (add == FALSE) {
+                    if (is.null(ylim)) {
+                      ylim <- range(unlist(lapply(fv, function(x) {
+                        return(x$fit)
+                      })), na.rm = TRUE)
+                    }
+                    plotargs <- list2str(names(par)[!names(par) %in% c("col", "lty", "lwd", "type", "pch", 
+                      "bg")], par)
+                    
+                    if (plotargs != "") {
+                      plotargs <- sprintf(",%s", plotargs)
+                    }
+                    
+                    eval(parse(text = sprintf("emptyPlot( range(fv[[1]][,numterm[1]]), ylim,
+\t\t\t            main=main, xlab=xlab, ylab=ylab,
+\t\t\t            h0=h0, v0=v0, eegAxis=eegAxis %s)", 
+                      plotargs)))
+                  }
+                  # no grouping predictor:
+                  if (is.null(groupterm[1])) {
+                    lensu <- max(c(length(select), 1))
+                    # default settings:
+                    cols <- 1:lensu
+                    ltys <- 1:lensu
+                    lwds <- rep(1, lensu)
+                    types <- rep("l", lensu)
+                    pchs <- rep(21, lensu)
+                    bgs <- rep(1, lensu)
+                    cexs <- rep(1, lensu)
+                    if ("col" %in% names(par)) {
+                      if (length(par[["col"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["col"]]))
+                        cols <- rep(par[["col"]], repn)[1:lensu]
+                      } else {
+                        cols <- par[["col"]]
+                      }
+                      par[["col"]] <- NULL
+                    }
+                    if ("lty" %in% names(par)) {
+                      if (length(par[["lty"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["lty"]]))
+                        ltys <- rep(par[["lty"]], repn)[1:lensu]
+                      } else {
+                        ltys <- par[["lty"]]
+                      }
+                      par[["lty"]] <- NULL
+                    }
+                    if ("lwd" %in% names(par)) {
+                      if (length(par[["lwd"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["lwd"]]))
+                        lwds <- rep(par[["lwd"]], repn)[1:lensu]
+                      } else {
+                        lwds <- par[["lwd"]]
+                      }
+                      par[["lwd"]] <- NULL
+                    }
+                    if ("type" %in% names(par)) {
+                      if (length(par[["type"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["type"]]))
+                        types <- rep(par[["type"]], repn)[1:lensu]
+                      } else {
+                        types <- par[["type"]]
+                      }
+                      par[["type"]] <- NULL
+                    }
+                    if ("pch" %in% names(par)) {
+                      if (length(par[["pch"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["pch"]]))
+                        pchs <- rep(par[["pch"]], repn)[1:lensu]
+                      } else {
+                        pchs <- par[["pch"]]
+                      }
+                      par[["pch"]] <- NULL
+                    }
+                    if ("bg" %in% names(par)) {
+                      if (length(par[["bg"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["bg"]]))
+                        bgs <- rep(par[["bg"]], repn)[1:lensu]
+                      } else {
+                        bgs <- par[["bg"]]
+                      }
+                      par[["bg"]] <- NULL
+                    }
+                    if ("cex" %in% names(par)) {
+                      if (length(par[["cex"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["cex"]]))
+                        cexs <- rep(par[["cex"]], repn)[1:lensu]
+                      } else {
+                        cexs <- par[["cex"]]
+                      }
+                      par[["cex"]] <- NULL
+                    }
+                    parspec <- list2str(names(par), par)
+                    if (parspec != "") {
+                      parspec <- sprintf(",%s", parspec)
+                    }
+                    for (i in 1:length(select)) {
+                      eval(parse(text = sprintf("lines(fv[[i]][,numterm[1]], fv[[i]][,'fit'], 
+\t\t\t\t\t\t\t\t\tcol=cols[i], lty=ltys[i], lwd=lwds[i],
+\t\t\t\t\t\t\t\t\ttype=types[i], pch=pchs[i], cex=cexs[i], bg=bgs[i]
+\t\t\t\t\t\t\t\t\t%s)", 
+                        parspec)))
+                    }
+                    # with grouping predictor:
+                  } else {
+                    lensu <- max(c(length(levels(fv[[1]][, groupterm[1]])), 1))
+                    # default settings:
+                    cols <- 1:lensu
+                    ltys <- 1:lensu
+                    lwds <- rep(1, lensu)
+                    types <- rep("l", lensu)
+                    pchs <- rep(21, lensu)
+                    bgs <- rep(1, lensu)
+                    cexs <- rep(1, lensu)
+                    if ("col" %in% names(par)) {
+                      if (length(par[["col"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["col"]]))
+                        cols <- rep(par[["col"]], repn)[1:lensu]
+                      } else {
+                        cols <- par[["col"]]
+                      }
+                      par[["col"]] <- NULL
+                    }
+                    if ("lty" %in% names(par)) {
+                      if (length(par[["lty"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["lty"]]))
+                        ltys <- rep(par[["lty"]], repn)[1:lensu]
+                      } else {
+                        ltys <- par[["lty"]]
+                      }
+                      par[["lty"]] <- NULL
+                    }
+                    if ("lwd" %in% names(par)) {
+                      if (length(par[["lwd"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["lwd"]]))
+                        lwds <- rep(par[["lwd"]], repn)[1:lensu]
+                      } else {
+                        lwds <- par[["lwd"]]
+                      }
+                      par[["lwd"]] <- NULL
+                    }
+                    if ("type" %in% names(par)) {
+                      if (length(par[["type"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["type"]]))
+                        types <- rep(par[["type"]], repn)[1:lensu]
+                      } else {
+                        types <- par[["type"]]
+                      }
+                      par[["type"]] <- NULL
+                    }
+                    if ("pch" %in% names(par)) {
+                      if (length(par[["pch"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["pch"]]))
+                        pchs <- rep(par[["pch"]], repn)[1:lensu]
+                      } else {
+                        pchs <- par[["pch"]]
+                      }
+                      par[["pch"]] <- NULL
+                    }
+                    if ("bg" %in% names(par)) {
+                      if (length(par[["bg"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["bg"]]))
+                        bgs <- rep(par[["bg"]], repn)[1:lensu]
+                      } else {
+                        bgs <- par[["bg"]]
+                      }
+                      par[["bg"]] <- NULL
+                    }
+                    if ("cex" %in% names(par)) {
+                      if (length(par[["cex"]]) < lensu) {
+                        repn <- ceiling(lensu/length(par[["cex"]]))
+                        cexs <- rep(par[["cex"]], repn)[1:lensu]
+                      } else {
+                        cexs <- par[["cex"]]
+                      }
+                      par[["cex"]] <- NULL
+                    }
+                    parspec <- list2str(names(par), par)
+                    if (parspec != "") {
+                      parspec <- sprintf(",%s", parspec)
+                    }
+                    count <- 1
+                    for (su in levels(fv[[1]][, groupterm[1]])) {
+                      for (i in 1:length(select)) {
+                        tmp <- fv[[i]][fv[[i]][, groupterm[1]] == su, ]
+                        eval(parse(text = sprintf("lines(tmp[,numterm[1]], tmp[,'fit'], 
+\t\t\t\t\t\t\t\tcol=cols[count], lty=ltys[count], lwd=lwds[count],
+\t\t\t\t\t\t\t\ttype=types[count], pch=pchs[count], cex=cexs[count], bg=bgs[count]
+\t\t\t\t\t\t\t\t%s)", 
+                          parspec)))
+                      }
+                      count <- count + 1
+                    }
+                  }
+                }  # end if plot=TRUE
+            invisible(fv)
+        }  # end else un=NULL
+    }  # end else class model
 }
 
 
@@ -859,11 +1122,11 @@ inspect_random <- function(model, select=1, fun=NULL,
 #' Generally other columns from the same data frame as the model was fitted on.
 #' @param cond A named list of the values to use for the other predictor terms 
 #' (not in view) or to select specific trials or time series to plot. 
-#' @param input Text string: "data" (default) plots the data, "resid" plots 
-#' the model residuals, and "fitted" plots the fitted values.
+#' @param input Text string: 'data' (default) plots the data, 'resid' plots 
+#' the model residuals, and 'fitted' plots the fitted values.
 #' @param rm.ranef Logical: whether or not to include the random effects in 
-#' the model predictions. Default is TRUE. Relevant for \code{input="fitted"} 
-#' and \code{input="resid"} (i.e., whether or not the residuals contain the 
+#' the model predictions. Default is TRUE. Relevant for \code{input='fitted'} 
+#' and \code{input='resid'} (i.e., whether or not the residuals contain the 
 #' random effects, TRUE and FALSE respectively ).
 #' @param col Vector with one color value (i.e., all data points will have the 
 #' same color), color values for each grouping condition specified in 
@@ -888,7 +1151,7 @@ inspect_random <- function(model, select=1, fun=NULL,
 #' @param v0 A vector indicating where to add dotted vertical lines for 
 #' reference. By default no values provided.
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "fitted values"). Default is FALSE.
+#' (i.e., 'fitted values'). Default is FALSE.
 #' @param transform Function for transforming the fitted values. 
 #' Default is NULL.
 #' @param transform.view Function for transforming the view values. 
@@ -914,46 +1177,43 @@ inspect_random <- function(model, select=1, fun=NULL,
 #'     data=simdat)
 #'
 #' # All data points, without clustering:
-#' plot_data(m1, view="Time")
+#' plot_data(m1, view='Time')
 #' 
 #' # All data, clustered by Trial (very small dots):
-#' plot_data(m1, view="Time", split_by="Trial",
+#' plot_data(m1, view='Time', split_by='Trial',
 #'     cex=.25)
 #' # Add a smooth for each trial:
-#' plot_smooth(m1, view="Time", plot_all="Trial", 
+#' plot_smooth(m1, view='Time', plot_all='Trial', 
 #'     add=TRUE, rm.ranef=TRUE)
 #' # Add the model predictions in same color:
-#' plot_smooth(m1, view="Time", plot_all="Trial", add=TRUE, rm.ranef=TRUE)
+#' plot_smooth(m1, view='Time', plot_all='Trial', add=TRUE, rm.ranef=TRUE)
 #'
 #' # Alternatively, use data to select events:
-#' plot_data(m1, view="Time", split_by=list(Event=simdat$Event),
+#' plot_data(m1, view='Time', split_by=list(Event=simdat$Event),
 #'     type='l')
 #' # which is the same as:
-#' plot_data(m1, view="Time", split_by=list(Subject=simdat$Subject, Trial=simdat$Trial),
+#' plot_data(m1, view='Time', split_by=list(Subject=simdat$Subject, Trial=simdat$Trial),
 #'     type='l')
 #' # Only for Trial=0
-#' plot_data(m1, view="Time", split_by=list(Event=simdat$Event),
+#' plot_data(m1, view='Time', split_by=list(Event=simdat$Event),
 #'    cond=list(Trial=0), type='l')
 #' # This is the same:
-#' plot_data(m1, view="Time", split_by="Subject",
+#' plot_data(m1, view='Time', split_by='Subject',
 #'    cond=list(Trial=0), type='l')
 #' # Add subject smooths:
-#' plot_smooth(m1, view="Time", plot_all="Subject", 
+#' plot_smooth(m1, view='Time', plot_all='Subject', 
 #'     cond=list(Trial=0), add=TRUE)
 #'
 #' # Change the colors:
-#' plot_data(m1, view="Time", split_by="Subject",
+#' plot_data(m1, view='Time', split_by='Subject',
 #'    cond=list(Trial=0), type='l', col='gray', alpha=1)
 #' }
 #' 
 #' @author Jacolien van Rij, idea of Tino Sering
 #' @family Functions for model inspection
-plot_data <- function(model, view, split_by=NULL, 
-	cond = NULL, input="data", rm.ranef=NULL, alpha=NULL, 
-   	col = NULL, add=FALSE, eegAxis=FALSE, 
-    main=NULL, xlab=NULL, ylab=NULL, ylim=NULL, 
-    h0=0, v0=NULL, hide.label=FALSE, transform=NULL, 
-    transform.view = NULL, print.summary=getOption('itsadug_print'), 
+plot_data <- function(model, view, split_by = NULL, cond = NULL, input = "data", rm.ranef = NULL, alpha = NULL, 
+    col = NULL, add = FALSE, eegAxis = FALSE, main = NULL, xlab = NULL, ylab = NULL, ylim = NULL, h0 = 0, 
+    v0 = NULL, hide.label = FALSE, transform = NULL, transform.view = NULL, print.summary = getOption("itsadug_print"), 
     ...) {
     v.names <- names(model$var.summary)
     dat <- model$model
@@ -962,220 +1222,229 @@ plot_data <- function(model, view, split_by=NULL,
     eventcol <- sprintf("%s%d", "ev", sample.int(1e+06, size = 1L))
     colcol <- sprintf("%s%d", "col", sample.int(1e+06, size = 1L))
     
-    if(is.null(main)){ main <- input }
-    if(is.null(xlab)){ xlab <- view }
-    if(is.null(ylab)){ ylab <- resp}
+    if (is.null(main)) {
+        main <- input
+    }
+    if (is.null(xlab)) {
+        xlab <- view
+    }
+    if (is.null(ylab)) {
+        ylab <- resp
+    }
     if (is.null(view)) {
         stop("Specify one view predictor for the x-axis, either the name of a model predictor or a vector.")
     } else {
-        if(length(view)>1){
-            if(view[1] %in% v.names){
-                view=view[1]
+        if (length(view) > 1) {
+            if (view[1] %in% v.names) {
+                view = view[1]
                 warning("Only first element of view is being used.")
-            }else{
+            } else {
                 stop("View is not column name of data.")
             }
-        }else{
+        } else {
             if (sum(view %in% v.names) != 1) {
                 stop(paste(c("View variable must be one of", v.names), collapse = ", "))
             }
-            if (!inherits(model$var.summary[[view]], c("numeric"))){
+            if (!inherits(model$var.summary[[view]], c("numeric"))) {
                 stop("Don't know what to do with parametric terms that are not simple numeric variables.")
             }
         }
-        dat[,viewcol] <- dat[,view]
+        dat[, viewcol] <- dat[, view]
     }
     y <- NULL
-    if(input=="data"){
+    if (input == "data") {
         y <- resp
-    }else if(input=="fitted"){
-        dat$fitted <- get_fitted(model, rm.ranef=rm.ranef)
+    } else if (input == "fitted") {
+        dat$fitted <- get_fitted(model, rm.ranef = rm.ranef)
         y <- "fitted"
-    }else if(input=="resid"){
-        fit <- get_fitted(model, rm.ranef=rm.ranef)
-        dat$resid <- dat[,resp] - fit
+    } else if (input == "resid") {
+        fit <- get_fitted(model, rm.ranef = rm.ranef)
+        dat$resid <- dat[, resp] - fit
         y <- "resid"
     }
     missing <- missing_est(model)
-    group=list()
-    if(!is.null(split_by)){
-        if(!is.list(split_by)){
-            if(!all(split_by %in% colnames(dat))){
-                notindata <- paste(split_by[!split_by %in% colnames(dat)], collapse=", ")
-                stop(sprintf("split_by value(s) %s is / are not included as predictor in the model.", 
-                    notindata))
-            }else{
-                for(i in split_by){
-                    group[[i]] <- as.vector(dat[,i])
+    group = list()
+    if (!is.null(split_by)) {
+        if (!is.list(split_by)) {
+            if (!all(split_by %in% colnames(dat))) {
+                notindata <- paste(split_by[!split_by %in% colnames(dat)], collapse = ", ")
+                stop(sprintf("split_by value(s) %s is / are not included as predictor in the model.", notindata))
+            } else {
+                for (i in split_by) {
+                  group[[i]] <- as.vector(dat[, i])
                 }
             }
-        }else{
+        } else {
             group <- split_by
         }
         split_by <- group
         for (i in 1:length(split_by)) {
             if (length(split_by[[i]]) != nrow(dat)) {
-                if(length(missing)>0){
-                    split_by[[i]] = split_by[[i]][-missing]
-                    if (length(split_by[[i]]) != nrow(dat)){
-                        warning(sprintf("Split factor %s is not of same length as the data.", names(split_by)[i]))
-                    }
+                if (length(missing) > 0) {
+                  split_by[[i]] = split_by[[i]][-missing]
+                  if (length(split_by[[i]]) != nrow(dat)) {
+                    warning(sprintf("Split factor %s is not of same length as the data.", names(split_by)[i]))
+                  }
                 }
             }
         }
-        if(length(split_by) > 1){
-            split_by=data.frame(split_by)
-            dat[,eventcol] <- interaction(split_by)
-        }else{
-            dat[,eventcol] <- as.factor( split_by[[1]] )
+        if (length(split_by) > 1) {
+            split_by = data.frame(split_by, stringsAsFactors = FALSE)
+            dat[, eventcol] <- interaction(split_by)
+        } else {
+            dat[, eventcol] <- as.factor(split_by[[1]])
         }
-    }else{
+    } else {
         dat[, eventcol] <- NULL
     }
-    if(!is.null(cond)){
+    if (!is.null(cond)) {
         cn <- names(cond)
-        for(icn in cn){
-        	if(icn %in% v.names){
-        		dat <- dat[dat[,icn] %in% cond[[icn]],]
-        	}else if(length(cond[[icn]])==nrow(dat)){
-        		if(is.logical(cond[[icn]])){
-        			dat <- dat[cond[[icn]]==TRUE,]
-        		}else{
-        			stop(sprintf("%s not found in the model. Provide a column of TRUE (include) and FALSE (do not include) of the size of the data.", icn))
-        		}        		
-        	}else if(length(cond[[icn]])>nrow(dat)){
-                if(!is.null(missing)){
-                    if(is.logical(cond[[icn]])){
-                        dat <- dat[cond[[icn]][-missing]==TRUE,]
-                    }else{
-                        stop(sprintf("%s not found in the model. Provide a column of TRUE (include) and FALSE (do not include) of the size of the data.", icn))
-                    }  
+        for (icn in cn) {
+            if (icn %in% v.names) {
+                dat <- dat[dat[, icn] %in% cond[[icn]], ]
+            } else if (length(cond[[icn]]) == nrow(dat)) {
+                if (is.logical(cond[[icn]])) {
+                  dat <- dat[cond[[icn]] == TRUE, ]
+                } else {
+                  stop(sprintf("%s not found in the model. Provide a column of TRUE (include) and FALSE (do not include) of the size of the data.", 
+                    icn))
                 }
-        	}else{
-        		stop(sprintf("%s not found in the model. Provide a column of TRUE (include) and FALSE (do not include) of the size of the data.", icn))
-        	}
+            } else if (length(cond[[icn]]) > nrow(dat)) {
+                if (!is.null(missing)) {
+                  if (is.logical(cond[[icn]])) {
+                    dat <- dat[cond[[icn]][-missing] == TRUE, ]
+                  } else {
+                    stop(sprintf("%s not found in the model. Provide a column of TRUE (include) and FALSE (do not include) of the size of the data.", 
+                      icn))
+                  }
+                }
+            } else {
+                stop(sprintf("%s not found in the model. Provide a column of TRUE (include) and FALSE (do not include) of the size of the data.", 
+                  icn))
+            }
         }
     }
     # sample events:
     dat <- droplevels(dat)
-    if(!is.null(transform)){
-        dat[,y] <- sapply(dat[,y], transform)
+    if (!is.null(transform)) {
+        dat[, y] <- sapply(dat[, y], transform)
     }
-    if(!is.null(transform.view)){
-        dat[,viewcol] <- sapply(dat[,viewcol], transform.view)
-    }    
-    if(is.null(ylim)){ 
-        ylim <- range(dat[,y], na.rm=TRUE)
+    if (!is.null(transform.view)) {
+        dat[, viewcol] <- sapply(dat[, viewcol], transform.view)
     }
-    if(is.null(alpha)){
-    	if(names(dev.cur())[1] %in% c("X11", "postscript", "xfig", "pictex") ){
-    		alpha=1
-    	}else{
-    		alpha=.5
-    	}
+    if (is.null(ylim)) {
+        ylim <- range(dat[, y], na.rm = TRUE)
     }
-    parlist=list(...)
-    if(! "pch" %in% names(parlist)){
-    	parlist[['pch']] <- 16
+    if (is.null(alpha)) {
+        if (names(dev.cur())[1] %in% c("X11", "postscript", "xfig", "pictex")) {
+            alpha = 1
+        } else {
+            alpha = 0.5
+        }
     }
-    if(! "cex" %in% names(parlist)){
-    	parlist[['cex']] <- .5
+    parlist = list(...)
+    if (!"pch" %in% names(parlist)) {
+        parlist[["pch"]] <- 16
+    }
+    if (!"cex" %in% names(parlist)) {
+        parlist[["cex"]] <- 0.5
     }
     line.par <- c("type", "pch", "lty", "bg", "cex", "lwd", "lend", "ljoin", "lmitre")
-    plot.par =list()
-    for(i in names(parlist)){
-        if(!i %in% line.par){
+    plot.par = list()
+    for (i in names(parlist)) {
+        if (!i %in% line.par) {
             plot.par[[i]] = parlist[[i]]
         }
     }
-    line.args <- list2str(x=line.par,inputlist=parlist)
-    plot.args <- list2str(x=names(plot.par), inputlist=parlist)
-    if(add==FALSE){
-        eval(parse(text=sprintf("emptyPlot(range(dat[,view]), ylim,
+    line.args <- list2str(x = line.par, inputlist = parlist)
+    plot.args <- list2str(x = names(plot.par), inputlist = parlist)
+    if (add == FALSE) {
+        eval(parse(text = sprintf("emptyPlot(range(dat[,view]), ylim,
             main=main, xlab=xlab, ylab=ylab,
-            h0=h0, v0=v0, eegAxis=eegAxis, %s)", plot.args) ))
-        if(hide.label==FALSE){
+            h0=h0, v0=v0, eegAxis=eegAxis, %s)", 
+            plot.args)))
+        if (hide.label == FALSE) {
             addlabel = sprintf("%s values", input)
             
-            mtext(addlabel, side=4, line=0, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
-            if(!is.null(transform)){
-                mtext("transformed", side=4, line=.75, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
+            mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            if (!is.null(transform)) {
+                mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
             }
-        }      
+        }
     }
     
     mycol <- NULL
-    if(is.null(col)){
-        if(!is.null(split_by)){
+    if (is.null(col)) {
+        if (!is.null(split_by)) {
             alllevels <- length(levels(dat[, eventcol]))
-            mycol <- rainbow(alllevels)[as.numeric(dat[,eventcol])]
-        }else{
-            mycol <-  rep( ifelse(names(dev.cur())[1] %in% c("X11", "postscript", "xfig", "pictex"), 'darkgray', alpha(1, f=.25) ), nrow(dat) )
+            mycol <- rainbow(alllevels)[as.numeric(dat[, eventcol])]
+        } else {
+            mycol <- rep(ifelse(names(dev.cur())[1] %in% c("X11", "postscript", "xfig", "pictex"), "darkgray", 
+                alpha(1, f = 0.25)), nrow(dat))
         }
-    }else{
-        if(!is.null(split_by)){
-            if(length(col) == length(levels(dat[,eventcol]))){
-                mycol <- col[as.numeric(dat[,eventcol])]
-            }else if(length(col) == nrow(dat)){
+    } else {
+        if (!is.null(split_by)) {
+            if (length(col) == length(levels(dat[, eventcol]))) {
+                mycol <- col[as.numeric(dat[, eventcol])]
+            } else if (length(col) == nrow(dat)) {
                 mycol <- col
-            }else {
-                if(!is.null(missing)){
-                    mycol <- col[-missing]
-                }else{
-                    if(length(col)>1){
-                        warning("Only first element of col is used.")
-                    }
-                    mycol <- col[1]
+            } else {
+                if (!is.null(missing)) {
+                  mycol <- col[-missing]
+                } else {
+                  if (length(col) > 1) {
+                    warning("Only first element of col is used.")
+                  }
+                  mycol <- col[1]
                 }
             }
-        }else{
-            if(length(col) == nrow(dat)){
+        } else {
+            if (length(col) == nrow(dat)) {
                 mycol <- col
-            }else{
-                if(!is.null(missing)){
-                    mycol <- col[-missing]
-                }else{
-                    if(length(col)>1){
-                        warning("Only first element of col is used.")
-                    }
-                    mycol <- col[1]
+            } else {
+                if (!is.null(missing)) {
+                  mycol <- col[-missing]
+                } else {
+                  if (length(col) > 1) {
+                    warning("Only first element of col is used.")
+                  }
+                  mycol <- col[1]
                 }
             }
-        }      
+        }
     }
     dat[, colcol] <- mycol
-    if(!is.null(split_by)){
-	    for(i in levels(dat[,eventcol])){
-	    	newd <- NULL
-	    	newd <- droplevels(dat[dat[, eventcol]==i,])
-	    	if(nrow(newd)>0){
-	    		# plot data:
-	    		eval(parse(text=sprintf( "points(newd[,viewcol], newd[,y], col=alpha(newd[,colcol],f=alpha), %s)", line.args)))
-	    		
-	    	} else{
-	    		if(print.summary){
-	    			message(sprintf("No data for event %s. Ignored.", i))
-	    		}
-	    	} 
-	    }
-	}else{
-		newd <- droplevels(dat)
-    	if(nrow(newd)>1){
-    		# plot data:
-    		eval(parse(text=sprintf( "points(newd[,viewcol], newd[,y], col=alpha(newd[,colcol], f=alpha), %s)", line.args)))
-    	} else{
-    		if(print.summary){
-	    		message("No data to be plotted.")
-	    	}
-    	} 	
-	}
-    #output
-    invisible( list(data = dat[,!colnames(dat) %in% c(viewcol, eventcol, colcol)], 
-    	view = dat[,viewcol], color = mycol  ) )
+    if (!is.null(split_by)) {
+        for (i in levels(dat[, eventcol])) {
+            newd <- NULL
+            newd <- droplevels(dat[dat[, eventcol] == i, ])
+            if (nrow(newd) > 0) {
+                # plot data:
+                eval(parse(text = sprintf("points(newd[,viewcol], newd[,y], col=alpha(newd[,colcol],f=alpha), %s)", 
+                  line.args)))
+                
+            } else {
+                if (print.summary) {
+                  message(sprintf("No data for event %s. Ignored.", i))
+                }
+            }
+        }
+    } else {
+        newd <- droplevels(dat)
+        if (nrow(newd) > 1) {
+            # plot data:
+            eval(parse(text = sprintf("points(newd[,viewcol], newd[,y], col=alpha(newd[,colcol], f=alpha), %s)", 
+                line.args)))
+        } else {
+            if (print.summary) {
+                message("No data to be plotted.")
+            }
+        }
+    }
+    # output
+    invisible(list(data = dat[, !colnames(dat) %in% c(viewcol, eventcol, colcol)], view = dat[, viewcol], 
+        color = mycol))
 }
- 
 
 
 
@@ -1247,93 +1516,92 @@ plot_data <- function(model, view, split_by=NULL,
 #' }
 #' 
 #' # see the vignette for examples:
-#' vignette("overview", package="itsadug")
+#' vignette('overview', package='itsadug')
 #' @author Jacolien van Rij, based on a function of Fabian Tomaschek 
 #' @seealso \code{\link[mgcv]{plot.gam}}
 #'
 #' @family Functions for model inspection
-plot_parametric <- function(x, pred, cond = list(), 
-    parametricOnly = FALSE, rm.ranef=NULL, 
-    col = 'black', se = 1.96, print.summary=getOption('itsadug_print'),
-    main=NULL, xlab=NULL, ...) {
-       
+plot_parametric <- function(x, pred, cond = list(), parametricOnly = FALSE, rm.ranef = TRUE, col = "black", 
+    se = 1.96, print.summary = getOption("itsadug_print"), main = NULL, xlab = NULL, ...) {
+    
     dnm <- names(list(...))
     parTerms <- NULL
-    if(parametricOnly){
+    if (parametricOnly) {
         parTerms <- summary(x)$p.t
     }
     v.names <- names(x$var.summary)
     if (sum(names(pred) %in% v.names) != length(pred)) {
         stop(paste(c("Pred variable must be one of", v.names), collapse = ", "))
     }
-    for(i in 1:length(names(pred))){
-        if (!inherits(x$var.summary[[names(pred)[i]]], c("factor"))){
+    for (i in 1:length(names(pred))) {
+        if (!inherits(x$var.summary[[names(pred)[i]]], c("factor"))) {
             stop("Don't know what to do with parametric terms that are not simple grouping variables.")
         }
     }
-    if(!is.null(cond)){
+    if (!is.null(cond)) {
         cn <- names(cond)
-        test <- sapply(cn, function(x){
-            if(length(unique(cond[[x]]))>1){
+        test <- sapply(cn, function(x) {
+            if (length(unique(cond[[x]])) > 1) {
                 stop("Do not specify more than 1 value for conditions listed in the argument cond.")
-            }else{
+            } else {
                 TRUE
             }
         })
     }
-    for(i in names(pred)){
+    for (i in names(pred)) {
         cond[[i]] <- pred[[i]]
     }
     newd <- NULL
-    if(parametricOnly){
+    if (parametricOnly) {
         su <- x$var.summary
         new.cond <- list()
-        for(i in names(su)){
-            if(i %in% names(cond)){
+        for (i in names(su)) {
+            if (i %in% names(cond)) {
                 new.cond[[i]] <- cond[[i]]
-            }else{
-                if(class(su[[i]])=="factor"){
-                    new.cond[[i]] <- as.character(su[[i]][1])
-                }else if(class(su[[i]])=="numeric"){
-                    new.cond[[i]] <- su[[i]][2]
+            } else {
+                if (class(su[[i]]) == "factor") {
+                  new.cond[[i]] <- as.character(su[[i]][1])
+                } else if (class(su[[i]]) == "numeric") {
+                  new.cond[[i]] <- su[[i]][2]
                 }
             }
         }
         newd <- expand.grid(new.cond)
-        p <- mgcv::predict.gam(x, newd, type='lpmatrix')
+        p <- mgcv::predict.gam(x, newd, type = "lpmatrix")
         rm.col <- colnames(p)[!colnames(p) %in% names(parTerms)]
-        p[,rm.col] <- 0
-        if(length(rm.col)==0){
-            warning("No smooth terms in the model.\n")               
+        p[, rm.col] <- 0
+        if (length(rm.col) == 0) {
+            warning("No smooth terms in the model.\n")
         }
         newd$fit <- p %*% coef(x)
-        if(se>0){
-            newd$CI <- se*sqrt(rowSums((p%*%vcov(x))*p))
+        if (se > 0) {
+            newd$CI <- se * sqrt(rowSums((p %*% vcov(x)) * p))
         }
-    }else{
-        newd <- get_predictions(x, cond=cond, se=ifelse(se>0, TRUE, FALSE), 
-            f=ifelse(se>0, se, 1.96), rm.ranef=rm.ranef,
-            print.summary=print.summary)
+    } else {
+        newd <- get_predictions(x, cond = cond, se = ifelse(se > 0, TRUE, FALSE), f = ifelse(se > 0, se, 1.96), 
+            rm.ranef = rm.ranef, print.summary = print.summary)
     }
     newd$VnewCol <- NA
     newd <- droplevels(newd)
-    if(length(pred)>1){
+    if (length(pred) > 1) {
         newd$VnewCol <- interaction(newd[, names(pred)])
-    }else{
-        newd$VnewCol <- newd[,names(pred)[1]]
+    } else {
+        newd$VnewCol <- newd[, names(pred)[1]]
     }
-    newd <- newd[order(newd$VnewCol),]
-    if(is.null(main)){ main <- paste(names(pred), collapse=' x ') }
-    if(is.null(xlab)){ xlab <- names(x$model)[!names(x$model) %in% v.names]}
+    newd <- newd[order(newd$VnewCol), ]
+    if (is.null(main)) {
+        main <- paste(names(pred), collapse = " x ")
+    }
+    if (is.null(xlab)) {
+        xlab <- names(x$model)[!names(x$model) %in% v.names]
+    }
     
-    dotplot_error(x=as.vector(newd$fit), se.val=as.vector(newd$CI),
-        labels=as.character(newd$VnewCol), 
-        main=main, xlab=xlab, ...)
-    abline(v=0, lty=3)
+    dotplot_error(x = as.vector(newd$fit), se.val = as.vector(newd$CI), labels = as.character(newd$VnewCol), 
+        main = main, xlab = xlab, ...)
+    abline(v = 0, lty = 3)
     newd$VnewCol <- NULL
     invisible(list(fv = newd))
 }
- 
 
 
 
@@ -1419,11 +1687,11 @@ plot_parametric <- function(x, pred, cond = list(),
 #' @param transform.view Function for transforming 
 #' the values on the x-axis. Defaults to NULL (no transformation).
 #' @param legend_plot_all Legend location. This could be a keyword from 
-#' the list "bottomright", "bottom", "bottomleft", "left", "topleft", "top", 
-#' "topright", "right" and "center", or a list with \code{x} and \code{y} 
+#' the list 'bottomright', 'bottom', 'bottomleft', 'left', 'topleft', 'top', 
+#' 'topright', 'right' and 'center', or a list with \code{x} and \code{y} 
 #' coordinate (e.g., \code{list(x=0,y=0)}). 
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "fitted values"). Default is FALSE.
+#' (i.e., 'fitted values'). Default is FALSE.
 #' @param ... other options to pass on to lines and plot, 
 #' see \code{\link[graphics]{par}}
 #' @section Notes:
@@ -1444,16 +1712,16 @@ plot_parametric <- function(x, pred, cond = list(),
 #' # Default plot produces only surface of Time x Trial:
 #' plot(m1, select=1)
 #' # Only the Time component:
-#' plot_smooth(m1, view="Time")
+#' plot_smooth(m1, view='Time')
 #' # Note the summary that is printed.
 #'
 #' # without random effects:
-#' plot_smooth(m1, view="Time", rm.ranef=TRUE)
+#' plot_smooth(m1, view='Time', rm.ranef=TRUE)
 #' 
 #' # Plot summed effects:
 #' dev.new(width=8, height=4) # use x11(,8,4) on Linux
 #' par(mfrow=c(1,2))
-#' fvisgam(m1, view=c("Time", "Trial"), 
+#' fvisgam(m1, view=c('Time', 'Trial'), 
 #'     plot.type='contour', color='topo', main='interaction',
 #'     rm.ranef=TRUE)
 #' arrows(x0=0, x1=2200, y0=-5, y1=-5, col='red', 
@@ -1468,22 +1736,22 @@ plot_parametric <- function(x, pred, cond = list(),
 #'     data=simdat, discrete=TRUE)
 #' 
 #' # Plot all levels of a predictor:
-#' plot_smooth(m2, view='Time', plot_all="Group",
+#' plot_smooth(m2, view='Time', plot_all='Group',
 #'     rm.ranef=TRUE)
 #' # It also possible to combine predictors in plot_all.
 #' # Note: this is not a meaningfull plot, because Subjects
 #' # fall in only one group. Just for illustration purposes!
-#' plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"))
+#' plot_smooth(m2, view='Time', plot_all=c('Group', 'Subject'))
 #' # Clearly visible difference in confidence interval, because  
-#' # a01 does not occur in Group "Children":
+#' # a01 does not occur in Group 'Children':
 #' # (Note that this plot generates warning)
-#' plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"), cond=list(Subject="a01"))
+#' plot_smooth(m2, view='Time', plot_all=c('Group', 'Subject'), cond=list(Subject='a01'))
 #'
 #' # Using sim.ci: simultaneous CI instead of pointwise CI
 #' dev.new(width=8, height=4) # use x11(,8,4) on Linux
 #' par(mfrow=c(1,2))
-#' plot_smooth(m2, view='Time', plot_all="Group", rm.ranef=TRUE)
-#' plot_smooth(m2, view='Time', rm.ranef=TRUE, plot_all="Group", sim.ci=TRUE, 
+#' plot_smooth(m2, view='Time', plot_all='Group', rm.ranef=TRUE)
+#' plot_smooth(m2, view='Time', rm.ranef=TRUE, plot_all='Group', sim.ci=TRUE, 
 #'     add=TRUE, shade=FALSE, xpd=TRUE)
 #' plot_smooth(m2, view='Time', rm.ranef=TRUE, sim.ci=TRUE, col='red')
 #' 
@@ -1491,43 +1759,39 @@ plot_parametric <- function(x, pred, cond = list(),
 #' 
 #' # Using transform
 #' # Plot log-transformed dependent predictor on original scale:
-#' plot_smooth(m1, view="Time", rm.ranef=TRUE, transform=exp)
+#' plot_smooth(m1, view='Time', rm.ranef=TRUE, transform=exp)
 #'
 #' # Notes on transform.view: 
 #' # This will generate an error, because x-values <= 0 will result in NaN:
-#' plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log)
+#' plot_smooth(m1, view='Time', rm.ranef=TRUE, transform.view=log)
 #' # adjusting the x-axis helps:
-#' plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log,
+#' plot_smooth(m1, view='Time', rm.ranef=TRUE, transform.view=log,
 #'    xlim=c(1,2000))
 #' 
 #' }
 #'
 #' # and for a quick overview of plotfunctions:
-#' vignette("overview", package="itsadug")
+#' vignette('overview', package='itsadug')
 #'
 #' @author Jacolien van Rij and Martijn Wieling. 
 #' @seealso \code{\link[mgcv]{plot.gam}}, \code{\link{plot_diff}} 
 #'
 #' @family Functions for model inspection
-plot_smooth <- function(x, view = NULL, cond = list(), 
-    plot_all=NULL, rm.ranef=NULL,
-    n.grid = 30, rug = NULL, add=FALSE, 
-    se = 1.96, sim.ci=FALSE, shade = TRUE, eegAxis=FALSE, 
-    col=NULL, lwd=NULL, lty=NULL,
-    print.summary=getOption('itsadug_print'),
-    main=NULL, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, h0=0, v0=NULL, 
-    transform=NULL, transform.view=NULL, legend_plot_all=NULL, 
-    hide.label=FALSE, ...) {
-       
-    # For simultaneous CI, n.grid needs to be at least 200, 
-    # otherwise the simulations for the simultaneous CI is not adequate
-    if (sim.ci==TRUE) { 
-        n.grid = max(n.grid,200) 
+plot_smooth <- function(x, view = NULL, cond = list(), plot_all = NULL, rm.ranef = TRUE, n.grid = 30, rug = NULL, 
+    add = FALSE, se = 1.96, sim.ci = FALSE, shade = TRUE, eegAxis = FALSE, col = NULL, lwd = NULL, lty = NULL, 
+    print.summary = getOption("itsadug_print"), main = NULL, xlab = NULL, ylab = NULL, xlim = NULL, ylim = NULL, 
+    h0 = 0, v0 = NULL, transform = NULL, transform.view = NULL, legend_plot_all = NULL, hide.label = FALSE, 
+    ...) {
+    
+    # For simultaneous CI, n.grid needs to be at least 200, otherwise the simulations for the simultaneous CI
+    # is not adequate
+    if (sim.ci == TRUE) {
+        n.grid = max(n.grid, 200)
     }
-    if(is.null(rug)){
-        if(nrow(x$model) < 10000){
+    if (is.null(rug)) {
+        if (nrow(x$model) < 10000) {
             rug = TRUE
-        }else{
+        } else {
             rug = FALSE
         }
     }
@@ -1536,183 +1800,178 @@ plot_smooth <- function(x, view = NULL, cond = list(),
     if (is.null(view)) {
         stop("Specify one view predictors for the x-axis.")
     } else {
-        if(length(view)>1){
-            warning('Only first element of view will be used.')
+        if (length(view) > 1) {
+            warning("Only first element of view will be used.")
             view <- view[1]
         }
         if (sum(view %in% v.names) != 1) {
             stop(paste(c("View variable must be one of", v.names), collapse = ", "))
         }
-        if (!inherits(x$var.summary[[view[1]]], c("numeric", "integer"))){
+        if (!inherits(x$var.summary[[view[1]]], c("numeric", "integer"))) {
             stop("Don't know what to do with parametric terms that are not simple numeric variables.")
         }
     }
-    if(!is.null(cond)){
+    if (!is.null(cond)) {
         cn <- names(cond)
-        # test <- sapply(cn, function(x){
-        #     if(length(unique(cond[[x]]))>1){
-        #         stop("Do not specify more than 1 value for conditions listed in the argument cond.")
-        #     }else{
-        #         TRUE
-        #     }
-        # })
-        test <- sapply(cn, function(y){
-        	# check predictors:
-        	if( ! y %in% v.names ){
-        		stop(paste(c("Cond predictor must be one of", v.names), collapse = ", "))
-        	}
-        	# check values:
-        	else if( inherits(x$var.summary[[y]], "factor") ){
-        		if( ! all(cond[[y]] %in% levels(x$var.summary[[y]])) ){
-        			stop( sprintf("Not all specified values for %s are found in the model data.",y))
-        		}
-        	}
-        	else{
-        		TRUE
-        	}
+        # test <- sapply(cn, function(x){ if(length(unique(cond[[x]]))>1){ stop('Do not specify more than 1 value
+        # for conditions listed in the argument cond.') }else{ TRUE } })
+        test <- sapply(cn, function(y) {
+            # check predictors:
+            if (!y %in% v.names) {
+                stop(paste(c("Cond predictor must be one of", v.names), collapse = ", "))
+            }
+            # check values:
+            if (inherits(x$var.summary[[y]], "factor")) {
+                if (!all(cond[[y]] %in% levels(x$var.summary[[y]]))) {
+                  stop(sprintf("Not all specified values for %s are found in the model data.", y))
+                }
+            }
+            return(TRUE)
         })
         cond.data <- cond
     }
-    if(!is.null(plot_all)){
-        if(!is.vector(plot_all)){
+    if (!is.null(plot_all)) {
+        if (!is.vector(plot_all)) {
             stop("Argument plot_all should be a vector with predictor names.")
-        }else{
+        } else {
             # check if plot_all in cond
-            if(any(plot_all %in% names(cond))){
-                warning(sprintf("%s in cond and in plot_all. Not all levels are being plotted.",
-                    paste(plot_all[plot_all %in% names(cond)], collapse=', ')))
+            if (any(plot_all %in% names(cond))) {
+                warning(sprintf("%s in cond and in plot_all. Not all levels are being plotted.", paste(plot_all[plot_all %in% 
+                  names(cond)], collapse = ", ")))
                 # plot_all <- plot_all[!plot_all %in% names(cond)]
             }
             # check if plot_all are column names
-            if(any(! plot_all %in% v.names)){
-                warning(sprintf("%s (specified in plot_all) is not a model predictor. Will be ignored.",
-                    paste(plot_all[!plot_all %in% v.names], collapse=', ')))
+            if (any(!plot_all %in% v.names)) {
+                warning(sprintf("%s (specified in plot_all) is not a model predictor. Will be ignored.", paste(plot_all[!plot_all %in% 
+                  v.names], collapse = ", ")))
                 plot_all <- plot_all[plot_all %in% v.names]
             }
             # check length:
-            if(length(plot_all)>0){
-                for(i in plot_all){
-                	if( !i %in% names(cond) ){
-						if(! inherits( x$model[,i], c("factor") )){
-	                        cond[[i]] <- unique(x$model[,i])
-	                        warning(sprintf("Predictor %s is not a factor.", i))
-	                    }else{
-	                        cond[[i]] <- unique(as.character(x$model[,i]))
-	                    }
-                	}
+            if (length(plot_all) > 0) {
+                for (i in plot_all) {
+                  if (!i %in% names(cond)) {
+                    if (!inherits(x$model[, i], c("factor"))) {
+                      cond[[i]] <- sort(unique(x$model[, i]))
+                      warning(sprintf("Predictor %s is not a factor.", i))
+                    } else {
+                      cond[[i]] <- levels(x$model[, i])
+                      # cond[[i]] <- sort(unique(as.character(x$model[, i])))
+                    }
+                  }
                 }
-            }else{
+            } else {
                 plot_all <- NULL
-            }           
+            }
         }
-    }else{
-        if(is.null(col)){
-            col="black"
+    } else {
+        if (is.null(col)) {
+            col = "black"
         }
     }
-    m1 <- seq(min(x$var.summary[[view[1]]], na.rm=TRUE), 
-        max(x$var.summary[[view[1]]], na.rm=TRUE), length=n.grid)
-    if(!is.null(xlim)){
-        m1 <- seq(xlim[1], xlim[2], length=n.grid)
+    m1 <- seq(min(x$var.summary[[view[1]]], na.rm = TRUE), max(x$var.summary[[view[1]]], na.rm = TRUE), length = n.grid)
+    if (!is.null(xlim)) {
+        m1 <- seq(xlim[1], xlim[2], length = n.grid)
     }
     cond[[view[1]]] <- m1
-    newd <- get_predictions(x, cond=cond, se=ifelse(se>0, TRUE, FALSE), 
-        f=ifelse(se>0, se, 1.96), sim.ci=sim.ci, rm.ranef=rm.ranef,
-        print.summary=print.summary)
-    if(se > 0){
-        if(("ul" %in% names(newd)) |("ll" %in% names(newd))){
+    newd <- get_predictions(x, cond = cond, se = ifelse(se > 0, TRUE, FALSE), f = ifelse(se > 0, se, 1.96), 
+        sim.ci = sim.ci, rm.ranef = rm.ranef, print.summary = print.summary)
+    if (se > 0) {
+        if (("ul" %in% names(newd)) | ("ll" %in% names(newd))) {
             warning("Column names 'ul' and / or 'll' are used for plotting confidence intervals. Predictors with the same names may be overwitten, which may cause unexpected effects. Please rename predictors by using capitalization to avoid problems with plotting.")
         }
-        newd$ul <- with(newd, fit+CI)
-        newd$ll <- with(newd, fit-CI)
-        if(sim.ci==TRUE){
-        	newd$ul <- with(newd, fit+sim.CI)
-        	newd$ll <- with(newd, fit-sim.CI)
+        newd$ul <- with(newd, fit + CI)
+        newd$ll <- with(newd, fit - CI)
+        if (sim.ci == TRUE) {
+            newd$ul <- with(newd, fit + sim.CI)
+            newd$ll <- with(newd, fit - sim.CI)
         }
-        if(!is.null(transform)){
+        if (!is.null(transform)) {
             newd$ul <- sapply(newd$ul, transform)
             newd$ll <- sapply(newd$ll, transform)
         }
     }
-    if(!is.null(transform)){
+    if (!is.null(transform)) {
         newd$fit <- sapply(newd$fit, transform)
     }
     # transform values x-axis:
-    errormessage <- function(){
+    errormessage <- function() {
         return("Error: the function specified in transformation.view cannot be applied to x-values, because infinite or missing values are not allowed.")
-    
-    }
-    if(!is.null(transform.view)){
-        newd[,view[1]] <- sapply(newd[,view[1]], transform.view)
         
-        if(any(is.infinite(newd[,view[1]])) | any(is.nan(newd[,view[1]])) | any(is.na(newd[,view[1]]))){
+    }
+    if (!is.null(transform.view)) {
+        newd[, view[1]] <- sapply(newd[, view[1]], transform.view)
+        
+        if (any(is.infinite(newd[, view[1]])) | any(is.nan(newd[, view[1]])) | any(is.na(newd[, view[1]]))) {
             stop(errormessage())
         }
-        if(print.summary){
-            if(rug==TRUE){
-                rug=FALSE
+        if (print.summary) {
+            if (rug == TRUE) {
+                rug = FALSE
                 cat("\t* Note: X-values are transformed, no rug are printed.\n")
-            }else{
+            } else {
                 cat("\t* Note: X-values are transformed.\n")
             }
         }
     }
     # default layout settings
-    if(is.null(main)){ main <- "" }
-    if(is.null(xlab)){ xlab <- view[1] }
-    if(is.null(ylab)){ ylab <- names(x$model)[!names(x$model) %in% v.names]}
-    if(is.null(ylim)){ 
-        if(se>0){
+    if (is.null(main)) {
+        main <- ""
+    }
+    if (is.null(xlab)) {
+        xlab <- view[1]
+    }
+    if (is.null(ylab)) {
+        ylab <- names(x$model)[!names(x$model) %in% v.names]
+    }
+    if (is.null(ylim)) {
+        if (se > 0) {
             ylim <- range(c(newd$ul, newd$ll))
         } else {
             ylim <- range(newd$fit)
         }
     }
-    if(is.null(col) & is.null(plot_all)){
+    if (is.null(col) & is.null(plot_all)) {
         col = "black"
     }
-    if(is.null(lwd) & is.null(plot_all)){
+    if (is.null(lwd) & is.null(plot_all)) {
         lwd = 1
     }
-    if(is.null(lty) & is.null(plot_all)){
+    if (is.null(lty) & is.null(plot_all)) {
         lty = 1
     }
-    if(add==FALSE){
-        emptyPlot(range(newd[,view[1]]), ylim,
-            main=main, xlab=xlab, ylab=ylab,
-            h0=h0, v0=v0, eegAxis=eegAxis, ...)
-        if(hide.label==FALSE){
+    if (add == FALSE) {
+        emptyPlot(range(newd[, view[1]]), ylim, main = main, xlab = xlab, ylab = ylab, h0 = h0, v0 = v0, eegAxis = eegAxis, 
+            ...)
+        if (hide.label == FALSE) {
             addlabel = "fitted values"
-            if(!is.null(rm.ranef)){
-                if(rm.ranef !=FALSE){
-                    addlabel = paste(addlabel, "excl. random", sep=", ")
+            if (!is.null(rm.ranef)) {
+                if (rm.ranef != FALSE) {
+                  addlabel = paste(addlabel, "excl. random", sep = ", ")
                 }
             }
-            if(sim.ci==TRUE){
-                addlabel = paste(addlabel, "simult.CI", sep=", ")
+            if (sim.ci == TRUE) {
+                addlabel = paste(addlabel, "simult.CI", sep = ", ")
             }
-            mtext(addlabel, side=4, line=0, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
-            if(!is.null(transform)){
-                mtext("transformed", side=4, line=.75, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
+            mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            if (!is.null(transform)) {
+                mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
             }
-        }        
-    }
-    if(rug==TRUE){
-        if(!is.null(plot_all)){
-            rug_model(x, view=view[1])
-        }else{
-            rug.cond = cond
-            for(i in v.names){
-                if(!i %in% names(cond)){
-                    rug.cond[[i]] = unique(newd[,i])
-                }
-            }
-            rug_model(x, view=view[1], cond=rug.cond, rm.ranef=rm.ranef)  
         }
     }
-    if(!is.null(plot_all)){
+    if (rug == TRUE) {
+        if (!is.null(plot_all)) {
+            rug_model(x, view = view[1])
+        } else {
+            rug.cond = cond
+            for (i in v.names) {
+                if (!i %in% names(cond)) {
+                  rug.cond[[i]] = unique(newd[, i])
+                }
+            }
+            rug_model(x, view = view[1], cond = rug.cond, rm.ranef = rm.ranef)
+        }
+    }
+    if (!is.null(plot_all)) {
         alllevels <- c()
         plotlevels <- c()
         cols = "black"
@@ -1720,99 +1979,82 @@ plot_smooth <- function(x, view = NULL, cond = list(),
         lwds = 1
         tmpname <- plot_all
         newd <- droplevels(newd)
-        if(length(plot_all)>1){
-            tmpname <- sub("/", "", tempfile(pattern = "event", 
-                tmpdir = "plotsmooth", fileext = ""), fixed=TRUE)
-            newd[,tmpname] <- interaction(newd[, plot_all])
+        if (length(plot_all) > 1) {
+            tmpname <- sub("/", "", tempfile(pattern = "event", tmpdir = "plotsmooth", fileext = ""), fixed = TRUE)
+            newd[, tmpname] <- interaction(newd[, plot_all])
         }
-        alllevels <- length(levels(newd[,tmpname]))
-        plotlevels <- levels(newd[,tmpname])
-        if(is.null(plotlevels)){
-            alllevels <- length(unique(newd[,tmpname]))
-            plotlevels <- unique(newd[,tmpname])
+        alllevels <- length(levels(newd[, tmpname]))
+        plotlevels <- levels(newd[, tmpname])
+        if (is.null(plotlevels)) {
+            alllevels <- length(unique(newd[, tmpname]))
+            plotlevels <- unique(newd[, tmpname])
         }
-        cols=rainbow(alllevels)
-        ltys=rep(1, alllevels)
-        lwds=rep(1, alllevels)
-            
-        if(!is.null(col)){
-            if(length(col) < alllevels){
+        cols = rainbow(alllevels)
+        ltys = rep(1, alllevels)
+        lwds = rep(1, alllevels)
+        
+        if (!is.null(col)) {
+            if (length(col) < alllevels) {
                 cols = rep(col, ceiling(alllevels/length(col)))
-            }else{
+            } else {
                 cols = col
             }
         }
-        if(!is.null(lty)){
-            if(length(lty) < alllevels){
+        if (!is.null(lty)) {
+            if (length(lty) < alllevels) {
                 ltys = rep(lty, ceiling(alllevels/length(lty)))
-            }else{
+            } else {
                 ltys = lty
             }
         }
-        if(!is.null(lwd)){
-            if(length(lwd) < alllevels){
+        if (!is.null(lwd)) {
+            if (length(lwd) < alllevels) {
                 lwds = rep(lwd, ceiling(alllevels/length(lwd)))
-            }else{
+            } else {
                 lwds = lwd
             }
         }
-            
+        
         cnt <- 1
-        for(i in plotlevels){
-            if(se > 0){
-                plot_error(newd[newd[,tmpname]==i,view[1]], 
-                    newd[newd[,tmpname]==i,]$fit, 
-                    newd[newd[,tmpname]==i,]$ul, 
-                    se.fit2=newd[newd[,tmpname]==i,]$ll, 
-                    shade=shade, f=1, 
-                    col=cols[cnt], lwd=lwds[cnt], lty=ltys[cnt], ...)
-            }else{
-                lines(newd[newd[,tmpname]==i,view[1]], 
-                    newd[newd[,tmpname]==i,]$fit, 
-                    col=cols[cnt], lwd=lwds[cnt], lty=ltys[cnt], ...)
+        for (i in plotlevels) {
+            if (se > 0) {
+                plot_error(newd[newd[, tmpname] == i, view[1]], newd[newd[, tmpname] == i, ]$fit, newd[newd[, 
+                  tmpname] == i, ]$ul, se.fit2 = newd[newd[, tmpname] == i, ]$ll, shade = shade, f = 1, col = cols[cnt], 
+                  lwd = lwds[cnt], lty = ltys[cnt], ...)
+            } else {
+                lines(newd[newd[, tmpname] == i, view[1]], newd[newd[, tmpname] == i, ]$fit, col = cols[cnt], 
+                  lwd = lwds[cnt], lty = ltys[cnt], ...)
             }
-            cnt <- cnt+1
+            cnt <- cnt + 1
         }
-        if(! tmpname %in% plot_all){
+        if (!tmpname %in% plot_all) {
             newd[, tmpname] <- NULL
         }
         # add legend:
-        if(is.null(legend_plot_all)){
+        if (is.null(legend_plot_all)) {
             gfc <- getFigCoords()
-            legend(gfc[2], gfc[4],
-                legend=plotlevels,
-                text.col=cols,
-                text.font=2,
-                xjust=1, yjust=1,
-                bty='n', xpd=TRUE)
-        }else if( is.logical(legend_plot_all) ){
-            if(legend_plot_all ==  TRUE){
+            legend(gfc[2], gfc[4], legend = plotlevels, text.col = cols, text.font = 2, xjust = 1, yjust = 1, 
+                bty = "n", xpd = TRUE)
+        } else if (is.logical(legend_plot_all)) {
+            if (legend_plot_all == TRUE) {
                 gfc <- getFigCoords()
-                legend(gfc[2], gfc[4],
-                    legend=plotlevels,
-                    text.col=cols,
-                    text.font=2,
-                    xjust=1, yjust=1,
-                    bty='n', xpd=TRUE)
+                legend(gfc[2], gfc[4], legend = plotlevels, text.col = cols, text.font = 2, xjust = 1, yjust = 1, 
+                  bty = "n", xpd = TRUE)
             }
-        }else{
-            legend(legend_plot_all,
-                legend=plotlevels,
-                text.col=cols,
-                text.font=2,
-                bty='n', xpd=TRUE)
+        } else {
+            legend(legend_plot_all, legend = plotlevels, text.col = cols, text.font = 2, bty = "n", xpd = TRUE)
         }
-    }else{
-        if(se > 0){
-            plot_error(as.vector(newd[,view[1]]), newd$fit, newd$ul, se.fit2=newd$ll, shade=shade, f=1, col=col, lwd=lwd, lty=lty, ...)
-        }else{
-            lines(newd[,view[1]], newd$fit, col=col, lwd=lwd, lty=lty,...)
+    } else {
+        if (se > 0) {
+            plot_error(as.vector(newd[, view[1]]), newd$fit, newd$ul, se.fit2 = newd$ll, shade = shade, f = 1, 
+                col = col, lwd = lwd, lty = lty, ...)
+        } else {
+            lines(newd[, view[1]], newd$fit, col = col, lwd = lwd, lty = lty, ...)
         }
     }
     
-    invisible(list(fv = newd, rm.ranef=rm.ranef, transform=transform))
+    invisible(list(fv = newd, rm.ranef = rm.ranef, transform = transform))
 }
- 
 
 
 
@@ -1834,7 +2076,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #' variables.
 #' @param el.pos A list with X and Y positions and Electrodes, which are used
 #' for fitting the model.
-#' @param fun Text string, "fvisgam", "pvisgam", or "plot_diff2" signalling 
+#' @param fun Text string, 'fvisgam', 'pvisgam', or 'plot_diff2' signalling 
 #' which function to use for plotting.
 #' @param add.color.legend Logical: whether or not to add a color legend. 
 #' Default is TRUE. If FALSE (omitted), one could use the function
@@ -1843,8 +2085,8 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #' @param n.grid  The number of grid nodes in each direction used for 
 #' calculating the plotted surface. 
 #' @param col The colors for the background of the plot.
-#' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". 
+#' @param color The color scheme to use for plots. One of 'topo', 'heat', 
+#' 'cm', 'terrain', 'gray', 'bw', or 'rwb' (red-white-blue; default). 
 #' @param pch The type of points as indications for the electrode positions. 
 #' The value NA will suppress the plotting of electrode positions.
 #' @param bg The background color of the points.
@@ -1872,18 +2114,18 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #'
 #' # topo plot, by default uses fvisgam 
 #' # and automatically selects a timestamp (270ms):
-#' plot_topo(m1, view=c("X", "Y"))
+#' plot_topo(m1, view=c('X', 'Y'))
 #' # or:
-#' plot_topo(m1, view=c("X", "Y"), setmargins=FALSE, size=1)
+#' plot_topo(m1, view=c('X', 'Y'), setmargins=FALSE, size=1)
 #' 
 #' # add electrodes:
 #' electrodes <- eeg[,c('X','Y','Electrode')]
 #' electrodes <- as.list( electrodes[!duplicated(electrodes),] )
-#' plot_topo(m1, view=c("X", "Y"), el.pos=electrodes)
+#' plot_topo(m1, view=c('X', 'Y'), el.pos=electrodes)
 #' 
 #' # some formatting options:
-#' plot_topo(m1, view=c("X", "Y"), el.pos=electrodes,
-#'     main="Topo plot", zlim=c(-.5,.5), 
+#' plot_topo(m1, view=c('X', 'Y'), el.pos=electrodes,
+#'     main='Topo plot', zlim=c(-.5,.5), 
 #'     pch=15, col='red', color='terrain')
 #' 
 #' # plotting more than one panel only works if 
@@ -1893,7 +2135,7 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #'
 #' for(i in c(100, 200, 300)){
 #'     # make sure to keep zlim constant:
-#'	   plot_topo(m1, view=c('X', 'Y'), zlim=c(-.5, .5), 
+#'\t   plot_topo(m1, view=c('X', 'Y'), zlim=c(-.5, .5), 
 #'     cond=list(Time=i), el.pos=electrodes,
 #'     main=i)
 #' }
@@ -1923,97 +2165,83 @@ plot_smooth <- function(x, view = NULL, cond = list(),
 #'     xpd=TRUE)
 #' }
 #' @family Functions for model inspection
-plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam', 
-	add.color.legend=TRUE, 
-	size=5, n.grid=100, col=1, pch=21, bg=alpha(1), 
-	color='topo', xlab="", ylab="", 
-	setmargins=TRUE, ...){
-	# save old settings
-	oldpar =  list(mai=par()$mai, pin=par()$pin,
-		mar=par()$mar,
-		xaxt = par()$xaxt, yaxt = par()$yaxt,
-		bty = par()$bty)
-	
-	if( is.null( names(dev.list()) ) & (setmargins==TRUE)){
-		if(round( par()$fin[1], 4) != round( par()$fin[2], 4)){
-			dev.new(width=size, height=size)
-		}
-	}
-	if(setmargins){
-		par(pin=c(size,size), mai=rep(.5,4), xaxt='n', yaxt='n', bty='n')
-	}else{
-		par(pin=c(size,size), xaxt='n', yaxt='n', bty='n')
-	}
-	# range X
-	r.x <- range(model$model[,view[1]])
-	# range Y
-	r.y <- range(model$model[,view[2]])
-	# center
-	center <- c(r.x[1]+(r.x[2]-r.x[1])/2, r.y[1]+(r.y[2]-r.y[1])/2)
-	# radius
-	radius <- max(c((r.x[2]-r.x[1])/2, (r.y[2]-r.y[1])/2))
-	if(!is.null(el.pos)){
-		# range X
-		r.x <- range(c(model$model[,view[1]], el.pos[['X']]))
-		# range Y
-		r.y <- range(c(model$model[,view[2]], el.pos[['Y']]))
-		# center
-		center <- c(r.x[1]+(r.x[2]-r.x[1])/2, r.y[1]+(r.y[2]-r.y[1])/2)
-		# radius
-		radius <- max(c((r.x[2]-r.x[1])/2, (r.y[2]-r.y[1])/2))
-	}
-	xlim = c(center[1]-radius-0.1*radius, center[1]+radius+0.1*radius)
-	ylim = c(center[2]-radius-0.1*radius, center[2]+radius+0.1*radius)	
-	# plot effects
-	if(fun=='fvisgam'){
-		pp <- fvisgam(model, view, add.color.legend=FALSE, n.grid=n.grid, 
-			xlab=xlab, ylab=ylab, 
-			xlim=xlim, ylim=ylim, color=color, ...)
-	}else if (fun=='pvisgam'){
-		pp <- pvisgam(model, view, add.color.legend=FALSE, n.grid=n.grid, 
-			xlab=xlab, ylab=ylab, 
-			xlim=xlim, ylim=ylim, color=color, ...)
-	}else if (fun=='plot_diff2'){
-		pp <- plot_diff2(model, view, add.color.legend=FALSE, n.grid=n.grid, 
-			xlab=xlab, ylab=ylab, 
-			xlim=xlim, ylim=ylim, color=color, ...)
-	}else{
-		stop("Function unknown.")
-	}
-	par(bty='o')
-	box(col='white', lwd=1)
-	# add circle
-	gfc <- getFigCoords()
-	im <- expand.grid(x=seq(gfc[1], gfc[2], length=n.grid),
-		y=seq(gfc[3], gfc[4], length=n.grid))
-	
-	im$val <- NA
-	im$val <- ifelse( sqrt(im$x^2+im$y^2 ) >= (radius+.1*radius),
-		alpha('white', f=1), alpha('white', f=0))
-	mat <- matrix(im$val, byrow=TRUE, ncol=n.grid)
-	rasterImage(mat, xleft=gfc[1], ybottom=gfc[3],
-		xright=gfc[2], ytop=gfc[4])
-	points(el.pos[['X']], el.pos[['Y']], col=col, pch=pch, bg=bg, xpd=TRUE)
-	text(center[1], center[2]+radius, labels="^", pos=3, xpd=TRUE)
-	if(add.color.legend==TRUE){
-		gradientLegend(round(pp$zlim,3), color=color, pos=0.125, side=1, inside=FALSE)
-	}
-	
-	if(setmargins){
-		for(i in names(oldpar)){
-			eval(parse(text=sprintf("par(%s=%s)", i, 
-				ifelse(is.character(oldpar[[i]]), 
-					sprintf("'%s'", oldpar[[i]]), 
-					sprintf("c(%s)", paste(oldpar[[i]], collapse=","))))))
-		}		
-	}else{
-		for(i in c("pin", "xaxt", "yaxt", "bty")){
-			eval(parse(text=sprintf("par(%s=%s)", i, 
-				ifelse(is.character(oldpar[[i]]), 
-					sprintf("'%s'", oldpar[[i]]), 
-					sprintf("c(%s)", paste(oldpar[[i]], collapse=","))))))
-		}
-	}
+plot_topo <- function(model, view, el.pos = NULL, fun = "fvisgam", add.color.legend = TRUE, size = 5, n.grid = 100, 
+    col = 1, pch = 21, bg = alpha(1), color = "bwr", xlab = "", ylab = "", setmargins = TRUE, ...) {
+    # save old settings
+    oldpar = list(mai = par()$mai, pin = par()$pin, mar = par()$mar, xaxt = par()$xaxt, yaxt = par()$yaxt, 
+        bty = par()$bty)
+    
+    if (is.null(names(dev.list())) & (setmargins == TRUE)) {
+        if (round(par()$fin[1], 4) != round(par()$fin[2], 4)) {
+            dev.new(width = size, height = size)
+        }
+    }
+    if (setmargins) {
+        par(pin = c(size, size), mai = rep(0.5, 4), xaxt = "n", yaxt = "n", bty = "n")
+    } else {
+        par(pin = c(size, size), xaxt = "n", yaxt = "n", bty = "n")
+    }
+    # range X
+    r.x <- range(model$model[, view[1]])
+    # range Y
+    r.y <- range(model$model[, view[2]])
+    # center
+    center <- c(r.x[1] + (r.x[2] - r.x[1])/2, r.y[1] + (r.y[2] - r.y[1])/2)
+    # radius
+    radius <- max(c((r.x[2] - r.x[1])/2, (r.y[2] - r.y[1])/2))
+    if (!is.null(el.pos)) {
+        # range X
+        r.x <- range(c(model$model[, view[1]], el.pos[["X"]]))
+        # range Y
+        r.y <- range(c(model$model[, view[2]], el.pos[["Y"]]))
+        # center
+        center <- c(r.x[1] + (r.x[2] - r.x[1])/2, r.y[1] + (r.y[2] - r.y[1])/2)
+        # radius
+        radius <- max(c((r.x[2] - r.x[1])/2, (r.y[2] - r.y[1])/2))
+    }
+    xlim = c(center[1] - radius - 0.1 * radius, center[1] + radius + 0.1 * radius)
+    ylim = c(center[2] - radius - 0.1 * radius, center[2] + radius + 0.1 * radius)
+    # plot effects
+    if (fun == "fvisgam") {
+        pp <- fvisgam(model, view, add.color.legend = FALSE, n.grid = n.grid, xlab = xlab, ylab = ylab, xlim = xlim, 
+            ylim = ylim, color = color, ...)
+    } else if (fun == "pvisgam") {
+        pp <- pvisgam(model, view, add.color.legend = FALSE, n.grid = n.grid, xlab = xlab, ylab = ylab, xlim = xlim, 
+            ylim = ylim, color = color, ...)
+    } else if (fun == "plot_diff2") {
+        pp <- plot_diff2(model, view, add.color.legend = FALSE, n.grid = n.grid, xlab = xlab, ylab = ylab, 
+            xlim = xlim, ylim = ylim, color = color, ...)
+    } else {
+        stop("Function unknown.")
+    }
+    par(bty = "o")
+    box(col = "white", lwd = 1)
+    # add circle
+    gfc <- getFigCoords()
+    im <- expand.grid(x = seq(gfc[1], gfc[2], length = n.grid), y = seq(gfc[3], gfc[4], length = n.grid))
+    
+    im$val <- NA
+    im$val <- ifelse(sqrt(im$x^2 + im$y^2) >= (radius + 0.1 * radius), alpha("white", f = 1), alpha("white", 
+        f = 0))
+    mat <- matrix(im$val, byrow = TRUE, ncol = n.grid)
+    rasterImage(mat, xleft = gfc[1], ybottom = gfc[3], xright = gfc[2], ytop = gfc[4])
+    points(el.pos[["X"]], el.pos[["Y"]], col = col, pch = pch, bg = bg, xpd = TRUE)
+    text(center[1], center[2] + radius, labels = "^", pos = 3, xpd = TRUE)
+    if (add.color.legend == TRUE) {
+        gradientLegend(round(pp$zlim, 3), color = color, pos = 0.125, side = 1, inside = FALSE)
+    }
+    
+    if (setmargins) {
+        for (i in names(oldpar)) {
+            eval(parse(text = sprintf("par(%s=%s)", i, ifelse(is.character(oldpar[[i]]), sprintf("'%s'", oldpar[[i]]), 
+                sprintf("c(%s)", paste(oldpar[[i]], collapse = ","))))))
+        }
+    } else {
+        for (i in c("pin", "xaxt", "yaxt", "bty")) {
+            eval(parse(text = sprintf("par(%s=%s)", i, ifelse(is.character(oldpar[[i]]), sprintf("'%s'", oldpar[[i]]), 
+                sprintf("c(%s)", paste(oldpar[[i]], collapse = ","))))))
+        }
+    }
 }
 
 
@@ -2059,8 +2287,8 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' with the view variables and then grid nodes more than too.far from the 
 #' predictor variables are excluded.
 #' @param col The colors for the facets of the plot.
-#' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+#' @param color The color scheme to use for plots. One of 'topo', 'heat', 
+#' 'cm', 'terrain', 'gray' or 'bw'. Alternatively a vector with some colors 
 #' can be provided for a custom color palette (see examples).
 #' @param contour.col sets the color of contours when using plot.
 #' @param add.color.legend Logical: whether or not to add a color legend. 
@@ -2070,7 +2298,7 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' plotted, but if greater than zero, then 3 surfaces are plotted, one at the 
 #' predicted values minus se standard errors, one at the predicted values and 
 #' one at the predicted values plus se standard errors.
-#' @param plot.type one of "contour" or "persp" (default is "contour").
+#' @param plot.type one of 'contour' or 'persp' (default is 'contour').
 #' @param zlim A two item array giving the lower and upper limits for the z-
 #' axis scale. NULL to choose automatically.
 #' @param xlim A two item array giving the lower and upper limits for the x-
@@ -2080,7 +2308,7 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' @param nCol The number of colors to use in color schemes.
 #' @param labcex Size of the contour labels.
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "partial effect"). Default is FALSE.
+#' (i.e., 'partial effect'). Default is FALSE.
 #' @param print.summary Logical: whether or not to print summary.
 #' Default set to the print info messages option 
 #' (see \code{\link{infoMessages}}).
@@ -2094,8 +2322,11 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #' Defaults to FALSE.
 #' @param col.diff Color to shade the nonsignificant areas.
 #' @param alpha.diff Level of transparency to mark the nonsignificant areas.
+#' @param f Scaling factor to determine the CI from the se, for marking the 
+#' difference with 0. Only applies when \code{se} is smaller or equal to zero 
+#' and \code{show.diff} is set to TRUE. 
 #' @param ... other options to pass on to persp, image or contour. In 
-#' particular ticktype="detailed" will add proper axes labeling to the plots.
+#' particular ticktype='detailed' will add proper axes labeling to the plots.
 #' @section Warnings:
 #' \itemize{
 #' \item In contrast to vis.gam, do not specify other predictors in \code{cond} that 
@@ -2119,57 +2350,61 @@ plot_topo <- function(model, view, el.pos=NULL, fun='fvisgam',
 #'     data=simdat, discrete=TRUE)
 #'
 #' # Plot summed effects:
-#' vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
+#' vis.gam(m1, view=c('Time', 'Trial'), plot.type='contour', color='topo')
 #' # Partial effect of interaction:
-#' pvisgam(m1, view=c("Time", "Trial"), select=1)
+#' pvisgam(m1, view=c('Time', 'Trial'), select=1)
 #' # Same:
 #' plot(m1, select=1, scheme=2)
 #' plot(m1, select=1)
 #' # Alternatives:
-#' pvisgam(m1, view=c("Trial", "Time"), select=1)
-#' pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20))
-#' pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
-#'     color="terrain")
-#' pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
-#'     color=c("blue", "white", "red"))
+#' pvisgam(m1, view=c('Trial', 'Time'), select=1)
+#' pvisgam(m1, view=c('Trial', 'Time'), select=1, zlim=c(-20,20))
+#' pvisgam(m1, view=c('Trial', 'Time'), select=1, zlim=c(-20,20), 
+#'     color='terrain')
+#' pvisgam(m1, view=c('Trial', 'Time'), select=1, zlim=c(-20,20), 
+#'     color=c('blue', 'white', 'red'))
 #'
 #' # Notes on the color legend:
 #' # Labels can easily fall off the plot, therefore the numbers are 
 #' # automatically rounded.
 #' # To undo the rounding, set dec=NULL:
-#' pvisgam(m1, view=c("Time", "Trial"), dec=NULL)
+#' pvisgam(m1, view=c('Time', 'Trial'), dec=NULL)
 #' # For custom rounding, set dec to a value:
-#' pvisgam(m1, view=c("Time", "Trial"), dec=3)
+#' pvisgam(m1, view=c('Time', 'Trial'), dec=1)
 #' # To increase the left marging of the plot (so that the numbers fit):
 #' oldmar <- par()$mar
 #' par(mar=oldmar + c(0,0,0,1) ) # add one line to the right
-#' pvisgam(m1, view=c("Time", "Trial"), dec=3)
+#' pvisgam(m1, view=c('Time', 'Trial'), dec=3)
 #' par(mar=oldmar) # restore to default settings
+#' 
+#' # too.far: 
+#' n <- which(simdat$Time > 1500 & simdat$Trial > 5)
+#' simdat[n,]$Y <- NA
+#' simdat[simdat$Trial == -3,]$Y <- NA
+#' m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
+#'     data=simdat, discrete=TRUE)
+#' pvisgam(m1, view=c('Time', 'Trial'), select=1, too.far=0.03)
 #' 
 #' }
 #' # see the vignette for examples:
-#' vignette("overview", package="itsadug")
+#' vignette('overview', package='itsadug')
 #' @author Jacolien van Rij. Modification of \code{\link[mgcv]{vis.gam}} from 
 #' package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
 #' @seealso \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 #'
 #' @family Functions for model inspection
-pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30, 
-    too.far = 0, col = NA, color = "topo", contour.col = NULL, 
-    add.color.legend=TRUE,
-    se = -1, plot.type = "contour", zlim = NULL, 
-    xlim=NULL, ylim=NULL,
-    nCol = 50, labcex=.6, hide.label=FALSE,
-    print.summary=getOption('itsadug_print'),
-    show.diff=FALSE, col.diff=1, alpha.diff=.5,
-    dec=NULL,...) {
+pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30, too.far = 0, col = NA, color = "terrain", 
+    contour.col = NULL, add.color.legend = TRUE, se = 0, plot.type = "contour", zlim = NULL, xlim = NULL, 
+    ylim = NULL, nCol = 50, labcex = 0.6, hide.label = FALSE, print.summary = getOption("itsadug_print"), 
+    show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, dec = NULL, f = 1.96, ...) {
     
-    # This modfication of vis.gam allows the user to specify one condition to plot as partial effect surface.  Use: 1)
-    # view=c('Time','Trial') to specify which surface to plot, and 2) select=2 to select a specific smooth term (necessary
-    # for distinguishing between several levels of a predictor, such as te(Time, Trial):Condition2 of the tensor te(Time,
-    # Trial,by=Cond).  3) cond=list(X=5) can be used to select a specific value of a continuous predictor in a complex
-    # interaction, e.g. to specify the value of X in te(Time,Trial,X, by=Cond).  Important: do not specify other predictors
-    # in cond that are not to be plotted.
+    # This modfication of vis.gam allows the user to specify one condition to plot as partial effect surface.
+    # Use: 1) view=c('Time','Trial') to specify which surface to plot, and 2) select=2 to select a specific
+    # smooth term (necessary for distinguishing between several levels of a predictor, such as te(Time,
+    # Trial):Condition2 of the tensor te(Time, Trial,by=Cond).  3) cond=list(X=5) can be used to select a
+    # specific value of a continuous predictor in a complex interaction, e.g. to specify the value of X in
+    # te(Time,Trial,X, by=Cond).  Important: do not specify other predictors in cond that are not to be
+    # plotted.
     
     fac.seq <- function(fac, n.grid) {
         fn <- length(levels(fac))
@@ -2223,17 +2458,18 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
             ok <- FALSE
     }
     if (!ok) 
-        stop(paste("View variables must contain more than one value. view = c(", view[1], ",", view[2], ").", sep = ""))
+        stop(paste("View variables must contain more than one value. view = c(", view[1], ",", view[2], ").", 
+            sep = ""))
     if (is.factor(x$var.summary[[view[1]]])) {
         m1 <- fac.seq(x$var.summary[[view[1]]], n.grid)
     } else {
         r1 <- range(x$var.summary[[view[1]]])
         m1 <- seq(r1[1], r1[2], length = n.grid)
-        if(!is.null(xlim)){
-            if(length(xlim) != 2){
+        if (!is.null(xlim)) {
+            if (length(xlim) != 2) {
                 warning("Invalid xlim values specified. Argument xlim is being ignored.")
-            }else{ 
-                m1 <- seq(xlim[1], xlim[2], length=n.grid)
+            } else {
+                m1 <- seq(xlim[1], xlim[2], length = n.grid)
             }
         }
     }
@@ -2242,17 +2478,17 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
     } else {
         r2 <- range(x$var.summary[[view[2]]])
         m2 <- seq(r2[1], r2[2], length = n.grid)
-        if(!is.null(ylim)){
-            if(length(ylim) != 2){
+        if (!is.null(ylim)) {
+            if (length(ylim) != 2) {
                 warning("Invalid ylim values specified. Argument ylim is being ignored.")
-            }else{ 
-                m2 <- seq(ylim[1], ylim[2], length=n.grid)
+            } else {
+                m2 <- seq(ylim[1], ylim[2], length = n.grid)
             }
         }
     }
     v1 <- rep(m1, n.grid)
     v2 <- rep(m2, rep(n.grid, n.grid))
-    newd <- data.frame(matrix(0, n.grid * n.grid, 0))
+    newd <- data.frame(matrix(0, n.grid * n.grid, 0), stringsAsFactors = TRUE)
     
     # add factor to condition list
     if (is.numeric(select)) {
@@ -2284,7 +2520,7 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
     names(newd) <- v.names
     newd[[view[1]]] <- v1
     newd[[view[2]]] <- v2
-    zlab <- as.character(formula(x$terms)[2])  
+    zlab <- as.character(formula(x$terms)[2])
     X1 <- mgcv::predict.gam(x, newdata = newd, type = "terms", se.fit = TRUE)
     
     fv <- NULL
@@ -2296,9 +2532,9 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
     }
     
     if (is.numeric(select)) {
-        fv <- data.frame(fit = X1$fit[, select + n.linpred])
+        fv <- data.frame(fit = X1$fit[, select + n.linpred], stringsAsFactors = TRUE)
         fv$se.fit <- X1$se.fit[, select + n.linpred]
-        if(print.summary){
+        if (print.summary) {
             print(paste("Tensor(s) to be plotted:", colnames(X1$fit)[select + n.linpred]))
         }
         
@@ -2334,29 +2570,29 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         }
         
         if (length(colnamesX1) == 1) {
-            fv <- data.frame(fit = X1$fit[, colnamesX1])
+            fv <- data.frame(fit = X1$fit[, colnamesX1], stringsAsFactors = TRUE)
             fv$se.fit <- X1$se.fit[, colnamesX1]
-            if(print.summary){
+            if (print.summary) {
                 cat(paste("Tensor(s) to be plotted:", colnamesX1))
             }
         } else {
-            stop(sprintf("More than one level is selected for plotting: %s. Use 'select=(number of smooth, found in summary). Note that the surface does not reflect a true average of their partial effects. Please consider specifying one of these conditions in the cond parameter."
-                ,paste(colnamesX1, collapse = " + ")), immediate. = TRUE)
+            stop(sprintf("More than one level is selected for plotting: %s. Use 'select=(number of smooth, found in summary). Note that the surface does not reflect a true average of their partial effects. Please consider specifying one of these conditions in the cond parameter.", 
+                paste(colnamesX1, collapse = " + ")), immediate. = TRUE)
         }
     }
     
     z <- fv$fit
-    too.far.raster <- rep(alpha('white', f=0), nrow(fv))
+    too.far.raster <- rep(alpha("white", f = 0), nrow(fv))
     if (too.far > 0) {
         ex.tf <- mgcv::exclude.too.far(v1, v2, x$model[, view[1]], x$model[, view[2]], dist = too.far)
         # fv$se.fit[ex.tf] <- fv$fit[ex.tf] <- NA
         fv.toofar <- fv
         fv.toofar$se.fit[ex.tf] <- fv.toofar$fit[ex.tf] <- NA
-        too.far.raster[ex.tf] <- 'white'
+        too.far.raster[ex.tf] <- "white"
     }
     # raster images are row-first, in contrast to images...
-    too.far.raster <- matrix(too.far.raster, byrow=FALSE, n.grid, n.grid)
-    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1,])
+    too.far.raster <- matrix(too.far.raster, byrow = TRUE, n.grid, n.grid)
+    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1, ])
     if (is.factor(m1)) {
         m1 <- as.numeric(m1)
         m1 <- seq(min(m1) - 0.5, max(m1) + 0.5, length = n.grid)
@@ -2366,128 +2602,92 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         m2 <- seq(min(m1) - 0.5, max(m2) + 0.5, length = n.grid)
     }
     # if (se <= 0) {
-        old.warn <- options(warn = -1)
-        av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), n.grid, n.grid - 1)
-        options(old.warn)
-        max.z <- max(z, na.rm = TRUE)
-        z[is.na(z)] <- max.z * 10000
-        z <- matrix(z, n.grid, n.grid)
-        surf.col <- t(av) %*% z %*% av
-        surf.col[surf.col > max.z * 2] <- NA
-        if (!is.null(zlim)) {
-            if (length(zlim) != 2 || zlim[1] >= zlim[2]) 
-                stop("Something wrong with zlim")
-            if(!is.null(dec)){
-                if(dec == -1){
-                    dec <- getDec(min(zlim))
-                }
-                zlim <- getRange(zlim, step=(.1^dec), n.seg=2)
+    old.warn <- options(warn = -1)
+    av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), n.grid, n.grid - 1)
+    options(old.warn)
+    max.z <- max(z, na.rm = TRUE)
+    z[is.na(z)] <- max.z * 10000
+    z <- matrix(z, byrow=FALSE, n.grid, n.grid)
+    surf.col <- t(av) %*% z %*% av
+    surf.col[surf.col > max.z * 2] <- NA
+    if (!is.null(zlim)) {
+        if (length(zlim) != 2 || zlim[1] >= zlim[2]) 
+            stop("Something wrong with zlim")
+        if (!is.null(dec)) {
+            if (dec == -1) {
+                dec <- getDec(min(zlim))
             }
-            min.z <- zlim[1]
-            max.z <- zlim[2]
-        } else {
-            if(!is.null(dec)){
-                if(dec == -1){
-                    dec <- getDec(min(fv$fit, na.rm = TRUE))
-                }
-                tmp <- getRange(range(fv$fit, na.rm = TRUE, n.seg=2), step=(.1^dec))
-            }else{
-                tmp <- range(fv$fit, na.rm = TRUE)
-            }
-            # min.z <- min(z.fit, na.rm = TRUE)
-            # max.z <- max(z.fit, na.rm = TRUE)
-            min.z <- tmp[1]
-            max.z <- tmp[2]
+            zlim <- getRange(zlim, step = (0.1^dec), n.seg = 2)
         }
-        surf.col <- surf.col - min.z
-        surf.col <- surf.col/(max.z - min.z)
-        surf.col <- round(surf.col * nCol)
-        con.col <- 1
-        if (color[1] == "heat") {
-            pal <- heat.colors(nCol)
-            con.col <- 3
-        } else if (color[1] == "topo") {
-            pal <- topo.colors(nCol)
-            con.col <- 2
-        } else if (color[1] == "cm") {
-            pal <- cm.colors(nCol)
-            con.col <- 1
-        } else if (color[1] == "terrain") {
-            pal <- terrain.colors(nCol)
-            con.col <- 2
-        } else if (color[1] == "bpy") {
-            if (requireNamespace("sp", quietly = TRUE)) {
-                pal <- sp::bpy.colors(nCol)
-                con.col <- 1
-            } else {
-                warning("Package 'sp' needed for bpy color palette. Using topo.colors instead (default).")
-                color <- 'topo'
-                pal <- topo.colors(nCol)
-                con.col <- 2
+        min.z <- zlim[1]
+        max.z <- zlim[2]
+    } else {
+        if (!is.null(dec)) {
+            if (dec == -1) {
+                dec <- getDec(min(fv$fit, na.rm = TRUE))
             }
-        } else if (color[1] == "gray" || color[1] == "bw") {
-            pal <- gray(seq(0.1, 0.9, length = nCol))
-            con.col <- 1
+            tmp <- getRange(range(fv$fit, na.rm = TRUE, n.seg = 2), step = (0.1^dec))
         } else {
-            if( all(plotfunctions::isColor(color)) ){
-                pal <- colorRampPalette(color)(nCol)
-                con.col <- 1
-            }else{
-                stop("color scheme not recognised")
-            }  
+            tmp <- range(fv$fit, na.rm = TRUE)
         }
-        if (is.null(contour.col)) 
-            contour.col <- con.col
-        surf.col[surf.col < 1] <- 1
-        surf.col[surf.col > nCol] <- nCol
-        if (is.na(col)) 
-            col <- pal[as.array(surf.col)]
-        z <- matrix(fv$fit, n.grid, n.grid)
+        # min.z <- min(z.fit, na.rm = TRUE) max.z <- max(z.fit, na.rm = TRUE)
+        min.z <- tmp[1]
+        max.z <- tmp[2]
+    }
+    surf.col <- surf.col - min.z
+    surf.col <- surf.col/(max.z - min.z)
+    surf.col <- round(surf.col * nCol)
+    # recognize color scheme:
+    getcol <- get_palette(color, nCol = nCol, col = col)
+    pal <- getcol[["color"]]
+    con.col <- getcol[["col"]]
+    if (is.null(contour.col)) 
+        contour.col <- con.col
+    surf.col[surf.col < 1] <- 1
+    surf.col[surf.col > nCol] <- nCol
+    if (is.na(col)) 
+        col <- pal[as.array(surf.col)]
+    z <- matrix(fv$fit, byrow=FALSE, n.grid, n.grid)
     if (se <= 0) {
         if (plot.type == "contour") {
-            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
             if (color[1] != "bw") {
                 txt <- paste("image(m1,m2,z,col=pal,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
-                txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z), labcex=labcex", ifelse("add" %in% dnm, "", ",add=TRUE"), 
-                  ",...)", sep = "")
+                txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z), labcex=labcex", ifelse("add" %in% 
+                  dnm, "", ",add=TRUE"), ",...)", sep = "")
                 eval(parse(text = txt))
             } else {
                 txt <- paste("contour(m1,m2,z,col=1,zlim=c(min.z,max.z), labcex=labcex", stub, sep = "")
                 eval(parse(text = txt))
             }
-            gfc <- getFigCoords('p')
-            rasterImage(too.far.raster, xleft=gfc[1], xright=gfc[2], ybottom=gfc[3], ytop=gfc[4])
-            if(add.color.legend){
-                gradientLegend(round(c(min.z, max.z), 3), n.seg=3, pos=.875, color=pal, dec=dec)
+            gfc <- getFigCoords("p")
+            rasterImage(too.far.raster, xleft = gfc[1], xright = gfc[2], ybottom = gfc[3], ytop = gfc[4])
+            if (add.color.legend) {
+                gradientLegend(round(c(min.z, max.z), 3), n.seg = 3, pos = 0.875, color = pal, dec = dec)
             }
-            if(hide.label==FALSE){
-                mtext("partial effect", side=4, line=0, adj=0, 
-                    cex=.75, col='gray35', xpd=TRUE)
+            if (hide.label == FALSE) {
+                mtext("partial effect", side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
             }
-        }else{
-             stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
+        } else {
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
             if (color == "bw") {
                 op <- par(bg = "white")
                 txt <- paste("persp(m1,m2,z,col=\"white\",zlim=c(min.z,max.z) ", stub, sep = "")
                 eval(parse(text = txt))
                 par(op)
-            }
-            else {
-                txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", 
-                  stub, sep = "")
+            } else {
+                txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
-            } 
-            if(hide.label==FALSE){
-                mtext("partial effect", side=4, line=0, adj=0, 
-                    cex=.75, col='gray35', xpd=TRUE)
-            }                      
+            }
+            if (hide.label == FALSE) {
+                mtext("partial effect", side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            }
         }
     } else {
-        # lo.col <- hi.col <- NULL
-        # z.min <- z.max <- NULL
+        # lo.col <- hi.col <- NULL z.min <- z.max <- NULL
         if (color[1] == "bw" || color[1] == "gray") {
             subs <- paste("grey are +/-", se, "s.e.")
             lo.col <- "gray"
@@ -2496,7 +2696,7 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
             subs <- paste("red/green are +/-", se, "s.e.")
             lo.col <- "green"
             hi.col <- "red"
-            con.col <- 'black'
+            con.col <- "black"
         }
         if (!is.null(zlim)) {
             if (length(zlim) != 2 || zlim[1] >= zlim[2]) 
@@ -2510,57 +2710,62 @@ pvisgam <- function(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
         zlim <- c(z.min, z.max)
         z <- fv$fit - fv$se.fit * se
         z <- matrix(z, n.grid, n.grid)
-        if (plot.type == "contour"){
+        if (plot.type == "contour") {
             zlim <- c(z.min, z.max)
             z.max <- max(fv$fit, na.rm = TRUE)
             z.min <- min(fv$fit, na.rm = TRUE)
-            newd <- data.frame(fit=fv$fit,
-                se.fit = fv$se.fit,
-                XX1 = rep(m1, n.grid),
-                XX2 = rep(m2, each=n.grid))
+            newd <- data.frame(fit = fv$fit, se.fit = fv$se.fit, XX1 = rep(m1, n.grid), XX2 = rep(m2, each = n.grid), 
+                stringsAsFactors = TRUE)
             names(newd)[3:4] = view
-            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
-            txt <- paste("plotsurface(newd, view=view, predictor='fit', valCI='se.fit', color=pal, col=con.col, ci.col=c(lo.col, hi.col), zlim=c(z.min,z.max)", stub, sep = "")
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
+            txt <- paste("plotsurface(newd, view=view, predictor='fit', valCI='se.fit', color=pal, col=con.col, ci.col=c(lo.col, hi.col), zlim=c(z.min,z.max)", 
+                stub, sep = "")
             eval(parse(text = txt))
-        }else{
-            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("zlab" %in% 
-                dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
-            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, sep = "")
+        } else {
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("zlab" %in% dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", 
+                sep = "")
+            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), 
+                stub, sep = "")
             eval(parse(text = txt))
             par(new = TRUE)
             z <- fv$fit
             z <- matrix(z, n.grid, n.grid)
-            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), stub, sep = "")
+            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), 
+                stub, sep = "")
             eval(parse(text = txt))
             par(new = TRUE)
             z <- fv$fit + se * fv$se.fit
             z <- matrix(z, n.grid, n.grid)
-            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, sep = "")
+            txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), 
+                stub, sep = "")
             eval(parse(text = txt))
         }
-        if(hide.label==FALSE){
-            mtext("partial effect", side=4, line=0, adj=0, 
-                cex=.75, col='gray35', xpd=TRUE)
+        if (hide.label == FALSE) {
+            mtext("partial effect", side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
         }
     }
-    if(show.diff==TRUE){
-        if(plot.type=="contour"){
-            newd$CI <- se*fv$se.fit
-            plot_signifArea(newd, view=view, predictor="fit", valCI="CI", col=col.diff, alpha=alpha.diff)
-            if(print.summary & se <= 0){
-                cat("\t* Note: Shaded areas indicate areas that include 0 within the 95%CI.\n")
-            }else if (print.summary & se > 0){
-                cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI.\n", 
-                    round(2*pnorm(se)-1, 2)*100))
+    if (show.diff == TRUE) {
+        if (plot.type == "contour") {
+            if (print.summary & se <= 0) {
+                cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI (parameter f).\n", 
+                  round(2 * pnorm(f) - 1, 2) * 100))
+            } else if (print.summary & se > 0) {
+                cat(sprintf("\t* Note: Shaded areas indicate areas that include 0 within the %s%%CI (parameter se).\n", 
+                  round(2 * pnorm(se) - 1, 3) * 100))
+                f <- se
             }
-        }else{
+            newd$fit <- fv$fit
+            newd$CI <- f * fv$se.fit
+            plot_signifArea(newd, view = view, predictor = "fit", valCI = "CI", col = col.diff, alpha = alpha.diff)
+            
+        } else {
             warning("show.diff is only implemented for contour plots (plot.type=='contour').")
         }
     }
-    invisible(list(fv = fv, m1 = m1, m2 = m2, zlim=c(min.z,max.z)))
+    invisible(list(fv = fv, m1 = m1, m2 = m2, newd = newd, zlim = c(min.z, max.z)))
 }
- 
 
 
 

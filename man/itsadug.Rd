@@ -3,7 +3,6 @@
 \docType{package}
 \name{itsadug}
 \alias{itsadug}
-\alias{itsadug-package}
 \title{Interpreting Time Series, Autocorrelated Data Using GAMMs (itsadug)}
 \description{
 Itsadug provides a set of functions that facilitate the evaluation, 
@@ -13,14 +12,14 @@ the package \code{\link[mgcv]{mgcv}}.
 \section{Tutorials}{
 
 \itemize{
-\item \code{vignette("inspect", package="itsadug")} - summarizes different 
+\item \code{vignette('inspect', package='itsadug')} - summarizes different 
 functions for visualizing the model.
-\item \code{vignette("test", package="itsadug")} - summarizes 
+\item \code{vignette('test', package='itsadug')} - summarizes 
 different functions for significance testing.
-\item \code{vignette("acf", package="itsadug")} - summarizes how to check 
+\item \code{vignette('acf', package='itsadug')} - summarizes how to check 
 and account for autocorrelation in the residuals.
 }
-Also available online: \url{www.jacolienvanrij.com/itsadug}.
+Also available online on \url{https://www.jacolienvanrij.com}.
 }
 
 \section{Interpretation and visualization}{
@@ -80,8 +79,8 @@ the residuals
 Further, there are some wrappers around the \code{\link[mgcv]{predict.gam}}
 function to facilitate the extraction of model predictions. These can be 
 used for customized plots. See for an example in the vignette 
-"plotfunctions" 
-(\code{vignette("plotfunctions", package="itsadug")}).
+'plotfunctions' 
+(\code{vignette('plotfunctions', package='itsadug')}).
 \itemize{
   \item \code{\link{get_predictions}} for getting the estimates for given 
 settings of some or all of the model predictors;
@@ -106,7 +105,7 @@ When working on a server via the command line,
 using \code{ssh -X} instead of \code{ssh} may make the 
 HTML files available.
 \item A list of all available functions is provided in 
-\code{help(package="itsadug")}.
+\code{help(package='itsadug')}.
 }
 }
 

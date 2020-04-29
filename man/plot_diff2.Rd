@@ -5,13 +5,36 @@
 \alias{plotDiff2D}
 \title{Plot difference surface based on model predictions.}
 \usage{
-plot_diff2(model, view, comp, cond = NULL, color = "topo", nCol = 100,
-  col = NULL, add.color.legend = TRUE, se = 1.96, sim.ci = FALSE,
-  show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, n.grid = 30,
-  nlevels = 10, zlim = NULL, xlim = NULL, ylim = NULL, main = NULL,
-  xlab = NULL, ylab = NULL, rm.ranef = NULL, transform.view = NULL,
-  hide.label = FALSE, dec = NULL,
-  print.summary = getOption("itsadug_print"), ...)
+plot_diff2(
+  model,
+  view,
+  comp,
+  cond = NULL,
+  color = "terrain",
+  nCol = 100,
+  col = NULL,
+  add.color.legend = TRUE,
+  se = 1.96,
+  sim.ci = FALSE,
+  show.diff = FALSE,
+  col.diff = 1,
+  alpha.diff = 0.5,
+  n.grid = 30,
+  nlevels = 10,
+  zlim = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  main = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  rm.ranef = TRUE,
+  transform.view = NULL,
+  hide.label = FALSE,
+  dec = NULL,
+  f = 1.96,
+  print.summary = getOption("itsadug_print"),
+  ...
+)
 }
 \arguments{
 \item{model}{A GAMM model, resulting from the functions
@@ -26,8 +49,8 @@ and the 2 levels to calculate the difference for.}
 \item{cond}{Named list of the values to use for the other predictor terms 
 (not in view).}
 
-\item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+\item{color}{The color scheme to use for plots. One of 'topo', 'heat', 
+'cm', 'terrain', 'gray' or 'bw'. Alternatively a vector with some colors 
 can be provided for a custom color palette.}
 
 \item{nCol}{Range of colors of background of contour plot.}
@@ -85,7 +108,7 @@ axis scale. NULL to choose automatically.}
 \item{ylab}{Label y-axis.}
 
 \item{rm.ranef}{Logical: whether or not to remove random effects. 
-Default is FALSE. Alternatively a string (or vector of strings) with the 
+Default is TRUE. Alternatively a string (or vector of strings) with the 
 name of the random effect(s) to remove.}
 
 \item{transform.view}{List with two functions for transforming 
@@ -94,12 +117,16 @@ need to be transformed, set the other to NULL (no transformation).
 (See \code{\link{fvisgam}} for more info.)}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "difference"). Default is FALSE.}
+(i.e., 'difference'). Default is FALSE.}
 
 \item{dec}{Numeric: number of decimals for rounding the color legend. 
 When NULL (default), no rounding. If -1 (default), automatically determined. 
 Note: if value = -1 (default), rounding will be applied also when 
 \code{zlim} is provided.}
+
+\item{f}{Scaling factor to determine the CI from the se, for marking the 
+difference with 0. Only applies when \code{se} is smaller or equal to zero 
+and \code{show.diff} is set to TRUE.}
 
 \item{print.summary}{Logical: whether or not to print a summary.
 Default set to the print info messages option 
@@ -134,14 +161,17 @@ data(simdat)
 m1 <- bam(Y ~ Group + te(Time, Trial, by=Group),
     data=simdat)
 plot_diff2(m1, view=c('Time', 'Trial'), 
-    comp=list(Group=c("Children", "Adults")))
+    comp=list(Group=c('Children', 'Adults')))
 }
 }
 \seealso{
-Other Testing for significance: \code{\link{compareML}},
-  \code{\link{plot_diff}}, \code{\link{report_stats}},
-  \code{\link{wald_gam}}
+Other Testing for significance: 
+\code{\link{compareML}()},
+\code{\link{plot_diff}()},
+\code{\link{report_stats}()},
+\code{\link{wald_gam}()}
 }
 \author{
 Martijn Wieling, reimplemented by Jacolien van Rij
 }
+\concept{Testing for significance}

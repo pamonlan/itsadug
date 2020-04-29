@@ -4,12 +4,33 @@
 \alias{pvisgam}
 \title{Visualization of partial nonlinear interactions.}
 \usage{
-pvisgam(x, view = NULL, select = NULL, cond = list(), n.grid = 30,
-  too.far = 0, col = NA, color = "topo", contour.col = NULL,
-  add.color.legend = TRUE, se = -1, plot.type = "contour", zlim = NULL,
-  xlim = NULL, ylim = NULL, nCol = 50, labcex = 0.6,
-  hide.label = FALSE, print.summary = getOption("itsadug_print"),
-  show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, dec = NULL, ...)
+pvisgam(
+  x,
+  view = NULL,
+  select = NULL,
+  cond = list(),
+  n.grid = 30,
+  too.far = 0,
+  col = NA,
+  color = "terrain",
+  contour.col = NULL,
+  add.color.legend = TRUE,
+  se = 0,
+  plot.type = "contour",
+  zlim = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  nCol = 50,
+  labcex = 0.6,
+  hide.label = FALSE,
+  print.summary = getOption("itsadug_print"),
+  show.diff = FALSE,
+  col.diff = 1,
+  alpha.diff = 0.5,
+  dec = NULL,
+  f = 1.96,
+  ...
+)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -38,8 +59,8 @@ predictor variables are excluded.}
 
 \item{col}{The colors for the facets of the plot.}
 
-\item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+\item{color}{The color scheme to use for plots. One of 'topo', 'heat', 
+'cm', 'terrain', 'gray' or 'bw'. Alternatively a vector with some colors 
 can be provided for a custom color palette (see examples).}
 
 \item{contour.col}{sets the color of contours when using plot.}
@@ -53,7 +74,7 @@ plotted, but if greater than zero, then 3 surfaces are plotted, one at the
 predicted values minus se standard errors, one at the predicted values and 
 one at the predicted values plus se standard errors.}
 
-\item{plot.type}{one of "contour" or "persp" (default is "contour").}
+\item{plot.type}{one of 'contour' or 'persp' (default is 'contour').}
 
 \item{zlim}{A two item array giving the lower and upper limits for the z-
 axis scale. NULL to choose automatically.}
@@ -69,7 +90,7 @@ axis scale. NULL to choose automatically.}
 \item{labcex}{Size of the contour labels.}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "partial effect"). Default is FALSE.}
+(i.e., 'partial effect'). Default is FALSE.}
 
 \item{print.summary}{Logical: whether or not to print summary.
 Default set to the print info messages option 
@@ -89,8 +110,12 @@ When NULL (default), no rounding. If -1 the values are automatically determined.
 Note: if value = -1 (default), rounding will be applied also when 
 \code{zlim} is provided.}
 
+\item{f}{Scaling factor to determine the CI from the se, for marking the 
+difference with 0. Only applies when \code{se} is smaller or equal to zero 
+and \code{show.diff} is set to TRUE.}
+
 \item{...}{other options to pass on to persp, image or contour. In 
-particular ticktype="detailed" will add proper axes labeling to the plots.}
+particular ticktype='detailed' will add proper axes labeling to the plots.}
 }
 \description{
 Produces perspective or contour plot views of gam model 
@@ -132,46 +157,60 @@ m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
     data=simdat, discrete=TRUE)
 
 # Plot summed effects:
-vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
+vis.gam(m1, view=c('Time', 'Trial'), plot.type='contour', color='topo')
 # Partial effect of interaction:
-pvisgam(m1, view=c("Time", "Trial"), select=1)
+pvisgam(m1, view=c('Time', 'Trial'), select=1)
 # Same:
 plot(m1, select=1, scheme=2)
 plot(m1, select=1)
 # Alternatives:
-pvisgam(m1, view=c("Trial", "Time"), select=1)
-pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20))
-pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
-    color="terrain")
-pvisgam(m1, view=c("Trial", "Time"), select=1, zlim=c(-20,20), 
-    color=c("blue", "white", "red"))
+pvisgam(m1, view=c('Trial', 'Time'), select=1)
+pvisgam(m1, view=c('Trial', 'Time'), select=1, zlim=c(-20,20))
+pvisgam(m1, view=c('Trial', 'Time'), select=1, zlim=c(-20,20), 
+    color='terrain')
+pvisgam(m1, view=c('Trial', 'Time'), select=1, zlim=c(-20,20), 
+    color=c('blue', 'white', 'red'))
 
 # Notes on the color legend:
 # Labels can easily fall off the plot, therefore the numbers are 
 # automatically rounded.
 # To undo the rounding, set dec=NULL:
-pvisgam(m1, view=c("Time", "Trial"), dec=NULL)
+pvisgam(m1, view=c('Time', 'Trial'), dec=NULL)
 # For custom rounding, set dec to a value:
-pvisgam(m1, view=c("Time", "Trial"), dec=3)
+pvisgam(m1, view=c('Time', 'Trial'), dec=1)
 # To increase the left marging of the plot (so that the numbers fit):
 oldmar <- par()$mar
 par(mar=oldmar + c(0,0,0,1) ) # add one line to the right
-pvisgam(m1, view=c("Time", "Trial"), dec=3)
+pvisgam(m1, view=c('Time', 'Trial'), dec=3)
 par(mar=oldmar) # restore to default settings
+
+# too.far: 
+n <- which(simdat$Time > 1500 & simdat$Trial > 5)
+simdat[n,]$Y <- NA
+simdat[simdat$Trial == -3,]$Y <- NA
+m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
+    data=simdat, discrete=TRUE)
+pvisgam(m1, view=c('Time', 'Trial'), select=1, too.far=0.03)
 
 }
 # see the vignette for examples:
-vignette("overview", package="itsadug")
+vignette('overview', package='itsadug')
 }
 \seealso{
 \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{gamtabs}}, \code{\link{inspect_random}},
-  \code{\link{plot_data}}, \code{\link{plot_parametric}},
-  \code{\link{plot_smooth}}, \code{\link{plot_topo}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{gamtabs}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_data}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_smooth}()},
+\code{\link{plot_topo}()}
 }
 \author{
 Jacolien van Rij. Modification of \code{\link[mgcv]{vis.gam}} from 
 package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
 }
+\concept{Functions for model inspection}

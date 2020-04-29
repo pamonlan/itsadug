@@ -4,8 +4,7 @@
 \alias{report_stats}
 \title{Returns a description of the statistics of the smooth terms for reporting.}
 \usage{
-report_stats(model, summary = NULL,
-  print.summary = getOption("itsadug_print"))
+report_stats(model, summary = NULL, print.summary = getOption("itsadug_print"))
 }
 \arguments{
 \item{model}{A gam or bam object, produced by \code{\link[mgcv]{gam}} or 
@@ -33,10 +32,13 @@ report[3,2]
 
 }
 \seealso{
-Other Testing for significance: \code{\link{compareML}},
-  \code{\link{plot_diff2}}, \code{\link{plot_diff}},
-  \code{\link{wald_gam}}
+Other Testing for significance: 
+\code{\link{compareML}()},
+\code{\link{plot_diff2}()},
+\code{\link{plot_diff}()},
+\code{\link{wald_gam}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Testing for significance}

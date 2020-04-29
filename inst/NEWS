@@ -1,3 +1,33 @@
+# itsadug 2.4
+
+-> pvisgam: bug fixed that too.far was mirrored.
+
+-> rm.ranef=TRUE for plot_smooth, fvisgam, plot_parametric, plot_diff, plot_diff2, get_predictions, get_difference.
+
+-> default color gradient has been changed to terrain for the functions pvisgam, fvisgam, plot_diff2. For plot_topo the color gradient has changed to rwb (red-white-blue).
+
+-> plot_diff: 
+    * bug fixed. When mark.diff=FALSE, only estimates are provided, but no marks.
+    * warning added that parameter f is deprecated (excluded in 2.3, but no warning was added).
+
+-> start_event: contrast coding and reference level maintained in output data (thanks for the suggestion!)
+
+-> find_difference and get_modelterms return data..frames instead of lists.
+
+
+# itsadug 2.3.2
+- new utility function corfit added: returns the correlation between data and model fit.
+
+# itsadug 2.3.2
+
+- in inspect_random: possible to specify more than one random effect term, which will be combined. Examples will be added. This may be useful for inspection of factorsmooth random effects with by-argument specified.
+- in get_modelterm: by-variable value will be returned in output 
+
+# itsadug 2.3.1
+
+- in inspect_random: argument col deleted from help file, but color can still be specified with col. Now it's also possible to specify lty, lwd, type, pch, cex, and bg.
+
+
 # itsadug 2.3
 
 ## Changes in arguments:

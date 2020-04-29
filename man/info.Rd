@@ -8,15 +8,15 @@ info(input = NULL)
 }
 \arguments{
 \item{input}{Optional parameter. Normally (NULL) the citation info is 
-printed. If value "version" then only the version is printed.}
+printed. If value 'version' then only the version is printed.}
 }
 \description{
 Information on how to cite this package
 }
 \examples{
 info()
-info("version")
-citation(package="itsadug")
+info('version')
+citation(package='itsadug')
 # To get info about R version:
 R.version.string
 }
@@ -24,5 +24,7 @@ R.version.string
 \code{\link[utils]{citation}}, \code{\link[base]{R.version}},
 \code{\link[utils]{sessionInfo}}
 
-Other Functions for package use: \code{\link{infoMessages}}
+Other Functions for package use: 
+\code{\link{infoMessages}()}
 }
+\concept{Functions for package use}

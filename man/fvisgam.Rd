@@ -4,13 +4,35 @@
 \alias{fvisgam}
 \title{Visualization of nonlinear interactions, summed effects.}
 \usage{
-fvisgam(x, view = NULL, cond = list(), n.grid = 30, too.far = 0,
-  col = NA, color = "topo", contour.col = NULL, add.color.legend = TRUE,
-  se = -1, sim.ci = FALSE, plot.type = "contour", xlim = NULL,
-  ylim = NULL, zlim = NULL, nCol = 50, rm.ranef = NULL,
-  print.summary = getOption("itsadug_print"), transform = NULL,
-  transform.view = NULL, hide.label = FALSE, dec = NULL,
-  show.diff = FALSE, col.diff = 1, alpha.diff = 0.5, ...)
+fvisgam(
+  x,
+  view = NULL,
+  cond = list(),
+  n.grid = 30,
+  too.far = 0,
+  col = NA,
+  color = "terrain",
+  contour.col = NULL,
+  add.color.legend = TRUE,
+  se = -1,
+  sim.ci = FALSE,
+  plot.type = "contour",
+  xlim = NULL,
+  ylim = NULL,
+  zlim = NULL,
+  nCol = 50,
+  rm.ranef = TRUE,
+  print.summary = getOption("itsadug_print"),
+  transform = NULL,
+  transform.view = NULL,
+  hide.label = FALSE,
+  dec = NULL,
+  show.diff = FALSE,
+  col.diff = 1,
+  alpha.diff = 0.5,
+  f = 1.96,
+  ...
+)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -36,8 +58,8 @@ predictor variables are excluded.}
 
 \item{col}{The colors for the facets of the plot.}
 
-\item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw". Alternatively a vector with some colors 
+\item{color}{The color scheme to use for plots. One of 'topo', 'heat', 
+'cm', 'terrain', 'gray' or 'bw'. Alternatively a vector with some colors 
 can be provided for a custom color palette (see examples).}
 
 \item{contour.col}{sets the color of contours when using plot.}
@@ -62,7 +84,7 @@ covariance matrix of the parameters is uncertainty corrected
 (\code{unconditional=TRUE}) to reflect the uncertainty on the estimation of 
 smoothness parameters.}
 
-\item{plot.type}{one of "contour" or "persp" (default is "contour").}
+\item{plot.type}{one of 'contour' or 'persp' (default is 'contour').}
 
 \item{xlim}{A two item array giving the lower and upper limits for the x-
 axis scale. NULL to choose automatically.}
@@ -91,7 +113,7 @@ need to be transformed, set the other to NULL (no transformation).
 See examples below.}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "fitted values"). Default is FALSE.}
+(i.e., 'fitted values'). Default is FALSE.}
 
 \item{dec}{Numeric: number of decimals for rounding the color legend. 
 When NULL, no rounding (default). If -1, automatically determined.  
@@ -107,8 +129,12 @@ Defaults to FALSE.}
 
 \item{alpha.diff}{Level of transparency to mark the nonsignificant areas.}
 
+\item{f}{Scaling factor to determine the CI from the se, for marking the 
+difference with 0. Only applies when \code{se} is smaller or equal to zero 
+and \code{show.diff} is set to TRUE.}
+
 \item{...}{other options to pass on to persp, image or contour. In 
-particular ticktype="detailed" will add proper axes labeling to the plots.}
+particular ticktype='detailed' will add proper axes labeling to the plots.}
 }
 \description{
 Produces perspective or contour plot views of gam model 
@@ -138,60 +164,74 @@ m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
     data=simdat, discrete=TRUE)
 
 # Plot summed effects:
-vis.gam(m1, view=c("Time", "Trial"), plot.type='contour', color='topo')
+vis.gam(m1, view=c('Time', 'Trial'), plot.type='contour', color='topo')
 # Same plot:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=FALSE)
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=FALSE)
 # Without random effects included:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE)
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE)
 
 # Notes on the color legend:
 # Labels can easily fall off the plot, therefore the numbers can be
 # automatically rounded.
 # To do the rounding, set dec=-1:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
      dec=-1)
 # For custom rounding, set dec to a value:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
      dec=0)
 # To increase the left marging of the plot (so that the numbers fit):
 oldmar <- par()$mar
 par(mar=oldmar + c(0,0,0,1) ) # add one line to the right
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
      dec=3)
 par(mar=oldmar) # restore to default settings
 
 # changing the color palette:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
-    color="terrain")
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
-    color=c("blue", "white", "red"), col=1)
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
+    color='terrain')
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
+    color=c('blue', 'white', 'red'), col=1)
 
 # Using transform
 # Plot log-transformed dependent predictor on measurement scale:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE, transform=exp)
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE, transform=exp)
 
 # Notes on transform.view: 
 # This will generate an error, because x-values <= 0 will result in NaN:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
    transform.view=list(log, NULL))
 # adjusting the x-axis helps:
-fvisgam(m1, view=c("Time", "Trial"), rm.ranef=TRUE,
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE,
    xlim=c(1,2000), transform.view=list(log, NULL))
+
+# too.far: 
+n <- which(simdat$Time > 1500 & simdat$Trial > 5)
+simdat[n,]$Y <- NA
+simdat[simdat$Trial == -3,]$Y <- NA
+m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
+    data=simdat, discrete=TRUE)
+fvisgam(m1, view=c('Time', 'Trial'), rm.ranef=TRUE, too.far=.03)
 
 }
 # see the vignette for examples:
-vignette("inspect", package="itsadug")
+vignette('inspect', package='itsadug')
 }
 \seealso{
 \code{\link[mgcv]{vis.gam}}, \code{\link[mgcv]{plot.gam}}
 
-Other Functions for model inspection: \code{\link{gamtabs}},
-  \code{\link{inspect_random}}, \code{\link{plot_data}},
-  \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
-  \code{\link{plot_topo}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{gamtabs}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_data}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_smooth}()},
+\code{\link{plot_topo}()},
+\code{\link{pvisgam}()}
 }
 \author{
 Jacolien van Rij and Martijn Wieling. 
 Modification of \code{\link[mgcv]{vis.gam}} from 
 package \code{\link[mgcv]{mgcv}} of Simon N. Wood.
 }
+\concept{Functions for model inspection}

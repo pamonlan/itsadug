@@ -52,7 +52,7 @@
 #' # add hypothetical correlated term:
 #' simdat$predictor <-  (simdat$Trial+10)^.75 + rnorm(nrow(simdat))
 #' # principal components analysis:
-#' pca <- prcomp(simdat[, c("Trial", "predictor")])
+#' pca <- prcomp(simdat[, c('Trial', 'predictor')])
 #' # only first PC term contributes:
 #' summary(pca)
 #' # get rotation (weights of predictors in PC):
@@ -65,57 +65,52 @@
 #' m1 <- bam(Y ~ Group + te(Time, PC1, by=Group) 
 #'     + s(Time, Subject, bs='fs', m=1, k=5), data=simdat)
 #' # inspect surface:
-#' fvisgam(m1, view=c("Time", "PC1"), cond=list(Group="Children"),
+#' fvisgam(m1, view=c('Time', 'PC1'), cond=list(Group='Children'),
 #'     rm.ranef=TRUE)
 #' # how does Trial contribute?
-#' p <- get_pca_predictions(m1, pca.term="PC1", weights=pcar[,"PC1"], 
-#'     view=c("Time", "Trial"), cond=list(Group="Children"),
+#' p <- get_pca_predictions(m1, pca.term='PC1', weights=pcar[,'PC1'], 
+#'     view=c('Time', 'Trial'), cond=list(Group='Children'),
 #'     rm.ranef=TRUE, partial=FALSE)
 #' # Note that the range of Trial is estimated based on the values of PC1.
 #' # A better solution is to specify the range:
-#' p <- get_pca_predictions(m1, pca.term="PC1", weights=pcar[,"PC1"], 
+#' p <- get_pca_predictions(m1, pca.term='PC1', weights=pcar[,'PC1'], 
 #'     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
-#'     cond=list(Group="Children"),rm.ranef=TRUE, partial=FALSE)
+#'     cond=list(Group='Children'),rm.ranef=TRUE, partial=FALSE)
 #' # plotting of the surface:
-#' plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
-#'     view=c("Time", "Trial"), cond=list(Group="Children"),rm.ranef=TRUE)
+#' plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
+#'     view=c('Time', 'Trial'), cond=list(Group='Children'),rm.ranef=TRUE)
 #' }
 #' @family Functions for PCA interpretation
-get_pca_predictions <- function(x, pca.term=NULL, 
-	weights = NULL, view = NULL, 
-	cond = list(), select=NULL,
-    n.grid = 30, se = 1.96,  
-    xlim=NULL, ylim=NULL, 
-    partial=TRUE, rm.ranef=NULL, 
-    as.data.frame=TRUE, 
-    print.summary=getOption('itsadug_print')){
-    if(partial==TRUE){
-    	if(is.null(select)){
-    		stop("Specify a smooth term for which to extract the predictions with argument 'select'.")
-    	}
-    	if(is.null(pca.term)){
-    		pca.term <- x$smooth[[1]]$term[1]
-    		if(print.summary){
-    			cat(sprintf("Predictor %s selected as PC term.\n", pca.term))
-    		}
-    	}
+get_pca_predictions <- function(x, pca.term = NULL, weights = NULL, view = NULL, cond = list(), select = NULL, 
+    n.grid = 30, se = 1.96, xlim = NULL, ylim = NULL, partial = TRUE, rm.ranef = NULL, as.data.frame = TRUE, 
+    print.summary = getOption("itsadug_print")) {
+    if (partial == TRUE) {
+        if (is.null(select)) {
+            stop("Specify a smooth term for which to extract the predictions with argument 'select'.")
+        }
+        if (is.null(pca.term)) {
+            pca.term <- x$smooth[[1]]$term[1]
+            if (print.summary) {
+                cat(sprintf("Predictor %s selected as PC term.\n", pca.term))
+            }
+        }
     }
     v.names <- names(x$var.summary)
     obs <- c()
-    if(is.null(pca.term)){
-    	stop("Please specify pca term.")
-    }else{
-    	if(!pca.term %in% v.names){
-    		stop(paste(c("pca variable must be one of", v.names), collapse = ", "))
-    	}
+    if (is.null(pca.term)) {
+        stop("Please specify pca term.")
+    } else {
+        if (!pca.term %in% v.names) {
+            stop(paste(c("pca variable must be one of", v.names), collapse = ", "))
+        }
     }
     # check cond
-    if(!is.null(cond)){
+    if (!is.null(cond)) {
         cn <- names(cond)
-        test <- sapply(cn, function(x){
-            if(length(unique(cond[[x]]))>1){
+        test <- sapply(cn, function(x) {
+            if (length(unique(cond[[x]])) > 1) {
                 stop("Do not specify more than 1 value for conditions listed in the argument cond.")
-            }else{
+            } else {
                 TRUE
             }
         })
@@ -124,233 +119,221 @@ get_pca_predictions <- function(x, pca.term=NULL,
     if (is.null(view)) {
         stop("Specify view predictors for the x- and optionally y-axis.")
     } else {
-       	if(!is.list(view)){
-       		if(length(view) > 2){
-            warning("View has more than two values. Only first two will be used.")
-            view <- view[1:2]
-          }
-          view.list <- list()
-          for(i in view){
-            if(i %in% colnames(x$model)){
-              view.list[[i]] <- range(x$model[,i], na.rm=TRUE)
-            }else if(i %in% names(weights)){
-              r.pc <- range(x$model[,pca.term], na.rm=TRUE)
-              other.pca.components <- list()
-              for(j in names(weights)){
-                if(! j %in% view){
-                  if(j %in% names(cond)){
-                    other.pca.components[[j]] <- cond[[j]]
+        if (!is.list(view)) {
+            if (length(view) > 2) {
+                warning("View has more than two values. Only first two will be used.")
+                view <- view[1:2]
+            }
+            view.list <- list()
+            for (i in view) {
+                if (i %in% colnames(x$model)) {
+                  view.list[[i]] <- range(x$model[, i], na.rm = TRUE)
+                } else if (i %in% names(weights)) {
+                  r.pc <- range(x$model[, pca.term], na.rm = TRUE)
+                  other.pca.components <- list()
+                  for (j in names(weights)) {
+                    if (!j %in% view) {
+                      if (j %in% names(cond)) {
+                        other.pca.components[[j]] <- cond[[j]]
+                      }
+                    }
+                  }
+                  other <- 0
+                  for (j in names(other.pca.components)) {
+                    other <- other + weights[j] * other.pca.components[[j]]
+                  }
+                  other.pca.components <- NULL
+                  if (sum(view %in% names(weights)) == 1) {
+                    # option 1: only this view predictor is in PC
+                    view.list[[i]] <- (r.pc - other)/weights[i]
+                  } else if (sum(view %in% names(weights)) == 2) {
+                    # option 2: two view predictors are in PC
+                    view.list[[i]] <- (r.pc - other)/sum(weights[view])
+                    warning("The ranges of the two view predictors are unknown, and will be assumed the same. It is in most cases better to specify the view predictors as a list, with (the range of) their values. See examples.")
                   }
                 }
-              }
-              other <- 0
-              for(j in names(other.pca.components)){
-                other <- other + weights[j]*other.pca.components[[j]]
-              }
-              other.pca.components <- NULL
-              if(sum(view %in% names(weights))==1){
-                # option 1: only this view predictor is in PC
-                view.list[[i]] <- (r.pc -other)/ weights[i]
-              }else if (sum(view %in% names(weights))==2){
-                # option 2: two view predictors are in PC
-                view.list[[i]] <- (r.pc - other) / sum(weights[view])
-                warning("The ranges of the two view predictors are unknown, and will be assumed the same. It is in most cases better to specify the view predictors as a list, with (the range of) their values. See examples.")
-              }             
             }
-          }
-          view = view.list
-       	}
+            view = view.list
+        }
         # process view list
-     		for(i in 1:length(view)){
-     			if(length(view[[i]])==2){
-     				view[[i]] = seq(view[[i]][1], view[[i]][2], length=n.grid)
-     			}else if (length(view[[i]]) != nrow(x$model)){
-     				el <- missing_est(x)
-     				if(is.null(el)){
-     					view[[i]] = seq(min(view[[i]], na.rm=TRUE), max(view[[i]], na.rm=TRUE), length=n.grid)
-     				}else{
-     					tmp = 1:length(view[[1]])
-     					tmp = tmp[!tmp %in% el]
-     					if(length(view[[i]][tmp])==nrow(x$model)){
-     						if(!names(view)[i] %in% v.names){
-     							x$model[,names(view)[i]] <- view[[i]][tmp]
-     						}
-     					}
-     					view[[i]] = seq(min(view[[i]], na.rm=TRUE), max(view[[i]], na.rm=TRUE), length=n.grid)
-     				}
-     			}else{
-     				if(!names(view)[i] %in% v.names){
-     					x$model[,names(view)[i]] <- view[[i]]
-     				}       				
-     				view[[i]] = seq(min(view[[i]], na.rm=TRUE), max(view[[i]], na.rm=TRUE), length=n.grid)
-     			}
-     		}
-       	
+        for (i in 1:length(view)) {
+            if (length(view[[i]]) == 2) {
+                view[[i]] = seq(view[[i]][1], view[[i]][2], length = n.grid)
+            } else if (length(view[[i]]) != nrow(x$model)) {
+                el <- missing_est(x)
+                if (is.null(el)) {
+                  view[[i]] = seq(min(view[[i]], na.rm = TRUE), max(view[[i]], na.rm = TRUE), length = n.grid)
+                } else {
+                  tmp = 1:length(view[[1]])
+                  tmp = tmp[!tmp %in% el]
+                  if (length(view[[i]][tmp]) == nrow(x$model)) {
+                    if (!names(view)[i] %in% v.names) {
+                      x$model[, names(view)[i]] <- view[[i]][tmp]
+                    }
+                  }
+                  view[[i]] = seq(min(view[[i]], na.rm = TRUE), max(view[[i]], na.rm = TRUE), length = n.grid)
+                }
+            } else {
+                if (!names(view)[i] %in% v.names) {
+                  x$model[, names(view)[i]] <- view[[i]]
+                }
+                view[[i]] = seq(min(view[[i]], na.rm = TRUE), max(view[[i]], na.rm = TRUE), length = n.grid)
+            }
+        }
+        
     }
     m1 <- view[[1]]
     m2 <- NULL
-    if(length(view)>=2){
-	   	m2 <- view[[2]]
-	    if(length(view)>2){
-	    	warning("Only first two view predictors are being used.")
-	    }    	
+    if (length(view) >= 2) {
+        m2 <- view[[2]]
+        if (length(view) > 2) {
+            warning("Only first two view predictors are being used.")
+        }
     }
     view = names(view)[1:min(2, length(view))]
-    if(!is.null(xlim)){
-        if(length(xlim) != 2){
+    if (!is.null(xlim)) {
+        if (length(xlim) != 2) {
             warning("Invalid xlim values specified. Argument xlim is being ignored.")
-        }else{ 
-            m1 <- seq(xlim[1], xlim[2], length=n.grid)
+        } else {
+            m1 <- seq(xlim[1], xlim[2], length = n.grid)
         }
     }
-    if(!is.null(ylim)){
-        if(length(ylim) != 2){
+    if (!is.null(ylim)) {
+        if (length(ylim) != 2) {
             warning("Invalid ylim values specified. Argument ylim is being ignored.")
-        }else if(!is.null(m2)){ 
-            m2 <- seq(ylim[1], ylim[2], length=n.grid)
+        } else if (!is.null(m2)) {
+            m2 <- seq(ylim[1], ylim[2], length = n.grid)
         }
     }
-    # calculate PC1 values
-    # PC = a*view1 + b*view2
+    # calculate PC1 values PC = a*view1 + b*view2
     other.pca.components <- list()
-    if(!any(view %in% names(weights))){
-    	stop("None of the view predictors are found in weights.")
-    }else if(! all(names(weights) %in% view)){
-    	miss <- names(weights)[!names(weights) %in% view]
-     	for(i in miss){
-     		if(i %in% names(cond)){
-     			other.pca.components[[i]] <- cond[[i]]
-     			miss <- miss[miss != i]
-     		}else{
-          other.pca.components[[i]] <- 0
-        }    		
-    	}
-    	if(length(miss)>0){
-    		warning(sprintf("The following predictors are set to 0 when calculating the effect of %s: %s",
-    		    			pca.term, paste(miss, collapse=", ")))
-    	}
+    if (!any(view %in% names(weights))) {
+        stop("None of the view predictors are found in weights.")
+    } else if (!all(names(weights) %in% view)) {
+        miss <- names(weights)[!names(weights) %in% view]
+        for (i in miss) {
+            if (i %in% names(cond)) {
+                other.pca.components[[i]] <- cond[[i]]
+                miss <- miss[miss != i]
+            } else {
+                other.pca.components[[i]] <- 0
+            }
+        }
+        if (length(miss) > 0) {
+            warning(sprintf("The following predictors are set to 0 when calculating the effect of %s: %s", 
+                pca.term, paste(miss, collapse = ", ")))
+        }
     }
-    if(length(other.pca.components) > 0){
-    	tmp <- 0
-    	for(i in names(other.pca.components)){
-    		tmp <- tmp+weights[i]*other.pca.components[[i]]
-    	}
-    	other.pca.components <- tmp
-    }else{
-    	other.pca.components <- 0
+    if (length(other.pca.components) > 0) {
+        tmp <- 0
+        for (i in names(other.pca.components)) {
+            tmp <- tmp + weights[i] * other.pca.components[[i]]
+        }
+        other.pca.components <- tmp
+    } else {
+        other.pca.components <- 0
     }
     newd <- NULL
     obs <- "empty"
-    if(!is.null(m2)){
-  		tmp <- expand.grid(m1=m1, m2=m2)
-  		names(tmp) <- view
-      if(all(view %in% names(weights)) ){
-          tmp[,pca.term] <- weights[view[1]]*tmp[,view[1]] + weights[view[2]]*tmp[,view[2]] + other.pca.components
-          if( sum(view %in% colnames(x$model))==1){
-            if( view[1] %in% colnames(x$model)){
-              r.pc <- (x$model[,pca.term] - other.pca.components - weights[view[1]]*x$model[,view[1]]) / weights[view[2]]
-              obs <- data.frame(x=x$model[,view[1]], y=r.pc)
-              names(obs) <- view
-            }else{
-              r.pc <- (x$model[,pca.term] - other.pca.components - weights[view[2]]*x$model[,view[2]]) / weights[view[1]]
-              obs <- data.frame(x=x$model[,view[2]], y=r.pc)
-              names(obs) <- view
+    if (!is.null(m2)) {
+        tmp <- expand.grid(m1 = m1, m2 = m2)
+        names(tmp) <- view
+        if (all(view %in% names(weights))) {
+            tmp[, pca.term] <- weights[view[1]] * tmp[, view[1]] + weights[view[2]] * tmp[, view[2]] + other.pca.components
+            if (sum(view %in% colnames(x$model)) == 1) {
+                if (view[1] %in% colnames(x$model)) {
+                  r.pc <- (x$model[, pca.term] - other.pca.components - weights[view[1]] * x$model[, view[1]])/weights[view[2]]
+                  obs <- data.frame(x = x$model[, view[1]], y = r.pc, stringsAsFactors = FALSE)
+                  names(obs) <- view
+                } else {
+                  r.pc <- (x$model[, pca.term] - other.pca.components - weights[view[2]] * x$model[, view[2]])/weights[view[1]]
+                  obs <- data.frame(x = x$model[, view[2]], y = r.pc, stringsAsFactors = FALSE)
+                  names(obs) <- view
+                }
+            } else if (sum(view %in% colnames(x$model)) == 2) {
+                obs <- x$model[, view]
+            } else {
+                r.pc <- (x$model[, pca.term] - other.pca.components)/(weights[view[1]] + weights[view[2]])
+                obs <- data.frame(x = r.pc, y = r.pc, stringsAsFactors = FALSE)
+                names(obs) <- view
             }
-          }else if( sum(view %in% colnames(x$model))==2 ){
-            obs <- x$model[,view]
-          }else{
-            r.pc <- (x$model[,pca.term] - other.pca.components) / (weights[view[1]]+weights[view[2]])
-            obs <- data.frame(x=r.pc, y=r.pc)
-            names(obs) <- view
-          }
-      }else if(sum(view %in% names(weights))==1){
-          tmp[,pca.term] <- weights[view[view %in% names(weights)]]*tmp[,view[view %in% names(weights)]] + other.pca.components
-          if( sum(view %in% colnames(x$model))==1){
-            if( view[1] %in% names(weights)){
-              r.pc <- (x$model[,pca.term] - other.pca.components) / weights[view[1]]
-              obs <- data.frame(x=r.pc, y=x$model[,view[2]])
-              names(obs) <- view
-            }else if( view[2] %in% names(weights)){
-              r.pc <- (x$model[,pca.term] - other.pca.components) / weights[view[2]]
-              obs <- data.frame(x=r.pc, y=x$model[,view[1]])
-              names(obs) <- view
+        } else if (sum(view %in% names(weights)) == 1) {
+            tmp[, pca.term] <- weights[view[view %in% names(weights)]] * tmp[, view[view %in% names(weights)]] + 
+                other.pca.components
+            if (sum(view %in% colnames(x$model)) == 1) {
+                if (view[1] %in% names(weights)) {
+                  r.pc <- (x$model[, pca.term] - other.pca.components)/weights[view[1]]
+                  obs <- data.frame(x = r.pc, y = x$model[, view[2]], stringsAsFactors = FALSE)
+                  names(obs) <- view
+                } else if (view[2] %in% names(weights)) {
+                  r.pc <- (x$model[, pca.term] - other.pca.components)/weights[view[2]]
+                  obs <- data.frame(x = r.pc, y = x$model[, view[1]], stringsAsFactors = FALSE)
+                  names(obs) <- view
+                }
+            } else if (sum(view %in% colnames(x$model)) == 2) {
+                obs <- data.frame(x = x$model[, view[1]], y = x$model[, view[2]], stringsAsFactors = FALSE)
+                names(obs) <- view
             }
-          }else if( sum(view %in% colnames(x$model))==2 ){
-            obs <- data.frame(x=x$model[, view[1]], y=x$model[,view[2]])
-            names(obs) <- view
-          }
-      }		
-  		cond[[pca.term]] <- unique(tmp[,pca.term])
-      cond[[view[1]]] <- m1
-      cond[[view[2]]] <- m2
-  		if(partial==TRUE){
-  			newd <- get_predictions(x, cond=cond, se=FALSE, 
-  		        f=0, rm.ranef=FALSE,
-  		        print.summary=FALSE)
-  			newd$fit <- NULL
-  			fv <- predict(x, newd, type="terms", se.fit=ifelse(se>0, TRUE, FALSE))
-  			smooth.names <- x$smooth[[select]]$label
-  			if(se>0){
-  				newd <- cbind(newd, 
-  					fit=fv$fit[,smooth.names], 
-  					se.fit=fv$se.fit[,smooth.names]*se)
-  			}else{
-  				newd <- cbind(newd, 
-  					fit=fv[,smooth.names])
-  			}
-  	
-  		}else{
-  			newd <- get_predictions(x, cond=cond, se=ifelse(se>0, TRUE, FALSE), 
-  		        f=ifelse(se>0, se, 1.96), rm.ranef=rm.ranef,
-  		        print.summary=print.summary)			
-  		}
-	    # add new predictors
-      newd <- merge(newd, tmp, by=colnames(newd)[colnames(newd) %in% colnames(tmp)], all=TRUE)
-	    newd <- newd[order(newd[,view[1]], newd[, view[2]]),]
-	    tmp <- NULL
-	}else{
-		tmp <- data.frame(m1=m1)
-		names(tmp) <- view
+        }
+        cond[[pca.term]] <- unique(tmp[, pca.term])
+        cond[[view[1]]] <- m1
+        cond[[view[2]]] <- m2
+        if (partial == TRUE) {
+            newd <- get_predictions(x, cond = cond, se = FALSE, f = 0, rm.ranef = FALSE, print.summary = FALSE)
+            newd$fit <- NULL
+            fv <- predict(x, newd, type = "terms", se.fit = ifelse(se > 0, TRUE, FALSE))
+            smooth.names <- x$smooth[[select]]$label
+            if (se > 0) {
+                newd <- cbind(newd, fit = fv$fit[, smooth.names], se.fit = fv$se.fit[, smooth.names] * se)
+            } else {
+                newd <- cbind(newd, fit = fv[, smooth.names])
+            }
+            
+        } else {
+            newd <- get_predictions(x, cond = cond, se = ifelse(se > 0, TRUE, FALSE), f = ifelse(se > 0, se, 
+                1.96), rm.ranef = rm.ranef, print.summary = print.summary)
+        }
+        # add new predictors
+        newd <- merge(newd, tmp, by = colnames(newd)[colnames(newd) %in% colnames(tmp)], all = TRUE)
+        newd <- newd[order(newd[, view[1]], newd[, view[2]]), ]
+        tmp <- NULL
+    } else {
+        tmp <- data.frame(m1 = m1, stringsAsFactors = FALSE)
+        names(tmp) <- view
+        
+        tmp[, pca.term] <- weights[view[1]] * tmp[, view[1]] + other.pca.components
+        cond[[pca.term]] <- unique(tmp[, pca.term])
+        cond[[view[1]]] <- m1
+        if (partial == TRUE) {
+            newd <- get_predictions(x, cond = cond, se = FALSE, f = 0, rm.ranef = FALSE, print.summary = FALSE)
+            newd$fit <- NULL
+            fv <- predict(x, newd, type = "terms", se.fit = ifelse(se > 0, TRUE, FALSE))
+            smooth.names <- x$smooth[[select]]$label
+            if (se > 0) {
+                newd <- cbind(newd, fit = fv$fit[, smooth.names], se.fit = fv$se.fit[, smooth.names] * se)
+            } else {
+                newd <- cbind(newd, fit = fv[, smooth.names])
+            }
+            
+        } else {
+            newd <- get_predictions(x, cond = cond, se = ifelse(se > 0, TRUE, FALSE), f = ifelse(se > 0, se, 
+                1.96), rm.ranef = rm.ranef, print.summary = print.summary)
+        }
+        # add new predictors
+        newd[, view[1]] <- tmp[, view[1]]
+        ### newd[, view[2]] <- tmp[, view[2]] <- some way to extract these predictors
+        newd <- newd[order(newd[, view[1]]), ]
+        tmp <- NULL
+    }
+    attr(newd, "partial") <- partial
+    attr(newd, "select") <- select
+    attr(newd, "rm.ranef") <- rm.ranef
+    attr(newd, "se") <- se
+    attr(newd, "weights") <- weights
+    attr(newd, "view") <- view
+    attr(newd, "obs") <- obs
+    return(newd)
     
-    tmp[,pca.term] <- weights[view[1]]*tmp[,view[1]] + other.pca.components 
-    cond[[pca.term]] <- unique(tmp[,pca.term])
-    cond[[view[1]]] <- m1
-		if(partial==TRUE){
-			newd <- get_predictions(x, cond=cond, se=FALSE, 
-		        f=0, rm.ranef=FALSE,
-		        print.summary=FALSE)
-			newd$fit <- NULL
-			fv <- predict(x, newd, type="terms", se.fit=ifelse(se>0, TRUE, FALSE))
-			smooth.names <- x$smooth[[select]]$label
-			if(se>0){
-				newd <- cbind(newd, 
-					fit=fv$fit[,smooth.names], 
-					se.fit=fv$se.fit[,smooth.names]*se)
-			}else{
-				newd <- cbind(newd, 
-					fit=fv[,smooth.names])
-			}
-	
-		}else{
-			newd <- get_predictions(x, cond=cond, se=ifelse(se>0, TRUE, FALSE), 
-		        f=ifelse(se>0, se, 1.96), rm.ranef=rm.ranef,
-		        print.summary=print.summary)			
-		}
-	    # add new predictors
-	    newd[, view[1]] <- tmp[, view[1]]
-	    ### newd[, view[2]] <- tmp[, view[2]] <- some way to extract these predictors
-	    newd <- newd[order(newd[,view[1]]),]
-	    tmp <- NULL
-	}
-	attr(newd, "partial") <- partial
-	attr(newd, "select") <- select
-	attr(newd, "rm.ranef") <- rm.ranef
-	attr(newd, "se") <- se
-	attr(newd, "weights") <- weights
-	attr(newd, "view") <- view
-	attr(newd, "obs") <- obs
-	return(newd)
-	
 }
 
 
@@ -398,8 +381,8 @@ get_pca_predictions <- function(x, pca.term=NULL,
 #' @param rm.ranef Logical: whether or not to remove random effects. 
 #' Default is TRUE.
 #' @param col The colors for the facets of the plot.
-#' @param color The color scheme to use for plots. One of "topo", "heat", 
-#' "cm", "terrain", "gray" or "bw". 
+#' @param color The color scheme to use for plots. One of 'topo', 'heat', 
+#' 'cm', 'terrain', 'gray' or 'bw'. 
 #' @param contour.col sets the color of contours when using plot.
 #' @param nCol The number of colors to use in color schemes.
 #' @param plotCI Logical: whether or not to plot the confidence intervals. 
@@ -411,7 +394,7 @@ get_pca_predictions <- function(x, pca.term=NULL,
 #' is plotted, but if greater than zero, then 3 surfaces are plotted, one at 
 #' the predicted values minus se standard errors, one at the predicted 
 #' values and one at the predicted values plus se standard errors.
-#' @param plot.type one of "contour" or "persp" (default is "contour").
+#' @param plot.type one of 'contour' or 'persp' (default is 'contour').
 #' @param zlim A two item array giving the lower and upper limits for the z-
 #' axis scale. NULL to choose automatically.
 #' @param xlim A two item array giving the lower and upper limits for the x-
@@ -428,19 +411,19 @@ get_pca_predictions <- function(x, pca.term=NULL,
 #' need to be transformed, set the other to NULL (no transformation).
 #' See examples below.
 #' @param hide.label Logical: whether or not to hide the label 
-#' (i.e., "fitted values"). Default is FALSE.
+#' (i.e., 'fitted values'). Default is FALSE.
 #' @param dec Numeric: number of decimals for rounding the color legend. 
 #' When NULL, no rounding (default). If -1, automatically determined.  
 #' Note: if value = -1, rounding will be applied also when 
 #' \code{zlim} is provided.
 #' @param ... other options to pass on to persp, image or contour. In 
-#' particular ticktype="detailed" will add proper axes labeling to the plots.
+#' particular ticktype='detailed' will add proper axes labeling to the plots.
 #' @author Jacolien van Rij
 #' data(simdat)
 #' # add hypothetical correlated term:
 #' simdat$predictor <-  (simdat$Trial+10)^.75 + rnorm(nrow(simdat))
 #' # principal components analysis:
-#' pca <- prcomp(simdat[, c("Trial", "predictor")])
+#' pca <- prcomp(simdat[, c('Trial', 'predictor')])
 #' # only first PC term contributes:
 #' summary(pca)
 #' # get rotation (weights of predictors in PC):
@@ -452,144 +435,136 @@ get_pca_predictions <- function(x, pca.term=NULL,
 #' m1 <- bam(Y ~ Group + te(Time, PC1, by=Group) 
 #'     + s(Time, Subject, bs='fs', m=1, k=5), data=simdat)
 #' # inspect surface:
-#' fvisgam(m1, view=c("Time", "PC1"), cond=list(Group="Children"),
+#' fvisgam(m1, view=c('Time', 'PC1'), cond=list(Group='Children'),
 #'     rm.ranef=TRUE)
 #' # how does Trial contribute?
-#' plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
-#'     view=c("Time", "Trial"), cond=list(Group="Children"),rm.ranef=TRUE)
+#' plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
+#'     view=c('Time', 'Trial'), cond=list(Group='Children'),rm.ranef=TRUE)
 #' # Note that the range of Trial is estimated based on the values of PC1.
 #' # A better solution is to specify the range:
-#' plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
+#' plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
 #'     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
-#'     cond=list(Group="Children"),rm.ranef=TRUE)
+#'     cond=list(Group='Children'),rm.ranef=TRUE)
 #' 
 #' # Partial effects:
-#' pvisgam(m1, view=c("Time", "PC1"), cond=list(Group="Children"),
+#' pvisgam(m1, view=c('Time', 'PC1'), cond=list(Group='Children'),
 #'     select=1, rm.ranef=TRUE)
 #' # PCA:
-#' plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
+#' plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
 #'     partial=TRUE, select=1,
 #'     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
-#'     cond=list(Group="Children"))
+#'     cond=list(Group='Children'))
 #' 
 #' @seealso \code{\link{fvisgam}}, \code{\link{pvisgam}}
 #'
 #' @family Functions for PCA interpretation
-plot_pca_surface <- function(x, pca.term=NULL, 
-	weights = NULL, view = NULL, cond = list(),
-	partial=FALSE, select=NULL, se = -1, 
-    n.grid = 30, too.far = 0, rm.ranef=NULL, 
-    col = NA, color = "topo", contour.col = NULL,
-    nCol = 50,  plotCI=FALSE,
-    add.color.legend=TRUE, plot.type = "contour", 
-    xlim=NULL, ylim=NULL, zlim = NULL,
-    print.summary=getOption('itsadug_print'), 
-    transform=NULL, transform.view=NULL, hide.label=FALSE, 
-    dec=NULL, ...){
+plot_pca_surface <- function(x, pca.term = NULL, weights = NULL, view = NULL, cond = list(), partial = FALSE, 
+    select = NULL, se = -1, n.grid = 30, too.far = 0, rm.ranef = NULL, col = NA, color = "topo", contour.col = NULL, 
+    nCol = 50, plotCI = FALSE, add.color.legend = TRUE, plot.type = "contour", xlim = NULL, ylim = NULL, zlim = NULL, 
+    print.summary = getOption("itsadug_print"), transform = NULL, transform.view = NULL, hide.label = FALSE, 
+    dec = NULL, ...) {
     dnm <- names(list(...))
     v.names <- names(x$var.summary)
-    if(length(view) < 2){
-    	stop("Specify 2 view predictors in a list; see examples.")
-    }else{
+    if (length(view) < 2) {
+        stop("Specify 2 view predictors in a list; see examples.")
+    } else {
     }
-    newd <- get_pca_predictions(x=x, pca.term=pca.term, 
-    	weights=weights, view=view,
-    	cond=cond, partial=partial, select=select,
-    	n.grid=n.grid, se=se, rm.ranef=rm.ranef,
-    	xlim=xlim, ylim=ylim, print.summary=getOption('itsadug_print'))
+    newd <- get_pca_predictions(x = x, pca.term = pca.term, weights = weights, view = view, cond = cond, partial = partial, 
+        select = select, n.grid = n.grid, se = se, rm.ranef = rm.ranef, xlim = xlim, ylim = ylim, print.summary = getOption("itsadug_print"))
     view = attr(newd, "view")
-    m1 <- sort(unique(newd[,view[1]]))
-    m2 <- sort(unique(newd[,view[2]]))
+    m1 <- sort(unique(newd[, view[1]]))
+    m2 <- sort(unique(newd[, view[2]]))
     x$model <- cbind(x$model, attr(newd, "obs"))
     # transform values x- and y-axes:
-    errormessage <- function(name){
-        return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", name))
+    errormessage <- function(name) {
+        return(sprintf("Error: the function specified in transformation.view cannot be applied to %s-values, because infinite or missing values are not allowed.", 
+            name))
     }
-    if(!is.null(transform.view)){
-        if(length(transform.view)==1){
+    if (!is.null(transform.view)) {
+        if (length(transform.view) == 1) {
             
             m1 <- sapply(m1, transform.view)
             m2 <- sapply(m2, transform.view)
-            if(any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))){
+            if (any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))) {
                 stop(errormessage("x"))
             }
-            if(any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))){
+            if (any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))) {
                 stop(errormessage("y"))
             }
-            if(print.summary){
+            if (print.summary) {
                 cat("\t* Note: The same transformation is applied to values of x-axis and y-axis.\n")
             }
-        }else if(length(transform.view) >= 2){
-            if(!is.null(transform.view[[1]])){
+        } else if (length(transform.view) >= 2) {
+            if (!is.null(transform.view[[1]])) {
                 m1 <- sapply(m1, transform.view[[1]])
-                if(any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))){
-                    stop(errormessage("x"))
+                if (any(is.infinite(m1)) | any(is.nan(m1)) | any(is.na(m1))) {
+                  stop(errormessage("x"))
                 }
             }
-            if(!is.null(transform.view[[2]])){
+            if (!is.null(transform.view[[2]])) {
                 m2 <- sapply(m2, transform.view[[2]])
-                if(any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))){
-                    stop(errormessage("y"))
+                if (any(is.infinite(m2)) | any(is.nan(m2)) | any(is.na(m2))) {
+                  stop(errormessage("y"))
                 }
             }
-            if(print.summary){
+            if (print.summary) {
                 cat("\t* Note: Transformation function(s) applied to values of x-axis and / or y-axis.\n")
             }
-        }          
+        }
     }
-    too.far.raster <- rep(alpha('white', f=0), nrow(newd))
+    too.far.raster <- rep(alpha("white", f = 0), nrow(newd))
     newd.toofar <- newd
     ex.tf = NULL
     if (too.far > 0) {
-        ex.tf <- mgcv::exclude.too.far(newd[,view[1]], newd[,view[2]], x$model[, view[1]], x$model[, view[2]], dist = too.far)
+        ex.tf <- mgcv::exclude.too.far(newd[, view[1]], newd[, view[2]], x$model[, view[1]], x$model[, view[2]], 
+            dist = too.far)
         newd.toofar$se.fit[ex.tf] <- newd.toofar$fit[ex.tf] <- NA
-        too.far.raster[ex.tf] <- 'white'
+        too.far.raster[ex.tf] <- "white"
     }
     # raster images are row-first, in contrast to images...
-    too.far.raster <- matrix(too.far.raster, byrow=FALSE, n.grid, n.grid)
-    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1,])
-    z <- matrix(newd$fit, byrow=TRUE, n.grid, n.grid)
-    z.toofar <- matrix(newd.toofar$fit, byrow=TRUE, n.grid, n.grid)
+    too.far.raster <- matrix(too.far.raster, byrow = FALSE, n.grid, n.grid)
+    too.far.raster <- as.raster(too.far.raster[nrow(too.far.raster):1, ])
+    z <- matrix(newd$fit, byrow = TRUE, n.grid, n.grid)
+    z.toofar <- matrix(newd.toofar$fit, byrow = TRUE, n.grid, n.grid)
     zlab <- colnames(x$model)[!colnames(x$model) %in% names(cond)][1]
-   
-    if (plotCI==FALSE | se <= 0) {
+    
+    if (plotCI == FALSE | se <= 0) {
         z.fit <- newd$fit
         z.fit.toofar <- newd.toofar$fit
-        if(!is.null(transform)){
+        if (!is.null(transform)) {
             z.fit <- sapply(z.fit, transform)
-            z <- matrix(z.fit, byrow=TRUE, n.grid, n.grid)
+            z <- matrix(z.fit, byrow = TRUE, n.grid, n.grid)
             z.fit.toofar <- sapply(z.fit.toofar, transform)
         }
         old.warn <- options(warn = -1)
-        av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), byrow=TRUE, n.grid, n.grid - 1)
+        av <- matrix(c(0.5, 0.5, rep(0, n.grid - 1)), byrow = TRUE, n.grid, n.grid - 1)
         options(old.warn)
         max.z <- max(z, na.rm = TRUE)
         z[is.na(z)] <- max.z * 10000
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z, byrow = TRUE, n.grid, n.grid)
         surf.col <- t(av) %*% z %*% av
         surf.col[surf.col > max.z * 2] <- NA
         if (!is.null(zlim)) {
             if (length(zlim) != 2 || zlim[1] >= zlim[2]) 
                 stop("Something wrong with zlim")
-            if(!is.null(dec)){
-                if(dec == -1){
-                    dec <- getDec(min(zlim, na.rm=TRUE))
+            if (!is.null(dec)) {
+                if (dec == -1) {
+                  dec <- getDec(min(zlim, na.rm = TRUE))
                 }
-                zlim <- getRange(zlim, step=(.1^dec), n.seg=2)
+                zlim <- getRange(zlim, step = (0.1^dec), n.seg = 2)
             }
             min.z <- zlim[1]
             max.z <- zlim[2]
         } else {
-            if(!is.null(dec)){
-                if(dec == -1){
-                    dec <- getDec(min(z.fit.toofar, na.rm = TRUE))
+            if (!is.null(dec)) {
+                if (dec == -1) {
+                  dec <- getDec(min(z.fit.toofar, na.rm = TRUE))
                 }
-                tmp <- getRange(range(z.fit.toofar, na.rm = TRUE), n.seg=2, step=(.1^dec))
-            }else{
+                tmp <- getRange(range(z.fit.toofar, na.rm = TRUE), n.seg = 2, step = (0.1^dec))
+            } else {
                 tmp <- range(z.fit.toofar, na.rm = TRUE)
             }
-            # min.z <- min(z.fit, na.rm = TRUE)
-            # max.z <- max(z.fit, na.rm = TRUE)
+            # min.z <- min(z.fit, na.rm = TRUE) max.z <- max(z.fit, na.rm = TRUE)
             min.z <- tmp[1]
             max.z <- tmp[2]
         }
@@ -615,7 +590,7 @@ plot_pca_surface <- function(x, pca.term=NULL,
                 con.col <- 1
             } else {
                 warning("Package 'sp' needed for bpy color palette. Using topo.colors instead (default).")
-                color <- 'topo'
+                color <- "topo"
                 pal <- topo.colors(nCol)
                 con.col <- 2
             }
@@ -629,75 +604,68 @@ plot_pca_surface <- function(x, pca.term=NULL,
         surf.col[surf.col > nCol] <- nCol
         if (is.na(col)) 
             col <- pal[as.array(surf.col)]
-        z <- matrix(z, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z, byrow = TRUE, n.grid, n.grid)
         if (plot.type == "contour") {
-            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
             if (color != "bw") {
                 txt <- paste("image(m1,m2,z,col=pal,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
-                txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z)", ifelse("add" %in% dnm, "", ",add=TRUE"), 
-                  ",...)", sep = "")
+                txt <- paste("contour(m1,m2,z,col=contour.col,zlim=c(min.z,max.z)", ifelse("add" %in% dnm, 
+                  "", ",add=TRUE"), ",...)", sep = "")
                 eval(parse(text = txt))
             } else {
                 txt <- paste("contour(m1,m2,z,col=1,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
             }
-            gfc <- getFigCoords('p')
-            rasterImage(too.far.raster, xleft=gfc[1], xright=gfc[2], ybottom=gfc[3], ytop=gfc[4])
-            if(add.color.legend){
-                gradientLegend(c(min.z, max.z), n.seg=3, pos=.875, 
-                    color=pal, dec=dec)
+            gfc <- getFigCoords("p")
+            rasterImage(too.far.raster, xleft = gfc[1], xright = gfc[2], ybottom = gfc[3], ytop = gfc[4])
+            if (add.color.legend) {
+                gradientLegend(c(min.z, max.z), n.seg = 3, pos = 0.875, color = pal, dec = dec)
             }
-	        if(hide.label==FALSE){
-	        	addlabel = "fitted values"
-	        	if(!is.null(rm.ranef)){
-	        		if(rm.ranef !=FALSE){
-	        			addlabel = paste(addlabel, "excl. random", sep=", ")
-	        		}
-	        	}
-	        	mtext(addlabel, side=4, line=0, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	if(!is.null(transform)){
-	        		mtext("transformed", side=4, line=.75, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	}
-	        }
-	            
-        }else{
-             stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("main" %in% 
-                dnm, "", ",main=zlab"), ",...)", sep = "")
+            if (hide.label == FALSE) {
+                addlabel = "fitted values"
+                if (!is.null(rm.ranef)) {
+                  if (rm.ranef != FALSE) {
+                    addlabel = paste(addlabel, "excl. random", sep = ", ")
+                  }
+                }
+                mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                if (!is.null(transform)) {
+                  mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                }
+            }
+            
+        } else {
+            stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+                ifelse("main" %in% dnm, "", ",main=zlab"), ",...)", sep = "")
             if (color == "bw") {
                 op <- par(bg = "white")
                 txt <- paste("persp(m1,m2,z,col=\"white\",zlim=c(min.z,max.z) ", stub, sep = "")
                 eval(parse(text = txt))
                 par(op)
-            }
-            else {
-                txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", 
-                  stub, sep = "")
+            } else {
+                txt <- paste("persp(m1,m2,z,col=col,zlim=c(min.z,max.z)", stub, sep = "")
                 eval(parse(text = txt))
-            } 
-	        if(hide.label==FALSE){
-	        	addlabel = "fitted values"
-	        	if(!is.null(rm.ranef)){
-	        		if(rm.ranef !=FALSE){
-	        			addlabel = paste(addlabel, "excl. random", sep=", ")
-	        		}
-	        	}
-	        	mtext(addlabel, side=4, line=0, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	if(!is.null(transform)){
-	        		mtext("transformed", side=4, line=.75, adj=0, 
-	        		cex=.75, col='gray35', xpd=TRUE)
-	        	}
-	        }
+            }
+            if (hide.label == FALSE) {
+                addlabel = "fitted values"
+                if (!is.null(rm.ranef)) {
+                  if (rm.ranef != FALSE) {
+                    addlabel = paste(addlabel, "excl. random", sep = ", ")
+                  }
+                }
+                mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                if (!is.null(transform)) {
+                  mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+                }
+            }
         }
     } else {
         z.fit <- newd$fit
         z.cil <- newd$fit - newd$CI
         z.ciu <- newd$fit + newd$CI
-        if(!is.null(transform)){
+        if (!is.null(transform)) {
             z.fit <- sapply(z.fit, transform)
             z.cil <- sapply(z.cil, transform)
             z.ciu <- sapply(z.ciu, transform)
@@ -721,42 +689,41 @@ plot_pca_surface <- function(x, pca.term=NULL,
             z.min <- min(z.cil, na.rm = TRUE)
         }
         zlim <- c(z.min, z.max)
-        z <- matrix(z.cil, byrow=TRUE, n.grid, n.grid)
+        z <- matrix(z.cil, byrow = TRUE, n.grid, n.grid)
         if (plot.type == "contour") 
             warning("sorry no option for contouring with errors: try plot.gam")
-        stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), ifelse("zlab" %in% 
-            dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, sep = "")
+        stub <- paste(ifelse("xlab" %in% dnm, "", ",xlab=view[1]"), ifelse("ylab" %in% dnm, "", ",ylab=view[2]"), 
+            ifelse("zlab" %in% dnm, "", ",zlab=zlab"), ifelse("sub" %in% dnm, "", ",sub=subs"), ",...)", sep = "")
+        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=lo.col"), stub, 
+            sep = "")
         eval(parse(text = txt))
         par(new = TRUE)
-        z <- matrix(z.fit, byrow=TRUE, n.grid, n.grid)
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), stub, sep = "")
+        z <- matrix(z.fit, byrow = TRUE, n.grid, n.grid)
+        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=\"black\""), 
+            stub, sep = "")
         eval(parse(text = txt))
         par(new = TRUE)
-        z <- matrix(z.ciu, byrow=TRUE, n.grid, n.grid)
-        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, sep = "")
+        z <- matrix(z.ciu, byrow = TRUE, n.grid, n.grid)
+        txt <- paste("persp(m1,m2,z,col=col,zlim=zlim", ifelse("border" %in% dnm, "", ",border=hi.col"), stub, 
+            sep = "")
         eval(parse(text = txt))
-        if(hide.label==FALSE){
-        	addlabel = "fitted values"
-        	if(!is.null(rm.ranef)){
-        		if(rm.ranef !=FALSE){
-        			addlabel = paste(addlabel, "excl. random", sep=", ")
-        		}
-        	}
-        	mtext(addlabel, side=4, line=0, adj=0, 
-        		cex=.75, col='gray35', xpd=TRUE)
-        	if(!is.null(transform)){
-        		mtext("transformed", side=4, line=.75, adj=0, 
-        		cex=.75, col='gray35', xpd=TRUE)
-        	}
+        if (hide.label == FALSE) {
+            addlabel = "fitted values"
+            if (!is.null(rm.ranef)) {
+                if (rm.ranef != FALSE) {
+                  addlabel = paste(addlabel, "excl. random", sep = ", ")
+                }
+            }
+            mtext(addlabel, side = 4, line = 0, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            if (!is.null(transform)) {
+                mtext("transformed", side = 4, line = 0.75, adj = 0, cex = 0.75, col = "gray35", xpd = TRUE)
+            }
         }
     }
-    invisible(list(fv = newd, m1 = m1, m2 = m2, zlim=c(min.z, max.z), too.far = ex.tf,
-         note=paste(ifelse(is.null(transform), "type=lpmatrix, not on response scale", transform),
-         	sprintf("Model predictor %s is transformed back to %s and %s", pca.term, view[1], view[2]),
-         	sep=";")) )   
+    invisible(list(fv = newd, m1 = m1, m2 = m2, zlim = c(min.z, max.z), too.far = ex.tf, note = paste(ifelse(is.null(transform), 
+        "type=lpmatrix, not on response scale", transform), sprintf("Model predictor %s is transformed back to %s and %s", 
+        pca.term, view[1], view[2]), sep = ";")))
 }
- 
 
 
 

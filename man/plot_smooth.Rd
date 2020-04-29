@@ -4,13 +4,36 @@
 \alias{plot_smooth}
 \title{Visualization of smooths.}
 \usage{
-plot_smooth(x, view = NULL, cond = list(), plot_all = NULL,
-  rm.ranef = NULL, n.grid = 30, rug = NULL, add = FALSE, se = 1.96,
-  sim.ci = FALSE, shade = TRUE, eegAxis = FALSE, col = NULL,
-  lwd = NULL, lty = NULL, print.summary = getOption("itsadug_print"),
-  main = NULL, xlab = NULL, ylab = NULL, xlim = NULL, ylim = NULL,
-  h0 = 0, v0 = NULL, transform = NULL, transform.view = NULL,
-  legend_plot_all = NULL, hide.label = FALSE, ...)
+plot_smooth(
+  x,
+  view = NULL,
+  cond = list(),
+  plot_all = NULL,
+  rm.ranef = TRUE,
+  n.grid = 30,
+  rug = NULL,
+  add = FALSE,
+  se = 1.96,
+  sim.ci = FALSE,
+  shade = TRUE,
+  eegAxis = FALSE,
+  col = NULL,
+  lwd = NULL,
+  lty = NULL,
+  print.summary = getOption("itsadug_print"),
+  main = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  h0 = 0,
+  v0 = NULL,
+  transform = NULL,
+  transform.view = NULL,
+  legend_plot_all = NULL,
+  hide.label = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -105,12 +128,12 @@ Default is NULL.}
 the values on the x-axis. Defaults to NULL (no transformation).}
 
 \item{legend_plot_all}{Legend location. This could be a keyword from 
-the list "bottomright", "bottom", "bottomleft", "left", "topleft", "top", 
-"topright", "right" and "center", or a list with \code{x} and \code{y} 
+the list 'bottomright', 'bottom', 'bottomleft', 'left', 'topleft', 'top', 
+'topright', 'right' and 'center', or a list with \code{x} and \code{y} 
 coordinate (e.g., \code{list(x=0,y=0)}).}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "fitted values"). Default is FALSE.}
+(i.e., 'fitted values'). Default is FALSE.}
 
 \item{...}{other options to pass on to lines and plot, 
 see \code{\link[graphics]{par}}}
@@ -141,16 +164,16 @@ m1 <- bam(Y ~ te(Time, Trial)+s(Time, Subject, bs='fs', m=1),
 # Default plot produces only surface of Time x Trial:
 plot(m1, select=1)
 # Only the Time component:
-plot_smooth(m1, view="Time")
+plot_smooth(m1, view='Time')
 # Note the summary that is printed.
 
 # without random effects:
-plot_smooth(m1, view="Time", rm.ranef=TRUE)
+plot_smooth(m1, view='Time', rm.ranef=TRUE)
 
 # Plot summed effects:
 dev.new(width=8, height=4) # use x11(,8,4) on Linux
 par(mfrow=c(1,2))
-fvisgam(m1, view=c("Time", "Trial"), 
+fvisgam(m1, view=c('Time', 'Trial'), 
     plot.type='contour', color='topo', main='interaction',
     rm.ranef=TRUE)
 arrows(x0=0, x1=2200, y0=-5, y1=-5, col='red', 
@@ -165,22 +188,22 @@ m2 <- bam(Y ~ Group + s(Time, by=Group)
     data=simdat, discrete=TRUE)
 
 # Plot all levels of a predictor:
-plot_smooth(m2, view='Time', plot_all="Group",
+plot_smooth(m2, view='Time', plot_all='Group',
     rm.ranef=TRUE)
 # It also possible to combine predictors in plot_all.
 # Note: this is not a meaningfull plot, because Subjects
 # fall in only one group. Just for illustration purposes!
-plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"))
+plot_smooth(m2, view='Time', plot_all=c('Group', 'Subject'))
 # Clearly visible difference in confidence interval, because  
-# a01 does not occur in Group "Children":
+# a01 does not occur in Group 'Children':
 # (Note that this plot generates warning)
-plot_smooth(m2, view='Time', plot_all=c("Group", "Subject"), cond=list(Subject="a01"))
+plot_smooth(m2, view='Time', plot_all=c('Group', 'Subject'), cond=list(Subject='a01'))
 
 # Using sim.ci: simultaneous CI instead of pointwise CI
 dev.new(width=8, height=4) # use x11(,8,4) on Linux
 par(mfrow=c(1,2))
-plot_smooth(m2, view='Time', plot_all="Group", rm.ranef=TRUE)
-plot_smooth(m2, view='Time', rm.ranef=TRUE, plot_all="Group", sim.ci=TRUE, 
+plot_smooth(m2, view='Time', plot_all='Group', rm.ranef=TRUE)
+plot_smooth(m2, view='Time', rm.ranef=TRUE, plot_all='Group', sim.ci=TRUE, 
     add=TRUE, shade=FALSE, xpd=TRUE)
 plot_smooth(m2, view='Time', rm.ranef=TRUE, sim.ci=TRUE, col='red')
 
@@ -188,29 +211,35 @@ plot_smooth(m2, view='Time', rm.ranef=TRUE, sim.ci=TRUE, col='red')
 
 # Using transform
 # Plot log-transformed dependent predictor on original scale:
-plot_smooth(m1, view="Time", rm.ranef=TRUE, transform=exp)
+plot_smooth(m1, view='Time', rm.ranef=TRUE, transform=exp)
 
 # Notes on transform.view: 
 # This will generate an error, because x-values <= 0 will result in NaN:
-plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log)
+plot_smooth(m1, view='Time', rm.ranef=TRUE, transform.view=log)
 # adjusting the x-axis helps:
-plot_smooth(m1, view="Time", rm.ranef=TRUE, transform.view=log,
+plot_smooth(m1, view='Time', rm.ranef=TRUE, transform.view=log,
    xlim=c(1,2000))
 
 }
 
 # and for a quick overview of plotfunctions:
-vignette("overview", package="itsadug")
+vignette('overview', package='itsadug')
 
 }
 \seealso{
 \code{\link[mgcv]{plot.gam}}, \code{\link{plot_diff}}
 
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{gamtabs}}, \code{\link{inspect_random}},
-  \code{\link{plot_data}}, \code{\link{plot_parametric}},
-  \code{\link{plot_topo}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{gamtabs}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_data}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_topo}()},
+\code{\link{pvisgam}()}
 }
 \author{
 Jacolien van Rij and Martijn Wieling.
 }
+\concept{Functions for model inspection}

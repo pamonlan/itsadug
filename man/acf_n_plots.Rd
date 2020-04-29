@@ -4,9 +4,20 @@
 \alias{acf_n_plots}
 \title{Generate N ACF plots of individual or aggregated time series.}
 \usage{
-acf_n_plots(x, n = 5, split_by = NULL, cond = NULL, max_lag = NULL,
-  fun = mean, plot = TRUE, random = F, mfrow = NULL, add = FALSE,
-  print.summary = getOption("itsadug_print"), ...)
+acf_n_plots(
+  x,
+  n = 5,
+  split_by = NULL,
+  cond = NULL,
+  max_lag = NULL,
+  fun = mean,
+  plot = TRUE,
+  random = F,
+  mfrow = NULL,
+  add = FALSE,
+  print.summary = getOption("itsadug_print"),
+  ...
+)
 }
 \arguments{
 \item{x}{A vector with time series data, typically residuals of a 
@@ -101,18 +112,22 @@ acf_n_plots(simdat$res, split_by=list(simdat$Subject, simdat$Trial))
 }
 
 # see the vignette for examples:
-vignette("acf", package="itsadug")
+vignette('acf', package='itsadug')
 }
 \seealso{
 Use \code{\link[stats]{acf}} for the original ACF function, 
 and \code{\link{acf_plot}} for an ACF that takes into account time series 
 in the data.
 
-Other functions for model criticism: \code{\link{acf_plot}},
-  \code{\link{acf_resid}}, \code{\link{derive_timeseries}},
-  \code{\link{resid_gam}}, \code{\link{start_event}},
-  \code{\link{start_value_rho}}
+Other functions for model criticism: 
+\code{\link{acf_plot}()},
+\code{\link{acf_resid}()},
+\code{\link{derive_timeseries}()},
+\code{\link{resid_gam}()},
+\code{\link{start_event}()},
+\code{\link{start_value_rho}()}
 }
 \author{
 Jacolien van Rij, R. Harald Baayen
 }
+\concept{functions for model criticism}

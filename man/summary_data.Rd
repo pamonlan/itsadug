@@ -26,11 +26,20 @@ data(simdat)
 summary_data(simdat)
 }
 \seealso{
-Other Utility functions: \code{\link{convertNonAlphanumeric}},
-  \code{\link{diff_terms}}, \code{\link{find_difference}},
-  \code{\link{missing_est}}, \code{\link{print_summary}},
-  \code{\link{timeBins}}
+Other Utility functions: 
+\code{\link{convertNonAlphanumeric}()},
+\code{\link{corfit}()},
+\code{\link{diff_terms}()},
+\code{\link{find_difference}()},
+\code{\link{missing_est}()},
+\code{\link{modeledf}()},
+\code{\link{observations}()},
+\code{\link{print_summary}()},
+\code{\link{refLevels}()},
+\code{\link{res_df}()},
+\code{\link{timeBins}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Utility functions}

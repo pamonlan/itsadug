@@ -8,23 +8,25 @@ infoMessages(input)
 }
 \arguments{
 \item{input}{Input variable indicating to print info messages 
-("on", or 1, or TRUE) or not ("off", 0, or FALSE).}
+('on', or 1, or TRUE) or not ('off', 0, or FALSE).}
 }
 \description{
 Turn on or off information messages.
 }
 \examples{
 # To turn on the info messages (all the same):
-infoMessages("on")
+infoMessages('on')
 infoMessages(1)
 infoMessages(TRUE)
 # To turn off the info messages (all the same):
-infoMessages("off")
+infoMessages('off')
 infoMessages(0)
 infoMessages(FALSE)
 # checking output:
 (out <- infoMessages(FALSE))
 }
 \seealso{
-Other Functions for package use: \code{\link{info}}
+Other Functions for package use: 
+\code{\link{info}()}
 }
+\concept{Functions for package use}

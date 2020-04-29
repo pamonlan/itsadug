@@ -4,10 +4,24 @@
 \alias{inspect_random}
 \title{Inspection and interpretation of random factor smooths.}
 \usage{
-inspect_random(model, select = 1, fun = NULL, cond = NULL, n.grid = 30,
-  print.summary = getOption("itsadug_print"), plot = TRUE, add = FALSE,
-  main = NULL, xlab = NULL, ylab = NULL, ylim = NULL, h0 = 0,
-  v0 = NULL, col = NULL, eegAxis = FALSE, ...)
+inspect_random(
+  model,
+  select = 1,
+  fun = NULL,
+  cond = NULL,
+  n.grid = 30,
+  print.summary = getOption("itsadug_print"),
+  plot = TRUE,
+  add = FALSE,
+  main = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  ylim = NULL,
+  h0 = 0,
+  v0 = NULL,
+  eegAxis = FALSE,
+  ...
+)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -50,8 +64,6 @@ for reference. By default 0.}
 
 \item{v0}{A vector indicating where to add dotted vertical lines 
 for reference. By default no values provided.}
-
-\item{col}{Specifying the colors of the lines.}
 
 \item{eegAxis}{Whether or not to reverse the y-axis 
 (plotting negative upwards).}
@@ -97,8 +109,8 @@ newd <- inspect_random(m2, select=5,
 # Make lattice plot:
 require(lattice)
 lattice::xyplot(fit~Time | Subject,
-    data=newd, type="l",
-    xlab="Time", ylab="Partial effect")
+    data=newd, type='l',
+    xlab='Time', ylab='Partial effect')
 
 # Using argument 'fun':
 inspect_random(m2, select=5, fun=mean, 
@@ -109,14 +121,20 @@ inspect_random(m2, select=5, fun=mean,
 }
 
 # see the vignette for examples:
-vignette("overview", package="itsadug")
+vignette('overview', package='itsadug')
 }
 \seealso{
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{gamtabs}}, \code{\link{plot_data}},
-  \code{\link{plot_parametric}}, \code{\link{plot_smooth}},
-  \code{\link{plot_topo}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{gamtabs}()},
+\code{\link{plot_data}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_smooth}()},
+\code{\link{plot_topo}()},
+\code{\link{pvisgam}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Functions for model inspection}

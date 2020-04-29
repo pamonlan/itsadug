@@ -5,14 +5,35 @@
 \title{Visualization of the effect predictors in nonlinear interactions with 
 principled components.}
 \usage{
-plot_pca_surface(x, pca.term = NULL, weights = NULL, view = NULL,
-  cond = list(), partial = FALSE, select = NULL, se = -1, n.grid = 30,
-  too.far = 0, rm.ranef = NULL, col = NA, color = "topo",
-  contour.col = NULL, nCol = 50, plotCI = FALSE,
-  add.color.legend = TRUE, plot.type = "contour", xlim = NULL,
-  ylim = NULL, zlim = NULL, print.summary = getOption("itsadug_print"),
-  transform = NULL, transform.view = NULL, hide.label = FALSE,
-  dec = NULL, ...)
+plot_pca_surface(
+  x,
+  pca.term = NULL,
+  weights = NULL,
+  view = NULL,
+  cond = list(),
+  partial = FALSE,
+  select = NULL,
+  se = -1,
+  n.grid = 30,
+  too.far = 0,
+  rm.ranef = NULL,
+  col = NA,
+  color = "topo",
+  contour.col = NULL,
+  nCol = 50,
+  plotCI = FALSE,
+  add.color.legend = TRUE,
+  plot.type = "contour",
+  xlim = NULL,
+  ylim = NULL,
+  zlim = NULL,
+  print.summary = getOption("itsadug_print"),
+  transform = NULL,
+  transform.view = NULL,
+  hide.label = FALSE,
+  dec = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -58,8 +79,8 @@ Default is TRUE.}
 
 \item{col}{The colors for the facets of the plot.}
 
-\item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw".}
+\item{color}{The color scheme to use for plots. One of 'topo', 'heat', 
+'cm', 'terrain', 'gray' or 'bw'.}
 
 \item{contour.col}{sets the color of contours when using plot.}
 
@@ -72,7 +93,7 @@ The value of \code{se} determines the size of the CI.}
 Default is TRUE. If FALSE (omitted), one could use the function
 \code{\link{gradientLegend}} to add a legend manually at any position.}
 
-\item{plot.type}{one of "contour" or "persp" (default is "contour").}
+\item{plot.type}{one of 'contour' or 'persp' (default is 'contour').}
 
 \item{xlim}{A two item array giving the lower and upper limits for the x-
 axis scale. NULL to choose automatically.}
@@ -96,7 +117,7 @@ need to be transformed, set the other to NULL (no transformation).
 See examples below.}
 
 \item{hide.label}{Logical: whether or not to hide the label 
-(i.e., "fitted values"). Default is FALSE.}
+(i.e., 'fitted values'). Default is FALSE.}
 
 \item{dec}{Numeric: number of decimals for rounding the color legend. 
 When NULL, no rounding (default). If -1, automatically determined.  
@@ -104,7 +125,7 @@ Note: if value = -1, rounding will be applied also when
 \code{zlim} is provided.}
 
 \item{...}{other options to pass on to persp, image or contour. In 
-particular ticktype="detailed" will add proper axes labeling to the plots.}
+particular ticktype='detailed' will add proper axes labeling to the plots.}
 }
 \description{
 Produces perspective or contour plot views of gam model 
@@ -115,7 +136,8 @@ but allows to cancel random effects.
 \seealso{
 \code{\link{fvisgam}}, \code{\link{pvisgam}}
 
-Other Functions for PCA interpretation: \code{\link{get_pca_predictions}}
+Other Functions for PCA interpretation: 
+\code{\link{get_pca_predictions}()}
 }
 \author{
 Jacolien van Rij
@@ -123,7 +145,7 @@ data(simdat)
 # add hypothetical correlated term:
 simdat$predictor <-  (simdat$Trial+10)^.75 + rnorm(nrow(simdat))
 # principal components analysis:
-pca <- prcomp(simdat[, c("Trial", "predictor")])
+pca <- prcomp(simdat[, c('Trial', 'predictor')])
 # only first PC term contributes:
 summary(pca)
 # get rotation (weights of predictors in PC):
@@ -135,23 +157,24 @@ simdat$PC1 <- pca$x[,1]
 m1 <- bam(Y ~ Group + te(Time, PC1, by=Group) 
     + s(Time, Subject, bs='fs', m=1, k=5), data=simdat)
 # inspect surface:
-fvisgam(m1, view=c("Time", "PC1"), cond=list(Group="Children"),
+fvisgam(m1, view=c('Time', 'PC1'), cond=list(Group='Children'),
     rm.ranef=TRUE)
 # how does Trial contribute?
-plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
-    view=c("Time", "Trial"), cond=list(Group="Children"),rm.ranef=TRUE)
+plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
+    view=c('Time', 'Trial'), cond=list(Group='Children'),rm.ranef=TRUE)
 # Note that the range of Trial is estimated based on the values of PC1.
 # A better solution is to specify the range:
-plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
+plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
-    cond=list(Group="Children"),rm.ranef=TRUE)
+    cond=list(Group='Children'),rm.ranef=TRUE)
 
 # Partial effects:
-pvisgam(m1, view=c("Time", "PC1"), cond=list(Group="Children"),
+pvisgam(m1, view=c('Time', 'PC1'), cond=list(Group='Children'),
     select=1, rm.ranef=TRUE)
 # PCA:
-plot_pca_surface(m1, pca.term="PC1", weights=pcar[,"PC1"], 
+plot_pca_surface(m1, pca.term='PC1', weights=pcar[,'PC1'], 
     partial=TRUE, select=1,
     view=list(Time=range(simdat$Time), Trial=range(simdat$Trial)), 
-    cond=list(Group="Children"))
+    cond=list(Group='Children'))
 }
+\concept{Functions for PCA interpretation}

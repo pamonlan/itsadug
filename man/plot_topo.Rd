@@ -4,10 +4,23 @@
 \alias{plot_topo}
 \title{Visualization of EEG topo maps.}
 \usage{
-plot_topo(model, view, el.pos = NULL, fun = "fvisgam",
-  add.color.legend = TRUE, size = 5, n.grid = 100, col = 1, pch = 21,
-  bg = alpha(1), color = "topo", xlab = "", ylab = "",
-  setmargins = TRUE, ...)
+plot_topo(
+  model,
+  view,
+  el.pos = NULL,
+  fun = "fvisgam",
+  add.color.legend = TRUE,
+  size = 5,
+  n.grid = 100,
+  col = 1,
+  pch = 21,
+  bg = alpha(1),
+  color = "bwr",
+  xlab = "",
+  ylab = "",
+  setmargins = TRUE,
+  ...
+)
 }
 \arguments{
 \item{model}{A gam object, produced by \code{\link[mgcv]{gam}} or 
@@ -21,7 +34,7 @@ variables.}
 \item{el.pos}{A list with X and Y positions and Electrodes, which are used
 for fitting the model.}
 
-\item{fun}{Text string, "fvisgam", "pvisgam", or "plot_diff2" signalling 
+\item{fun}{Text string, 'fvisgam', 'pvisgam', or 'plot_diff2' signalling 
 which function to use for plotting.}
 
 \item{add.color.legend}{Logical: whether or not to add a color legend. 
@@ -40,8 +53,8 @@ The value NA will suppress the plotting of electrode positions.}
 
 \item{bg}{The background color of the points.}
 
-\item{color}{The color scheme to use for plots. One of "topo", "heat", 
-"cm", "terrain", "gray" or "bw".}
+\item{color}{The color scheme to use for plots. One of 'topo', 'heat', 
+'cm', 'terrain', 'gray', 'bw', or 'rwb' (red-white-blue; default).}
 
 \item{xlab}{Label x-axis. Default excluded.}
 
@@ -76,18 +89,18 @@ m1 <- gam(Ampl ~ te(Time, X, Y, k=c(10,5,5),
 
 # topo plot, by default uses fvisgam 
 # and automatically selects a timestamp (270ms):
-plot_topo(m1, view=c("X", "Y"))
+plot_topo(m1, view=c('X', 'Y'))
 # or:
-plot_topo(m1, view=c("X", "Y"), setmargins=FALSE, size=1)
+plot_topo(m1, view=c('X', 'Y'), setmargins=FALSE, size=1)
 
 # add electrodes:
 electrodes <- eeg[,c('X','Y','Electrode')]
 electrodes <- as.list( electrodes[!duplicated(electrodes),] )
-plot_topo(m1, view=c("X", "Y"), el.pos=electrodes)
+plot_topo(m1, view=c('X', 'Y'), el.pos=electrodes)
 
 # some formatting options:
-plot_topo(m1, view=c("X", "Y"), el.pos=electrodes,
-    main="Topo plot", zlim=c(-.5,.5), 
+plot_topo(m1, view=c('X', 'Y'), el.pos=electrodes,
+    main='Topo plot', zlim=c(-.5,.5), 
     pch=15, col='red', color='terrain')
 
 # plotting more than one panel only works if 
@@ -97,7 +110,7 @@ par(mfrow=c(1,3))
 
 for(i in c(100, 200, 300)){
     # make sure to keep zlim constant:
-   plot_topo(m1, view=c('X', 'Y'), zlim=c(-.5, .5), 
+\t   plot_topo(m1, view=c('X', 'Y'), zlim=c(-.5, .5), 
     cond=list(Time=i), el.pos=electrodes,
     main=i)
 }
@@ -128,11 +141,17 @@ text(electrodes[['X']], electrodes[['Y']],
 }
 }
 \seealso{
-Other Functions for model inspection: \code{\link{fvisgam}},
-  \code{\link{gamtabs}}, \code{\link{inspect_random}},
-  \code{\link{plot_data}}, \code{\link{plot_parametric}},
-  \code{\link{plot_smooth}}, \code{\link{pvisgam}}
+Other Functions for model inspection: 
+\code{\link{dispersion}()},
+\code{\link{fvisgam}()},
+\code{\link{gamtabs}()},
+\code{\link{inspect_random}()},
+\code{\link{plot_data}()},
+\code{\link{plot_parametric}()},
+\code{\link{plot_smooth}()},
+\code{\link{pvisgam}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Functions for model inspection}

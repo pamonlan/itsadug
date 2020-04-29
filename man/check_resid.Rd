@@ -4,8 +4,13 @@
 \alias{check_resid}
 \title{Inspect residuals of regression models.}
 \usage{
-check_resid(model, AR_start = NULL, split_pred = NULL, ask = TRUE,
-  select = 1:4)
+check_resid(
+  model,
+  AR_start = NULL,
+  split_pred = NULL,
+  ask = TRUE,
+  select = 1:4
+)
 }
 \arguments{
 \item{model}{A regression model, resulting from the functions
@@ -55,7 +60,7 @@ data(simdat)
 
 \dontrun{
 # Add start event column:
-simdat <- start_event(simdat, event=c("Subject", "Trial"))
+simdat <- start_event(simdat, event=c('Subject', 'Trial'))
 head(simdat)
 
 # bam model with AR1 model (toy example, not serious model):
@@ -65,13 +70,13 @@ m1 <- bam(Y ~ Group + te(Time, Trial, by=Group),
 # Warning, no time series specified:
 check_resid(m1)
 
-# Time series specified, results in a "standard" ACF plot, 
+# Time series specified, results in a 'standard' ACF plot, 
 # treating all residuals as single time seriesand,
 # and an ACF plot with the average ACF over time series:
 check_resid(m1, split_pred=list(Subject=simdat$Subject, Trial=simdat$Trial))
 # Note: residuals do not look very good.
 # Alternative (results in the same, see help(acf_resid) ):
-check_resid(m1, split_pred="AR.start")
+check_resid(m1, split_pred='AR.start')
 
 # Define larger plot window (choose which line you need):
 dev.new(width=8, height=8) # on windows or mac
@@ -79,14 +84,16 @@ quartz(,8,8)               # on mac
 x11(width=8, height=8)     # on linux or mac
 
 par(mfrow=c(2,2), cex=1.1)
-check_resid(m1, split_pred="AR.start", ask=FALSE)
+check_resid(m1, split_pred='AR.start', ask=FALSE)
 }
 
 }
 \seealso{
-Other Model evaluation: \code{\link{diagnostics}},
-  \code{\link{plot_modelfit}}
+Other Model evaluation: 
+\code{\link{diagnostics}()},
+\code{\link{plot_modelfit}()}
 }
 \author{
 Jacolien van Rij
 }
+\concept{Model evaluation}

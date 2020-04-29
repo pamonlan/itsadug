@@ -4,7 +4,8 @@
 \name{simdat}
 \alias{simdat}
 \title{Simulated time series data.}
-\format{A data frame with 75600 rows and 6 variables:
+\format{
+A data frame with 75600 rows and 6 variables:
 \describe{
   \item{\code{Group}}{Age group of participants: Adults or Children.}
   \item{\code{Time}}{Time, time measure from start of each time series.}
@@ -14,7 +15,8 @@ For example, stimulus onset asynchrony.}
   \item{\code{Subject}}{Code for individual participants.}
   \item{\code{Y}}{Time series measure. 
 Similar to pupil size, sensor position, or voltage.}
-}}
+}
+}
 \usage{
 simdat
 }
