@@ -10,7 +10,8 @@ start_event(
   event = "Event",
   label = "start.event",
   label.event = NULL,
-  order = TRUE
+  order = TRUE,
+  newcode = TRUE
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ series. Default is NULL (no new column for time series is created).}
 
 \item{order}{Logical: whether or not to order each time series. 
 Default is TRUE, maybe set to FALSE with large data frames that are already ordered.}
+
+\item{newcode}{Logical: whether or not to use the new (and hopefully faster) code.}
 }
 \value{
 Data frame.
@@ -52,11 +55,15 @@ in the command window for installing the package \code{data.table}.
 \examples{
 data(simdat)
 head(simdat)
+simdat <- simdat[sample(1:nrow(simdat)),]
 simdat$Condition <- relevel(factor(simdat$Condition), ref="0")
 contrasts(simdat$Condition) <- "contr.poly"
-test <- start_event(simdat, event=c('Subject', 'Trial'), label.event='Event') 
 contrasts(simdat$Condition)
+test <- start_event(simdat, event=c('Subject', 'Trial'), label.event='Event') 
+contrasts(test$Condition)
 head(test)
+test <- start_event(simdat, event="Subject")
+test <- start_event(simdat, event=c('Subject', 'Trial'))
 }
 \seealso{
 Other functions for model criticism: 

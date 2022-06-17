@@ -32,7 +32,7 @@
 #' 
 #' @family Functions for model inspection
 dispersion = function(model) {
-    if ((!"gam" %in% class(model))) {
+    if (! inherits(model, "gam")) {
         stop("Model is not a gam object. Currently this function only works for models build with bam(), or gam().")
     }
     return(sum(resid(model, type = "pearson")^2)/res_df(model))
@@ -86,7 +86,7 @@ dispersion = function(model) {
 #' @param sim.ci Logical: Using simultaneous confidence intervals or not 
 #' (default set to FALSE). The implementation of simultaneous CIs follows 
 #' Gavin Simpson's blog of December 15, 2016: 
-#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' \url{https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
 #' This interval is calculated from simulations based. 
 #' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
 #' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
@@ -721,7 +721,7 @@ gamtabs <- function(model, caption = " ", label = "tab.gam", pnames = NA, snames
 inspect_random <- function(model, select = 1, fun = NULL, cond = NULL, n.grid = 30, print.summary = getOption("itsadug_print"), 
     plot = TRUE, add = FALSE, main = NULL, xlab = NULL, ylab = NULL, ylim = NULL, h0 = 0, v0 = NULL, eegAxis = FALSE, 
     ...) {
-    if (!"lm" %in% class(model)) {
+    if (! inherits(model, "lm")) {
         stop("This function does not work for class %s models.", class(model)[1])
     } else {
         par = list(...)
@@ -1559,9 +1559,9 @@ plot_parametric <- function(x, pred, cond = list(), parametricOnly = FALSE, rm.r
             if (i %in% names(cond)) {
                 new.cond[[i]] <- cond[[i]]
             } else {
-                if (class(su[[i]]) == "factor") {
+                if (inherits(su[[i]], "factor")) {
                   new.cond[[i]] <- as.character(su[[i]][1])
-                } else if (class(su[[i]]) == "numeric") {
+                } else if (inherits(su[[i]], "numeric")) {
                   new.cond[[i]] <- su[[i]][2]
                 }
             }
@@ -1651,7 +1651,7 @@ plot_parametric <- function(x, pred, cond = list(), parametricOnly = FALSE, rm.r
 #' @param sim.ci Logical: Using simultaneous confidence intervals or not 
 #' (default set to FALSE). The implementation of simultaneous CIs follows 
 #' Gavin Simpson's blog of December 15, 2016: 
-#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' \url{https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
 #' This interval is calculated from simulations based. 
 #' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
 #' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 

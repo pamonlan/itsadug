@@ -886,6 +886,7 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
 #' series. Default is NULL (no new column for time series is created).
 #' @param order Logical: whether or not to order each time series. 
 #' Default is TRUE, maybe set to FALSE with large data frames that are already ordered.
+#' @param newcode Logical: whether or not to use the new (and hopefully faster) code.
 #' @section Note:
 #' When working with large data frames, it may be worth installing the package 
 #' \code{data.table}. Although not required for the package, the function 
@@ -899,14 +900,18 @@ resid_gam <- function(model, AR_start = NULL, incl_na = FALSE, return_all = FALS
 #' @examples 
 #' data(simdat)
 #' head(simdat)
+#' simdat <- simdat[sample(1:nrow(simdat)),]
 #' simdat$Condition <- relevel(factor(simdat$Condition), ref="0")
 #' contrasts(simdat$Condition) <- "contr.poly"
-#' test <- start_event(simdat, event=c('Subject', 'Trial'), label.event='Event') 
 #' contrasts(simdat$Condition)
+#' test <- start_event(simdat, event=c('Subject', 'Trial'), label.event='Event') 
+#' contrasts(test$Condition)
 #' head(test)
+#' test <- start_event(simdat, event="Subject")
+#' test <- start_event(simdat, event=c('Subject', 'Trial'))
 #' @family functions for model criticism
 start_event <- function(data, column = "Time", event = "Event", label = "start.event", label.event = NULL, 
-    order = TRUE) {
+    order = TRUE, newcode = TRUE) {
     if (is.null(label)) {
         stop("No output column specified in argument 'label'.")
     }
@@ -929,43 +934,80 @@ start_event <- function(data, column = "Time", event = "Event", label = "start.e
             warning(sprintf("Column %s already exists, will be overwritten.", label.event))
         }
     }
-    # store reference levels:
-    ref <- refLevels(data)
-    tmp <- NULL
-    if (!is.null(label.event) & length(event) > 1) {
-        data[, label.event] <- interaction(data[, event])
-        tmp <- split(data, f = list(data[, label.event]), drop = TRUE)
-    } else if (length(event) > 1) {
-        tmp <- split(data, f = as.list(data[, event]), drop = TRUE)
+    
+
+    if(newcode){
+        if (!is.null(label.event) & length(event) > 1) {
+            data[, label.event] <- interaction(data[, event], drop=TRUE)  
+            if(order){
+                data <- data[order(data[, label.event], data[, column]),]
+            }
+            check <- tapply(data[,column], list(data[, label.event]), 
+                function(x){return(min(x, na.rm=TRUE))})   
+            data[, label] <- data[, column] == check[data[,label.event]]     
+        } else if (length(event) > 1) {
+            dummy.event.label = paste(c("tmpcolumn_", sample(c(letters, as.character(0:9), "_", "."), 
+                size=100, replace=TRUE)), collapse="")
+            data[, dummy.event.label] <- interaction(data[, event], drop=TRUE)
+            if(order){
+                data <- data[order(data[, dummy.event.label], data[, column]),]
+            }  
+            check <- tapply(data[,column], list(data[, dummy.event.label]), 
+                function(x){return(min(x, na.rm=TRUE))})   
+            data[, label] <- data[, column] == check[data[,dummy.event.label]] 
+            data[, dummy.event.label] <- NULL  
+        } else {
+            if(order){
+                data <- data[order(data[, event], data[, column]),]
+            }
+            check <- tapply(data[,column], list(data[, event]), 
+                function(x){return(min(x, na.rm=TRUE))})   
+            data[, label] <- data[, column] == check[data[,event]] 
+        }
+        return(data)
     } else {
-        tmp <- split(data, f = list(data[, event]), drop = TRUE)
+    ## OLD CODE:
+        # store reference levels:
+        ref <- refLevels(data)
+        tmp <- NULL
+        if (!is.null(label.event) & length(event) > 1) {
+            data[, label.event] <- interaction(data[, event])
+            tmp <- split(data, f = list(data[, label.event]), drop = TRUE)
+        } else if (length(event) > 1) {
+            tmp <- split(data, f = as.list(data[, event]), drop = TRUE)
+        } else {
+            tmp <- split(data, f = list(data[, event]), drop = TRUE)
+        }
+        if (order) {
+            tmp <- lapply(tmp, function(x) {
+                min.x <- min(x[, column])
+                x[, label] <- x[, column] == min.x
+                x <- x[order(x[, column]), ]
+                return(x)
+            })
+        } else {
+            tmp <- lapply(tmp, function(x) {
+                min.x <- min(x[, column])
+                x[, label] <- x[, column] == min.x
+                return(x)
+            })
+        }
+        if (requireNamespace("data.table", quietly = TRUE)) {
+            tmp <- as.data.frame(data.table::rbindlist(tmp), stringsAsFactors = FALSE)
+        } else {
+            if(getOption("itsadug_print")){
+                message("Package data.table is not installed. This package may speed up the function start_event.")
+            }
+            tmp <- do.call("rbind", tmp)
+        }
+        row.names(tmp) <- NULL
+        # put same reference levels back:
+        for(i in names(ref)){
+            tmp[,i] <- relevel(as.factor(tmp[,i]), ref=ref[[i]][['ref']])
+            contrasts(tmp[,i]) <- ref[[i]][['contr']]
+        }
+        return(tmp)
     }
-    if (order) {
-        tmp <- lapply(tmp, function(x) {
-            min.x <- min(x[, column])
-            x[, label] <- x[, column] == min.x
-            x <- x[order(x[, column]), ]
-            return(x)
-        })
-    } else {
-        tmp <- lapply(tmp, function(x) {
-            min.x <- min(x[, column])
-            x[, label] <- x[, column] == min.x
-            return(x)
-        })
-    }
-    if (requireNamespace("data.table", quietly = TRUE)) {
-        tmp <- as.data.frame(data.table::rbindlist(tmp), stringsAsFactors = FALSE)
-    } else {
-        tmp <- do.call("rbind", tmp)
-    }
-    row.names(tmp) <- NULL
-    # put same reference levels back:
-    for(i in names(ref)){
-        tmp[,i] <- relevel(as.factor(tmp[,i]), ref=ref[[i]][['ref']])
-        contrasts(tmp[,i]) <- ref[[i]][['contr']]
-    }
-    return(tmp)
 }
 
 

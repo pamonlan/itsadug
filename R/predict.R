@@ -84,7 +84,7 @@ get_coefs <- function(model, se = TRUE) {
 #' @param sim.ci Logical: Using simultaneous confidence intervals or not 
 #' (default set to FALSE). The implementation of simultaneous CIs follows 
 #' Gavin Simpson's blog of December 15, 2016: 
-#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' \url{https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
 #' This interval is calculated from simulations based. 
 #' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
 #' In addition, make sure to specify at least 200 points for each smooth 
@@ -127,7 +127,7 @@ get_coefs <- function(model, se = TRUE) {
 #' @family Model predictions
 get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.ci = FALSE, f = 1.96, 
     return.n.posterior = 0, print.summary = getOption("itsadug_print")) {
-    if (!"lm" %in% class(model)) {
+    if (!inherits(model, "lm")) {
         stop("This function does not work for class %s models.", class(model)[1])
     } else {
         newd <- NULL
@@ -166,10 +166,10 @@ get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE,
             } else if (i %in% names(cond)) {
                 new.cond1[[i]] <- new.cond2[[i]] <- cond[[i]]
             } else {
-                if (class(su[[i]]) == "factor") {
+                if (inherits(su[[i]],"factor")) {
                   new.cond1[[i]] <- as.character(su[[i]][1])
                   new.cond2[[i]] <- as.character(su[[i]][1])
-                } else if (class(su[[i]]) == "numeric") {
+                } else if (inherits(su[[i]], "numeric")) {
                   new.cond1[[i]] <- su[[i]][2]
                   new.cond2[[i]] <- su[[i]][2]
                 }
@@ -189,7 +189,7 @@ get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE,
         }
         mysummary <- summary_data(newd, print = FALSE)
         # Check for random effects:
-        if (class(rm.ranef) == "logical") {
+        if (inherits(rm.ranef, "logical")) {
             if (rm.ranef[1] == FALSE) {
                 rm.ranef <- NULL
             }
@@ -203,7 +203,7 @@ get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE,
             # smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in%
             # c('random.effect','fs.interaction'), 'Label'] )
             smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Dim == 0, "Label"])
-            if (class(rm.ranef) == "logical") {
+            if (inherits(rm.ranef, "logical")) {
                 if (rm.ranef[1] == TRUE) {
                   rm.ranef <- smoothlabels
                 } else {
@@ -247,7 +247,7 @@ get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE,
         if (se) {
             newd$CI <- f * sqrt(rowSums((p %*% vcov(model)) * p))
         }
-        # simultaneous CI See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+        # simultaneous CI See https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
         stackFits <- NULL
         if (sim.ci == TRUE) {
             Vb <- vcov(model, freq = FALSE, unconditional = TRUE)
@@ -347,11 +347,11 @@ get_difference <- function(model, comp, cond = NULL, rm.ranef = TRUE, se = TRUE,
 #' @author Jacolien van Rij
 #' @family Model predictions
 get_fitted <- function(model, se = 1.96, rm.ranef = NULL, as.data.frame = FALSE, print.summary = getOption("itsadug_print")) {
-    if (!"gam" %in% class(model)) {
+    if (!inherits(model, "gam")) {
         stop("This function does not work for class %s models.", class(model)[1])
     } else {
         if (!is.null(rm.ranef)) {
-            if (class(rm.ranef) == "logical") {
+            if (inherits(rm.ranef, "logical")) {
                 if (rm.ranef[1] == FALSE) {
                   rm.ranef <- NULL
                 }
@@ -370,7 +370,7 @@ get_fitted <- function(model, se = 1.96, rm.ranef = NULL, as.data.frame = FALSE,
             # smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in%
             # c('random.effect','fs.interaction'), 'Label'] )
             smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Dim == 0, "Label"])
-            if (class(rm.ranef) == "logical") {
+            if (inherits(rm.ranef, "logical")) {
                 if (rm.ranef[1] == TRUE) {
                   rm.ranef <- smoothlabels
                 } else if (rm.ranef[1] == FALSE) {
@@ -510,7 +510,7 @@ get_fitted <- function(model, se = 1.96, rm.ranef = NULL, as.data.frame = FALSE,
 #' @family Model predictions
 get_modelterm <- function(model, select, cond = NULL, n.grid = 30, se = TRUE, f = 1.96, as.data.frame = TRUE, 
     print.summary = getOption("itsadug_print")) {
-    if (!"lm" %in% class(model)) {
+    if (! inherits(model, "lm")) {
         stop("This function does not work for class %s models.", class(model)[1])
     } else {
         # find terms:
@@ -627,7 +627,7 @@ get_modelterm <- function(model, select, cond = NULL, n.grid = 30, se = TRUE, f 
 #' @param sim.ci Logical: Using simultaneous confidence intervals or not 
 #' (default set to FALSE). The implementation of simultaneous CIs follows 
 #' Gavin Simpson's blog of December 15, 2016: 
-#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' \url{https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
 #' This interval is calculated from simulations based. 
 #' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
 #' In addition, make sure to specify at least 200 points for each smooth 
@@ -697,11 +697,11 @@ get_predictions <- function(model, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.
     if (is.null(cond)) {
         stop("Please specify values for at least one predictor in the parameter 'cond'.")
     }
-    if (!"gam" %in% class(model)) {
+    if (! inherits(model, "gam")) {
         stop("This function does not work for class %s models.", class(model)[1])
     } else {
         if (!is.null(rm.ranef)) {
-            if (class(rm.ranef) == "logical") {
+            if (inherits(rm.ranef, "logical")) {
                 if (rm.ranef[1] == FALSE) {
                   rm.ranef <- NULL
                 }
@@ -714,9 +714,9 @@ get_predictions <- function(model, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.
             if (i %in% names(cond)) {
                 new.cond[[i]] <- cond[[i]]
             } else {
-                if (class(su[[i]]) == "factor") {
+                if (inherits(su[[i]], "factor")) {
                   new.cond[[i]] <- as.character(su[[i]][1])
-                } else if (class(su[[i]]) == "numeric") {
+                } else if (inherits(su[[i]], "numeric")) {
                   new.cond[[i]] <- su[[i]][2]
                 }
             }
@@ -733,7 +733,7 @@ get_predictions <- function(model, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.
             # smoothlabels <- as.vector( smoothlabels.table[smoothlabels.table$Class %in%
             # c('random.effect','fs.interaction'), 'Label'] )
             smoothlabels <- as.vector(smoothlabels.table[smoothlabels.table$Dim == 0, "Label"])
-            if (class(rm.ranef) == "logical") {
+            if (inherits(rm.ranef, "logical")) {
                 if (rm.ranef[1] == TRUE) {
                   rm.ranef <- smoothlabels
                 } else if (rm.ranef[1] == FALSE) {
@@ -784,7 +784,7 @@ get_predictions <- function(model, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.
             newd$rm.ranef <- paste(smoothlabels, collapse = ",")
         }
         
-        # simultaneous CI See http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
+        # simultaneous CI See https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/
         stackFits <- NULL
         if (sim.ci == TRUE) {
             Vb <- vcov(model, freq = FALSE, unconditional = TRUE)
@@ -889,7 +889,7 @@ get_predictions <- function(model, cond = NULL, rm.ranef = TRUE, se = TRUE, sim.
 #' @author Jacolien van Rij
 #' @family Model predictions
 get_random <- function(model, cond = NULL, print.summary = getOption("itsadug_print")) {
-    if (!"lm" %in% class(model)) {
+    if (! inherits(model, "lm")) {
         stop("This function does not work for class %s models.", class(model)[1])
     } else {
         # find random effects:

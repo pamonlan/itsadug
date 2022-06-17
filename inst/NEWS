@@ -1,3 +1,9 @@
+# itsadug 2.4.1
+
+-> bug fix in documentation compareML (\eqn with missing argument)
+-> bug fix in reporting significance stars (warnings about "sprintf('***', h1)" now should have disappeared)
+-> function start_event was updated (hopefully faster with larger data sets).
+
 # itsadug 2.4
 
 -> pvisgam: bug fixed that too.far was mirrored.

@@ -25,7 +25,7 @@ present a suggestion on how one could report the information. If
 \code{print.output} is set to FALSE, \code{suggest.report} will 
 set to FALSE too. Please inspect yourself whether the label between 
 square bracket fits your own standards. Note: the \code{X2} should be 
-replaced by a proper Chi-Square symbol \eqn{\chi^2}{}.}
+replaced by a proper Chi-Square symbol \eqn{\chi^2}.}
 
 \item{print.output}{Logical: whether or not to print the output. 
 By default set to true, even if the the messages are not allowed by 

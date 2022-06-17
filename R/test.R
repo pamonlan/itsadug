@@ -12,7 +12,7 @@
 #' \code{print.output} is set to FALSE, \code{suggest.report} will 
 #' set to FALSE too. Please inspect yourself whether the label between 
 #' square bracket fits your own standards. Note: the \code{X2} should be 
-#' replaced by a proper Chi-Square symbol \eqn{\chi^2}{}.
+#' replaced by a proper Chi-Square symbol \eqn{\chi^2}.
 #' @param print.output Logical: whether or not to print the output. 
 #' By default set to true, even if the the messages are not allowed by 
 #' a global package option using the function \code{\link{infoMessages}}.
@@ -163,8 +163,8 @@ compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALS
             ml1), Edf = c(ndf2, ndf1), Difference = c("", sprintf("%.3f", ml2 - ml1)), Df = c("", sprintf("%.3f", 
             abs(ndf1 - ndf2))), p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), ifelse(h1 < 0.001, 
             sprintf("%.3e", h1), ifelse(h1 < 0.01, sprintf("%.3f", h1), ifelse(h1 < 0.05, sprintf("%.3f", 
-                h1), sprintf("%.3f", h1)))))), Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), ifelse(h1 < 
-            0.01, sprintf("** ", h1), ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))), stringsAsFactors = FALSE)
+                h1), sprintf("%.3f", h1)))))), Sig. = c("", ifelse(h1 < 0.001, "***", ifelse(h1 < 
+            0.01, "** ", ifelse(h1 < 0.05, "*  ", "   ")))), stringsAsFactors = FALSE)
         report <- sprintf("\nReport suggestion: The Chi-Square test on the %s scores indicates that model %s is [%s?] better than model %s (X2(%.2f)=%.3f, p%s).\n-----\n", 
             type, deparse(substitute(model1)), ifelse(h1 > 0.1, "not significantly", ifelse(h1 > 0.05, "not significantly / marginally", 
                 ifelse(h1 > 0.01, "marginally / significantly", "significantly"))), deparse(substitute(model2)), 
@@ -181,8 +181,8 @@ compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALS
             ml2), Edf = c(ndf1, ndf2), Difference = c("", sprintf("%.3f", ml1 - ml2)), Df = c("", sprintf("%.3f", 
             abs(ndf1 - ndf2))), p.value = c("", ifelse(h1 < 2e-16, sprintf(" < 2e-16"), ifelse(h1 < 0.001, 
             sprintf("%.3e", h1), ifelse(h1 < 0.01, sprintf("%.3f", h1), ifelse(h1 < 0.05, sprintf("%.3f", 
-                h1), sprintf("%.3f", h1)))))), Sig. = c("", ifelse(h1 < 0.001, sprintf("***", h1), ifelse(h1 < 
-            0.01, sprintf("** ", h1), ifelse(h1 < 0.05, sprintf("*  ", h1), sprintf("   ", h1))))), stringsAsFactors = FALSE)
+                h1), sprintf("%.3f", h1)))))), Sig. = c("", ifelse(h1 < 0.001, "***", ifelse(h1 < 
+            0.01, "** ", ifelse(h1 < 0.05, "*  ", "   ")))), stringsAsFactors = FALSE)
         report <- sprintf("\nReport suggestion: The Chi-Square test on the %s scores indicates that model %s is [%s] better than model %s (X2(%.2f)=%.3f, p%s).\n-----\n", 
             type, deparse(substitute(model2)), ifelse(h1 > 0.1, "not significantly", ifelse(h1 > 0.05, "not significantly / marginally", 
                 ifelse(h1 > 0.01, "marginally / significantly", "significantly"))), deparse(substitute(model1)), 
@@ -300,7 +300,7 @@ compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALS
 #' @param sim.ci Logical: Using simultaneous confidence intervals or not 
 #' (default set to FALSE). The implementation of simultaneous CIs follows 
 #' Gavin Simpson's blog of December 15, 2016: 
-#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' \url{https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
 #' This interval is calculated from simulations based. 
 #' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
 #' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
@@ -374,9 +374,14 @@ compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALS
 #' }
 #'
 #' @family Testing for significance
-plot_diff <- function(model, view, comp, cond = NULL, se = 1.96, sim.ci = FALSE, n.grid = 100, add = FALSE, 
-    rm.ranef = TRUE, mark.diff = TRUE, col.diff = "red", col = "black", eegAxis = FALSE, transform.view = NULL, 
-    print.summary = getOption("itsadug_print"), plot = TRUE, main = NULL, ylab = NULL, xlab = NULL, xlim = NULL, 
+plot_diff <- function(model, view, comp, cond = NULL, 
+    se = 1.96, sim.ci = FALSE, 
+    n.grid = 100, add = FALSE, rm.ranef = TRUE, 
+    mark.diff = TRUE, col.diff = "red", col = "black", 
+    eegAxis = FALSE, transform.view = NULL, 
+    print.summary = getOption("itsadug_print"), 
+    plot = TRUE, 
+    main = NULL, ylab = NULL, xlab = NULL, xlim = NULL, 
     ylim = NULL, hide.label = FALSE, ...) {
     # For simultaneous CI, n.grid needs to be at least 200, otherwise the simulations for the simultaneous CI
     # is not adequate
@@ -581,7 +586,7 @@ plot_diff <- function(model, view, comp, cond = NULL, se = 1.96, sim.ci = FALSE,
 #' @param sim.ci Logical: Using simultaneous confidence intervals or not 
 #' (default set to FALSE). The implementation of simultaneous CIs follows 
 #' Gavin Simpson's blog of December 15, 2016: 
-#' \url{http://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
+#' \url{https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/}. 
 #' This interval is calculated from simulations based. 
 #' Please specify a seed (e.g., \code{set.seed(123)}) for reproducable results. 
 #' Note: in contrast with Gavin Simpson's code, here the Bayesian posterior 
