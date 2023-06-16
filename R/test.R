@@ -134,7 +134,7 @@ compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALS
     advice <- NULL
     warning <- NULL
     report <- NULL
-    
+    aicmessage <- NULL
     # if (type != 'AIC') { Situation 1: model 1 has lower score, but model 2 has lower df. Is it significantly
     # better model than model 2?  Situation 0: equal df
     if (abs(round(ndf2 - ndf1)) < 0.5) {
