@@ -235,6 +235,7 @@ compareML <- function(model1, model2, signif.stars = TRUE, suggest.report = FALS
     }
     
     #Init variable aicmessage
+    #
     aicmessage <- NULL
     if (type != "AIC") {
         if (is.null(model1$AR1.rho)) {
